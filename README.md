@@ -1,125 +1,57 @@
 # Test Lah!
 
-> Your Boss's Favorite QA Tool
+> Just, Test lah!
 
-A lightweight, fully client-side QA management tool with an interactive mindmap for organizing test flows, structured test case tracking, and AI-powered test case generation.
+A fully client-side QA management tool with interactive mindmaps, test case tracking, and AI-powered test case generation.
 
 ![Test Lah!](https://via.placeholder.com/900x400/F7F5F1/1A1A1A?text=Test+Lah%21+Screenshot)
 
-## Screenshots
-
-<!-- Replace these with actual screenshots -->
-| Login | Mindmap | Test Cases |
-|-------|---------|------------|
-| ![Login](https://via.placeholder.com/300x200/F7F5F1/A8A49E?text=Login) | ![Mindmap](https://via.placeholder.com/300x200/F7F5F1/A8A49E?text=Mindmap) | ![Test Cases](https://via.placeholder.com/300x200/F7F5F1/A8A49E?text=Test+Cases) |
-
-| AI Generation | Integrations | Projects |
-|---------------|--------------|----------|
-| ![AI Gen](https://via.placeholder.com/300x200/F7F5F1/A8A49E?text=AI+Generate) | ![Integrations](https://via.placeholder.com/300x200/F7F5F1/A8A49E?text=Integrations) | ![Projects](https://via.placeholder.com/300x200/F7F5F1/A8A49E?text=Projects) |
-
 ## Features
 
-- **Mindmap Editor** — Build flow maps with drag, pan, inline editing, horizontal/vertical node directions, and Bezier connectors
-- **Test Case Table** — Add, edit, reorder, and track status (pass/fail/skip/untested) with expandable cells
-- **AI Test Generation** — Generate test cases from natural language descriptions using Gemini, OpenAI, or DeepSeek
-- **Multi-Provider AI** — Switch between AI providers with test connection, model selection, and fallback support
-- **Multi-Language** — Generate test cases in English or Bahasa Indonesia
-- **Multi-Project** — Create, switch, rename, and delete projects with fun random icons
-- **Export** — Download as Markdown (formatted tables) or JSON (full backup)
-- **Responsive** — Stacked layout with tab bar on mobile
-- **Weather Integration** — Jakarta weather on login page
-- **Lottie Animations** — Smooth, playful animations throughout
+- **Mindmap Editor** — Drag-and-drop flow maps with horizontal/vertical directions and conditional edges
+- **Test Case Table** — Track pass/fail/skip/untested with expandable cells, custom columns, and bulk expand
+- **AI Generation** — Generate test cases from descriptions using Gemini, OpenAI, or DeepSeek
+- **Multi-Project** — Manage multiple projects with per-node column configs
+- **Export** — Download as Markdown or JSON
 
 ## Quick Start
 
 ```bash
-# Clone the repo
 git clone https://github.com/niamhramadhaan/test-lah.git
 cd test-lah
-
-# Install dependencies
 npm install
-
-# Start dev server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). Enter any name containing **"ayu"** to login.
 
-### Login
+### AI Setup
 
-Enter any name containing **"ayu"** (case-insensitive) to access the dashboard.
-
-### AI Features
-
-1. Go to **Integrations** from the sidebar
-2. Choose a provider (Gemini, OpenAI, or DeepSeek)
-3. Enter your API key and click **Test**
-4. Click **Connect** to save
-5. Select your default model
-6. Go to any node's test cases → click **Generate** in the dock
+1. Go to **Integrations** → choose a provider
+2. Enter API key → click **Test** → click **Connect**
+3. Select default model
+4. In any node's test cases → click **Generate** in the dock
 
 ## Tech Stack
 
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript (strict mode)
-- **Styling:** Tailwind CSS + CSS custom properties
-- **Animations:** Motion (Framer Motion), Lottie, Canvas Confetti
-- **AI SDKs:** `@google/generative-ai`, `openai`
-- **Persistence:** localStorage (client-side, no database)
-- **Auth:** sessionStorage (name-based gate, no passwords)
+Next.js 14 · TypeScript · Tailwind CSS · Motion · Lottie · `@google/generative-ai` · `openai`
 
-## Project Structure
+Data stored in browser localStorage. No backend required.
 
-```
-src/
-├── app/
-│   ├── api/              # Server API routes
-│   │   ├── generate/     # AI test case generation
-│   │   ├── llm/          # LLM connection test
-│   │   └── weather/      # Weather proxy (Open-Meteo)
-│   ├── (dashboard)/      # Dashboard layout + pages
-│   │   ├── integrations/ # AI provider config
-│   │   ├── projects/     # Project list + detail
-│   │   └── summary/      # Project summary
-│   └── login/            # Login page
-├── components/
-│   ├── layout/           # Header, profile
-│   ├── mindmap/          # Canvas, nodes, layout
-│   ├── testcase/         # Table, rows, generation
-│   ├── shared/           # Modal, EmptyState, etc.
-│   └── ui/               # Reusable UI primitives
-├── context/              # Dashboard context provider
-├── hooks/                # useAuth, useMindmap, useTestCases, etc.
-├── lib/                  # Utilities, export, LLM wrapper
-└── types/                # TypeScript interfaces
-```
+## Brand
 
-## Deployment
+| Color | Hex | Usage |
+|-------|-----|-------|
+| Background | `#F7F5F1` | Page background |
+| Card | `#FFFFFF` | Cards, panels |
+| Text Primary | `#1A1A1A` | Headings, body |
+| Text Secondary | `#7A7872` | Labels, hints |
+| Accent | `#1A1A1A` | Buttons, links |
+| Brown | `#6F4E37` | Coffee, highlights |
+| Pass | `#3B6011` | Pass status |
+| Fail | `#8B1A1A` | Fail status |
 
-### Vercel (Recommended)
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/niamhramadhaan/test-lah)
-
-Or manually:
-
-```bash
-npm i -g vercel
-vercel
-```
-
-Vercel auto-detects Next.js and deploys with zero configuration.
-
-### Other Platforms
-
-This is a standard Next.js app. It can be deployed to any platform that supports Next.js:
-- **Netlify** — `npm run build` + deploy `/out`
-- **Railway** — Connect repo, auto-deploy
-- **Docker** — Use the official Next.js Dockerfile
-
-## Environment Variables
-
-None required! All configuration (API keys, model selection) is stored in the user's browser via localStorage.
+Full brand guideline: [docs/brand-guideline.md](docs/brand-guideline.md)
 
 ## License
 
