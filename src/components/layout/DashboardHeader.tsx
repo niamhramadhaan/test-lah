@@ -277,7 +277,7 @@ export function DashboardHeader() {
 
           {dropdownOpen && (
             <div
-              className="absolute top-full right-0 mt-1 w-52 py-1 border z-[100]"
+              className="absolute top-full right-0 mt-1 w-52 py-1 border z-40"
               style={{
                 backgroundColor: 'var(--bg-card)',
                 borderColor: 'var(--border)',
