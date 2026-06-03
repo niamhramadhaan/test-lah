@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "Test Lah!",
   description: "Test Lah! — Your Boss's Favorite QA Tool",
   icons: {
-    icon: "https://static.vecteezy.com/system/resources/thumbnails/067/162/149/small/cute-duck-meme-sticker-transparent-cute-illustration-free-png.png",
+    icon: "/favicon.ico",
   },
 };
 

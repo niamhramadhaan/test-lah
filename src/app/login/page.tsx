@@ -104,20 +104,7 @@ export default function LoginPage() {
             texts={['Halo,', greeting + '!']}
             className="text-5xl font-bold"
           />
-          <h1
-            className="text-2xl font-bold mt-4"
-            style={{
-              background: 'linear-gradient(90deg, #6F4E37 0%, #6F4E37 35%, #FFD54F 50%, #6F4E37 65%, #6F4E37 100%)',
-              backgroundSize: '200% 100%',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              animation: 'shimmerText 2.5s ease-in-out infinite',
-            }}
-          >
-            Hei, Test Lah!
-          </h1>
-          <p className="text-sm mt-3" style={{ color: 'var(--text-tertiary)', animation: 'fadeInUp 0.6s ease-out 0.5s forwards', opacity: 0 }}>
+          <p className="text-sm mt-6" style={{ color: 'var(--text-tertiary)', animation: 'fadeInUp 0.6s ease-out 0.5s forwards', opacity: 0 }}>
             Let&apos;s get testing!
           </p>
         </div>
@@ -166,8 +153,18 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <h1 className="text-center text-xl font-bold mb-1 tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                  Welcome to Test Lah!
+                <h1
+                  className="text-center text-xl font-bold mb-1 tracking-tight"
+                  style={{
+                    background: 'linear-gradient(90deg, #6F4E37 0%, #6F4E37 35%, #FFD54F 50%, #6F4E37 65%, #6F4E37 100%)',
+                    backgroundSize: '200% 100%',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    animation: 'shimmerText 2.5s ease-in-out infinite',
+                  }}
+                >
+                  Hei, Test Lah!
                 </h1>
                 <p className="text-center text-xs mb-6" style={{ color: 'var(--text-tertiary)' }}>
                   Your one-stop QA companion. Let&apos;s get testing!
