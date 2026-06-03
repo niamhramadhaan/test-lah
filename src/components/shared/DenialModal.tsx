@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Highlighter } from '@/components/ui/highlighter'
 
 interface DenialModalProps {
   open: boolean
@@ -32,7 +33,6 @@ function MockQRCode() {
   return (
     <svg width="165" height="165" viewBox="0 0 165 165">
       <rect x="0" y="0" width="165" height="165" rx="8" fill="white" />
-      {/* Corner patterns */}
       <rect x="5" y="5" width="30" height="30" rx="2" fill="none" stroke="#1A1A1A" strokeWidth="3" />
       <rect x="12" y="12" width="16" height="16" rx="1" fill="#1A1A1A" />
       <rect x="130" y="5" width="30" height="30" rx="2" fill="none" stroke="#1A1A1A" strokeWidth="3" />
@@ -43,6 +43,48 @@ function MockQRCode() {
     </svg>
   )
 }
+
+const EWALLETS = [
+  {
+    name: 'GoPay',
+    color: '#00AA13',
+    logo: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#00AA13">
+        <path d="M12.072.713a15.38 15.38 0 0 0-.643.011C5.317.998.344 5.835.017 11.818c-.266 4.913 2.548 9.21 6.723 11.204 1.557.744 3.405-.19 3.706-1.861.203-1.126-.382-2.241-1.429-2.742-2.373-1.139-3.966-3.602-3.778-6.406.22-3.28 2.931-5.945 6.279-6.171 3.959-.267 7.257 2.797 7.257 6.619 0 2.623-1.553 4.888-3.809 5.965a2.511 2.511 0 0 0-1.395 2.706l.011.056c.295 1.644 2.111 2.578 3.643 1.852C21.233 21.139 24 17.117 24 12.461 23.996 5.995 18.664.749 12.072.711v.002Zm-.061 7.614c-2.331 0-4.225 1.856-4.225 4.139 0 2.282 1.894 4.137 4.225 4.137 2.33 0 4.225-1.855 4.225-4.137 0-2.283-1.895-4.139-4.225-4.139Z" />
+      </svg>
+    ),
+  },
+  {
+    name: 'OVO',
+    color: '#4C3494',
+    logo: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" fill="#4C3494" />
+        <ellipse cx="12" cy="12" rx="4.5" ry="6" fill="white" />
+        <circle cx="12" cy="12" r="2.5" fill="#4C3494" />
+      </svg>
+    ),
+  },
+  {
+    name: 'DANA',
+    color: '#108EE9',
+    logo: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="2" width="20" height="20" rx="5" fill="#108EE9" />
+        <path d="M7 8.5h2.5v7H7V8.5zM10.5 8.5H13c1.93 0 3 1.2 3 2.85 0 1.5-1 2.7-2.8 2.7h-.7v1.45h-2V8.5zm2 2.4h.6c.66 0 1-.35 1-.95s-.34-.95-1-.95h-.6v1.9z" fill="white" />
+      </svg>
+    ),
+  },
+  {
+    name: 'ShopeePay',
+    color: '#EE4D2D',
+    logo: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#EE4D2D">
+        <path d="M15.9414 17.9633c.229-1.879-.981-3.077-4.1758-4.0969-1.548-.528-2.277-1.22-2.26-2.1719.065-1.056 1.048-1.825 2.352-1.85a5.2898 5.2898 0 0 1 2.8838.89c.116.072.197.06.263-.039.09-.145.315-.494.39-.62.051-.081.061-.187-.068-.281-.185-.1369-.704-.4149-.983-.5319a6.4697 6.4697 0 0 0-2.5118-.514c-1.909.008-3.4129 1.215-3.5389 2.826-.082 1.1629.494 2.1078 1.73 2.8278.262.152 1.6799.716 2.2438.892 1.774.552 2.695 1.5419 2.478 2.6969-.197 1.047-1.299 1.7239-2.818 1.7439-1.2039-.046-2.2878-.537-3.1278-1.19l-.141-.11c-.104-.08-.218-.075-.287.03-.05.077-.376.547-.458.67-.077.108-.035.168.045.234.35.293.817.613 1.134.775a6.7097 6.7097 0 0 0 2.8289.727 4.9048 4.9048 0 0 0 2.0759-.354c1.095-.465 1.8029-1.394 1.9449-2.554zM11.9986 1.4009c-2.068 0-3.7539 1.95-3.8329 4.3899h7.6657c-.08-2.44-1.765-4.3899-3.8328-4.3899zm7.8516 22.5981-.08.001-15.7843-.002c-1.074-.04-1.863-.91-1.971-1.991l-.01-.195L1.298 6.2858a.459.459 0 0 1 .45-.494h4.9748C6.8448 2.568 9.1607 0 11.9996 0c2.8388 0 5.1537 2.5689 5.2757 5.7898h4.9678a.459.459 0 0 1 .458.483l-.773 15.5883-.007.131c-.094 1.094-.979 1.9769-2.0709 2.0059z" />
+      </svg>
+    ),
+  },
+]
 
 export function DenialModal({ open, onClose, onTryAgain }: DenialModalProps) {
   const [activeTab, setActiveTab] = useState<'qris' | 'ewallet' | 'va'>('qris')
@@ -117,11 +159,23 @@ export function DenialModal({ open, onClose, onTryAgain }: DenialModalProps) {
 
           {/* Content */}
           <div className="px-6 pt-4 pb-2">
-            <p className="text-center text-sm mb-1" style={{ color: 'var(--text-primary)' }}>
-              Maaf, nama kamu tidak terdaftar
+            <p className="text-center text-sm mb-2 leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+              Sepertinya kamu{' '}
+              <Highlighter action="underline" color="#FF5252" strokeWidth={2} animationDuration={800}>
+                <span className="font-semibold">bukan bagian dari SLTR Group</span>
+              </Highlighter>
+              {' '}ya?
             </p>
             <p className="text-center text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
-              sebagai QA dari SLTR Group. Silahkan melamar dan coba lagi.
+              Kamu harus{' '}
+              <Highlighter action="highlight" color="#FFD54F" animationDuration={1000}>
+                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>melamar terlebih dahulu</span>
+              </Highlighter>
+              {' '}untuk mendapatkan akses, atau{' '}
+              <Highlighter action="highlight" color="#FFD54F" animationDuration={1200}>
+                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>lakukan pembayaran ke Qois</span>
+              </Highlighter>
+              {' '}di bawah ini.
             </p>
           </div>
 
@@ -170,22 +224,14 @@ export function DenialModal({ open, onClose, onTryAgain }: DenialModalProps) {
 
               {activeTab === 'ewallet' && (
                 <div className="space-y-2">
-                  {[
-                    { name: 'GoPay', color: '#00AA13', letter: 'G' },
-                    { name: 'OVO', color: '#4C3494', letter: 'O' },
-                    { name: 'DANA', color: '#108EE9', letter: 'D' },
-                    { name: 'ShopeePay', color: '#EE4D2D', letter: 'S' },
-                  ].map(wallet => (
+                  {EWALLETS.map(wallet => (
                     <button
                       key={wallet.name}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-colors hover:bg-white"
                       style={{ borderColor: 'var(--border)' }}
                     >
-                      <div
-                        className="w-7 h-7 rounded-md flex items-center justify-center text-white text-xs font-bold"
-                        style={{ backgroundColor: wallet.color }}
-                      >
-                        {wallet.letter}
+                      <div className="w-7 h-7 rounded-md flex items-center justify-center overflow-hidden" style={{ backgroundColor: `${wallet.color}15` }}>
+                        {wallet.logo}
                       </div>
                       <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{wallet.name}</span>
                     </button>
