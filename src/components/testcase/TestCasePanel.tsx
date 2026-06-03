@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FlowNode, TestCase, ColumnConfig } from '@/types'
+import { FlowNode, TestCase, ColumnConfig, DEFAULT_COLUMNS } from '@/types'
 import { TestStats } from '@/hooks/useTestCases'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ProgressBar } from '@/components/shared/ProgressBar'
@@ -31,6 +31,8 @@ interface TestCasePanelProps {
   onRenameColumn: (nodeId: string, key: string, label: string) => void
   onUpdateNode: (id: string, patch: Partial<FlowNode>) => void
   onAddColumn?: (nodeId: string, label: string) => void
+  onDeleteColumn?: (nodeId: string, key: string) => void
+  confirmDialog?: (title: string, message: string) => Promise<boolean>
 }
 
 export function TestCasePanel({
@@ -48,6 +50,8 @@ export function TestCasePanel({
   onRenameColumn,
   onUpdateNode,
   onAddColumn,
+  onDeleteColumn,
+  confirmDialog,
 }: TestCasePanelProps) {
   const router = useRouter()
   const [notesOpen, setNotesOpen] = useState(false)
@@ -55,9 +59,18 @@ export function TestCasePanel({
   const [generateOpen, setGenerateOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [expandAll, setExpandAll] = useState(false)
+  const [addingColumn, setAddingColumn] = useState(false)
+  const [newColName, setNewColName] = useState('')
+  const newColInputRef = useRef<HTMLInputElement>(null)
   const columnsTrayRef = useRef<HTMLDivElement>(null)
 
   const visibleColumns = fullscreen ? columns : columns.filter(c => c.key !== 'code')
+  const defaultKeys = DEFAULT_COLUMNS.map(c => c.key)
+
+  // Focus new column input
+  useEffect(() => {
+    if (addingColumn && newColInputRef.current) newColInputRef.current.focus()
+  }, [addingColumn])
 
   // Close columns tray when clicking outside
   useEffect(() => {
@@ -168,35 +181,83 @@ export function TestCasePanel({
               </button>
             </div>
             <div className="py-1 max-h-[240px] overflow-y-auto">
-              {visibleColumns.map(col => (
+              {visibleColumns.map(col => {
+                const isCustom = !defaultKeys.includes(col.key)
+                return (
+                  <div
+                    key={col.key}
+                    className="flex items-center justify-between px-3 py-1.5 text-[11px] hover:bg-[var(--bg-secondary)] transition-colors group/col"
+                  >
+                    <button
+                      onClick={() => selectedNode && onToggleColumn(selectedNode.id, col.key)}
+                      className="flex items-center gap-2 flex-1 text-left"
+                      style={{ color: col.visible ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
+                    >
+                      <span className="w-3 text-center">{col.visible ? '✓' : ''}</span>
+                      <span>{col.label}</span>
+                    </button>
+                    {isCustom && (
+                      <button
+                        onClick={async () => {
+                          if (!selectedNode || !onDeleteColumn) return
+                          const hasData = testCases.some(tc => {
+                            const val = (tc as unknown as Record<string, unknown>)[col.key]
+                            return val && typeof val === 'string' && val.trim() !== ''
+                          })
+                          if (hasData && confirmDialog) {
+                            const ok = await confirmDialog('Delete Column', `This column has data in some test cases. Delete "${col.label}" anyway?`)
+                            if (!ok) return
+                          }
+                          onDeleteColumn(selectedNode.id, col.key)
+                        }}
+                        className="w-4 h-4 flex items-center justify-center rounded opacity-0 group-hover/col:opacity-100 hover:opacity-100 transition-opacity text-[10px]"
+                        style={{ color: 'var(--status-fail-text)' }}
+                        title={`Delete ${col.label}`}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Add new column — inline */}
+              {addingColumn ? (
+                <div className="px-3 py-1.5">
+                  <input
+                    ref={newColInputRef}
+                    value={newColName}
+                    onChange={e => setNewColName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && newColName.trim()) {
+                        onAddColumn?.(selectedNode!.id, newColName.trim())
+                        setNewColName('')
+                        setAddingColumn(false)
+                      }
+                      if (e.key === 'Escape') { setAddingColumn(false); setNewColName('') }
+                    }}
+                    onBlur={() => {
+                      if (newColName.trim()) {
+                        onAddColumn?.(selectedNode!.id, newColName.trim())
+                      }
+                      setNewColName('')
+                      setAddingColumn(false)
+                    }}
+                    placeholder="Column name..."
+                    className="w-full px-2 py-1 text-[11px] rounded border outline-none"
+                    style={{ borderColor: 'var(--accent)', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+              ) : (
                 <button
-                  key={col.key}
-                  onClick={() => selectedNode && onToggleColumn(selectedNode.id, col.key)}
+                  onClick={() => setAddingColumn(true)}
                   className="w-full px-3 py-1.5 text-[11px] text-left flex items-center gap-2 hover:bg-[var(--bg-secondary)] transition-colors"
-                  style={{
-                    color: col.visible ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                  }}
+                  style={{ color: 'var(--accent)' }}
                 >
-                  <span className="w-3 text-center">{col.visible ? '✓' : ''}</span>
-                  <span>{col.label}</span>
+                  <span className="w-3 text-center">+</span>
+                  <span>Add New Column</span>
                 </button>
-              ))}
-            </div>
-            <div className="border-t px-3 py-2" style={{ borderColor: 'var(--border)' }}>
-              <button
-                onClick={() => {
-                  if (!selectedNode) return
-                  const name = prompt('New column name:')
-                  if (name?.trim()) {
-                    onAddColumn?.(selectedNode.id, name.trim())
-                  }
-                }}
-                className="w-full text-[11px] text-left flex items-center gap-2 hover:bg-[var(--bg-secondary)] transition-colors rounded px-1 py-1"
-                style={{ color: 'var(--accent)' }}
-              >
-                <span>+</span>
-                <span>Add New Column</span>
-              </button>
+              )}
             </div>
           </div>
         )}

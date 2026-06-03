@@ -273,19 +273,24 @@ export function seedMockProject(): void {
   try {
     const raw = localStorage.getItem(key)
     const state = raw ? JSON.parse(raw) : { projects: {}, activeProjectId: null, selectedNodeId: null }
+    let changed = false
 
-    // Only seed if mock project doesn't exist
+    // Seed Simple Dashboard QA if missing
     if (!state.projects[MOCK_PROJECT_ID]) {
       state.projects[MOCK_PROJECT_ID] = getMockProject()
       state.activeProjectId = MOCK_PROJECT_ID
+      changed = true
     }
 
-    // Seed Revamp Cakra project
+    // Always ensure Revamp Cakra exists
     if (!state.projects[CAKRA_PROJECT_ID]) {
       state.projects[CAKRA_PROJECT_ID] = getCakraProject()
+      changed = true
     }
 
-    localStorage.setItem(key, JSON.stringify(state))
+    if (changed) {
+      localStorage.setItem(key, JSON.stringify(state))
+    }
   } catch {
     // Ignore errors
   }

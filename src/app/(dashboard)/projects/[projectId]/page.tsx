@@ -33,7 +33,7 @@ export default function ProjectDetailPage() {
     projects, activeProject, activeProjectId, selectedNodeId,
     setSelectedNodeId, switchProject,
     mindmap, testCases, pushState, lastSaved,
-    canUndo, canRedo, undo, redo,
+    canUndo, canRedo, undo, redo, confirmDialog,
   } = useDashboard()
 
   const project = projects[projectId] ?? null
@@ -308,6 +308,8 @@ export default function ProjectDetailPage() {
             onRenameColumn={testCases.updateColumnConfig}
             onUpdateNode={mindmap.updateNode}
             onAddColumn={testCases.addColumn}
+            onDeleteColumn={testCases.deleteColumn}
+            confirmDialog={confirmDialog}
           />
         </div>
       </div>

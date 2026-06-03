@@ -127,6 +127,16 @@ export function useTestCases(
     })
   }, [project, updateProject])
 
+  const deleteColumn = useCallback((nodeId: string, key: string) => {
+    if (!project) return
+    updateProject(project.id, p => {
+      const configs = { ...(p.columnConfigs ?? {}) }
+      const nodeConfig = configs[nodeId] ?? [...DEFAULT_COLUMNS]
+      configs[nodeId] = nodeConfig.filter(c => c.key !== key)
+      return { ...p, columnConfigs: configs }
+    })
+  }, [project, updateProject])
+
   return {
     testCases: cases,
     stats,
@@ -137,5 +147,6 @@ export function useTestCases(
     updateColumnConfig,
     toggleColumnVisibility,
     addColumn,
+    deleteColumn,
   }
 }

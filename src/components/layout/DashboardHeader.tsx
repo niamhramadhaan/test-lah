@@ -198,14 +198,16 @@ export function DashboardHeader() {
 
           <div className="w-px h-4 mx-0.5" style={{ backgroundColor: 'var(--border)' }} />
 
-          <ProfileDropdown
-            profile={profile}
-            initials={profileInitials}
-            onSetName={setProfileName}
-            onSetBannerColor={setProfileBannerColor}
-            onSetAvatarUrl={setProfileAvatarUrl}
-            onSetRole={setProfileRole}
-          />
+          <div className="relative z-[60]">
+            <ProfileDropdown
+              profile={profile}
+              initials={profileInitials}
+              onSetName={setProfileName}
+              onSetBannerColor={setProfileBannerColor}
+              onSetAvatarUrl={setProfileAvatarUrl}
+              onSetRole={setProfileRole}
+            />
+          </div>
 
           {/* Logout button */}
           <button
@@ -252,7 +254,7 @@ export function DashboardHeader() {
         </div>
 
         {/* Project dropdown */}
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative z-30" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="flex items-center gap-1.5 px-2 py-1 text-[10px] rounded-md border transition-colors hover:border-[var(--border-hover)]"

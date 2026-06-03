@@ -58,6 +58,7 @@ interface DashboardContextValue {
     updateColumnConfig: (nodeId: string, key: string, label: string) => void
     toggleColumnVisibility: (nodeId: string, key: string) => void
     addColumn: (nodeId: string, label: string) => void
+    deleteColumn: (nodeId: string, key: string) => void
   }
   dialog: ReturnType<typeof useDialog>['dialog']
   alertDialog: (title: string, message: string) => Promise<void>
