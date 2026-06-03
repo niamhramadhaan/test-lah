@@ -41,6 +41,7 @@ export default function ProjectsPage() {
   const [editValue, setEditValue] = useState('')
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
   const [donateOpen, setDonateOpen] = useState(false)
+  const [hoveredLater, setHoveredLater] = useState(false)
 
   const stats = useMemo(() => {
     const allCases = projectList.flatMap(p => Object.values(p.testCases).flat())
@@ -374,9 +375,11 @@ export default function ProjectsPage() {
             </div>
 
             {/* Actions */}
-            <div className="px-6 py-4 border-t flex gap-2" style={{ borderColor: 'var(--border)' }}>
+            <div className="px-6 py-4 border-t flex gap-2 relative" style={{ borderColor: 'var(--border)' }}>
               <button
                 onClick={() => setDonateOpen(false)}
+                onMouseEnter={() => setHoveredLater(true)}
+                onMouseLeave={() => setHoveredLater(false)}
                 className="flex-1 px-3 py-2.5 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
                 style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
               >
@@ -403,6 +406,34 @@ export default function ProjectsPage() {
               </p>
             </div>
           </div>
+
+          {/* Pinterest floating card — appears on Maybe Later hover */}
+          {hoveredLater && (
+            <div
+              className="absolute z-[410] rounded-xl border overflow-hidden hidden lg:block"
+              style={{
+                right: -370,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: 345,
+                backgroundColor: 'var(--bg-card)',
+                borderColor: 'var(--border)',
+                boxShadow: 'var(--shadow-lg)',
+                animation: 'fadeInRight 300ms ease-out',
+              }}
+            >
+              <div className="p-2">
+                <iframe
+                  src="https://assets.pinterest.com/ext/embed.html?id=620441286200289827"
+                  height="392"
+                  width="345"
+                  frameBorder="0"
+                  scrolling="no"
+                  style={{ borderRadius: 8 }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -414,6 +445,10 @@ export default function ProjectsPage() {
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(16px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInRight {
+          from { opacity: 0; transform: translateY(-50%) translateX(16px); }
+          to { opacity: 1; transform: translateY(-50%) translateX(0); }
         }
         @keyframes glowPulse {
           0%, 100% { box-shadow: 0 0 12px rgba(111,78,55,0.3), 0 0 24px rgba(111,78,55,0.15); }

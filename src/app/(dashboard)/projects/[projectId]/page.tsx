@@ -189,7 +189,7 @@ export default function ProjectDetailPage() {
               ref={leftPanelRef}
               className={`
                 ${mobileTab === 'mindmap' ? 'flex' : 'hidden'}
-                md:flex flex-col min-w-0
+                md:flex flex-col min-w-0 mobile-full-width
               `}
               style={{ width: `${splitRatio * 100}%` }}
             >
@@ -289,7 +289,7 @@ export default function ProjectDetailPage() {
           ref={rightPanelRef}
           className={`
             ${mobileTab === 'testcases' ? 'flex' : 'hidden'}
-            md:flex flex-col min-w-0
+            md:flex flex-col min-w-0 mobile-full-width
           `}
           style={{ width: tcFullscreen ? '100%' : `${(1 - splitRatio) * 100}%` }}
         >
@@ -311,6 +311,14 @@ export default function ProjectDetailPage() {
           />
         </div>
       </div>
+
+      <style jsx>{`
+        @media (max-width: 767px) {
+          .mobile-full-width {
+            width: 100% !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
