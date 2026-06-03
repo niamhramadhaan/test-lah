@@ -32,6 +32,7 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
   const [title, setTitle] = useState('')
   const [prompt, setPrompt] = useState('')
   const [language, setLanguage] = useState<'en' | 'id'>('en')
+  const [langOpen, setLangOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -197,20 +198,38 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
               </div>
             )}
 
-            {/* Language selector */}
-            <div>
-              <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                Language
-              </label>
-              <select
-                value={language}
-                onChange={e => setLanguage(e.target.value as 'en' | 'id')}
-                className="w-full px-3 py-2 text-sm rounded-lg border outline-none transition-colors cursor-pointer"
-                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}
+            {/* Language selector — accordion */}
+            <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+              <button
+                onClick={() => setLangOpen(prev => !prev)}
+                className="w-full flex items-center justify-between px-3 py-2 transition-colors hover:bg-[var(--bg-secondary)]"
               >
-                <option value="en">English</option>
-                <option value="id">Bahasa Indonesia</option>
-              </select>
+                <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Language</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}>
+                    {language === 'en' ? 'EN' : 'ID'}
+                  </span>
+                  <svg
+                    width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    style={{ transform: langOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms ease-out' }}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+              </button>
+              <div style={{ maxHeight: langOpen ? '80px' : '0px', overflow: 'hidden', transition: 'max-height 200ms ease-out' }}>
+                <div className="px-3 pb-2 pt-1">
+                  <select
+                    value={language}
+                    onChange={e => { setLanguage(e.target.value as 'en' | 'id'); setLangOpen(false) }}
+                    className="w-full px-2.5 py-1.5 text-xs rounded-md border outline-none transition-colors cursor-pointer"
+                    style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  >
+                    <option value="en">English</option>
+                    <option value="id">Bahasa Indonesia</option>
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
 
