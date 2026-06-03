@@ -398,17 +398,9 @@ export default function ProjectsPage() {
               <p className="text-xs text-center leading-relaxed mb-3" style={{ color: 'var(--text-secondary)', direction: 'rtl' }}>
                 اِنَّ الْمُصَّدِّقِيْنَ وَالْمُصَّدِّقٰتِ وَاَقْرَضُوا اللّٰهَ قَرْضًا حَسَنًا يُّضٰعَفُ لَهُمْ وَلَهُمْ اَجْرٌ كَرِيْمٌ ١٨
               </p>
-              <p className="text-[10px] text-center leading-relaxed mb-3" style={{ color: 'var(--text-tertiary)' }}>
+              <p className="text-[10px] text-center leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
                 &ldquo;Sesungguhnya orang-orang yang bersedekah baik laki-laki maupun perempuan dan meminjamkan kepada Allah dengan pinjaman yang baik, akan dilipatgandakan (balasannya) bagi mereka; dan mereka akan mendapat pahala yang mulia.&rdquo; (QS Al Hadid: 18)
               </p>
-              <div className="border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-                <p className="text-[10px] text-center leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
-                  Untuk mengakses berbagai layanan Kementerian Agama, kunjungi{' '}
-                  <a href="https://kemenag.go.id/layanan" target="_blank" rel="noopener noreferrer" style={{ color: '#6F4E37', textDecoration: 'underline' }}>kemenag.go.id/layanan</a>
-                  {' '}atau ikuti saluran WhatsApp{' '}
-                  <a href="https://whatsapp.com/channel/0029Vb9xP10Fy72KZA2gk81S" target="_blank" rel="noopener noreferrer" style={{ color: '#6F4E37', textDecoration: 'underline' }}>Kemenag</a>.
-                </p>
-              </div>
             </div>
           </div>
         </div>

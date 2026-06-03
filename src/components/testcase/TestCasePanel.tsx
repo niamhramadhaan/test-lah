@@ -140,14 +140,15 @@ export function TestCasePanel({
 
       {/* Dock at bottom */}
       <div className="flex-shrink-0 border-t py-2 flex justify-center relative" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-primary)' }}>
-        {/* Columns tray — positioned above dock */}
+        {/* Columns tray — positioned above dock center */}
         {columnsOpen && (
           <div
             ref={columnsTrayRef}
             className="absolute z-30 rounded-xl border"
             style={{
               bottom: '100%',
-              right: 16,
+              left: '50%',
+              transform: 'translateX(-50%)',
               marginBottom: 8,
               backgroundColor: 'var(--bg-card)',
               borderColor: 'var(--border)',

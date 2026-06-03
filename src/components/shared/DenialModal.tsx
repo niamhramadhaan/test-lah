@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Highlighter } from '@/components/ui/highlighter'
+import { ShineBorder } from '@/components/ui/shine-border'
 
 interface DenialModalProps {
   open: boolean
@@ -224,22 +225,31 @@ export function DenialModal({ open, onClose, onTryAgain }: DenialModalProps) {
                 </button>
 
                 {/* Bayar Akses */}
-                <button
-                  onClick={() => setPage('payment')}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-all hover:opacity-90"
-                  style={{ borderColor: '#6F4E37', backgroundColor: '#6F4E37' }}
-                >
-                  <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="12" y1="1" x2="12" y2="23" />
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                    </svg>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-xs font-semibold text-white">Bayar Akses</p>
-                    <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.7)' }}>Rp 999.999 — QRIS, e-wallet, VA</p>
-                  </div>
-                </button>
+                <div className="relative">
+                  <ShineBorder
+                    className="rounded-lg"
+                    shineColor={['#FFD54F', '#FFA726', '#FFD54F']}
+                    duration={4}
+                    borderWidth={2}
+                  />
+                  <button
+                    onClick={() => setPage('payment')}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-all hover:opacity-90 relative"
+                    style={{ borderColor: '#FFD54F', backgroundColor: 'transparent' }}
+                  >
+                    <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ backgroundColor: '#FFF8E1' }}>
+                      <span className="text-lg">😅</span>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        <Highlighter action="highlight" color="#FFD54F" animationDuration={1000}>
+                          Bayar Akses
+                        </Highlighter>
+                      </p>
+                      <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>Rp 999.999 — QRIS, e-wallet, VA</p>
+                    </div>
+                  </button>
+                </div>
 
                 {/* Bayar dengan metode lain */}
                 <button
