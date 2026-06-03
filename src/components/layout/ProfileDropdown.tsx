@@ -18,6 +18,15 @@ const AVATAR_URLS = [
   'https://cdn.jsdelivr.net/gh/alohe/avatars/png/upstream_22.png',
 ]
 
+const AVATAR_URLS_ROW3 = [
+  'https://i.pinimg.com/736x/ed/74/06/ed74063ade6d66fce2ca19acbe74babc.jpg',
+  'https://i.pinimg.com/736x/8c/6d/56/8c6d563311f0917d45d1f2ce5d7c1a2d.jpg',
+  'https://i.pinimg.com/736x/86/b8/be/86b8bea1c772cf5c540e6f01e6acce59.jpg',
+  'https://i.pinimg.com/736x/78/d4/b1/78d4b1787a4fd23c2a8d21e4fbbc016f.jpg',
+  'https://i.pinimg.com/1200x/87/de/e6/87dee6d33b04f1df28bc85702ee12d4b.jpg',
+  'https://i.pinimg.com/1200x/3b/e3/95/3be395c4a94705f95e0603afb04f9d56.jpg',
+]
+
 const ROLES = [
   'QA Engineer',
   'QA Lead',
@@ -254,6 +263,21 @@ export function ProfileDropdown({ profile, initials, onSetName, onSetBannerColor
                   }}
                 >
                   <img src={url} alt={`Avatar ${i + 11}`} className="w-full h-full object-cover" loading="lazy" />
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-6 gap-2 mt-2">
+              {AVATAR_URLS_ROW3.map((url, i) => (
+                <button
+                  key={url}
+                  onClick={() => onSetAvatarUrl(url)}
+                  className="w-10 h-10 rounded-lg overflow-hidden border-2 transition-all hover:scale-110 hover:shadow-md"
+                  style={{
+                    borderColor: profile.avatarUrl === url ? 'var(--accent)' : 'transparent',
+                    boxShadow: profile.avatarUrl === url ? '0 0 0 2px var(--accent)' : 'none',
+                  }}
+                >
+                  <img src={url} alt={`Avatar ${i + 23}`} className="w-full h-full object-cover" loading="lazy" />
                 </button>
               ))}
             </div>

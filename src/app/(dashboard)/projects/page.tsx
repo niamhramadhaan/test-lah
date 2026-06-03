@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useDashboard } from '@/context/DashboardContext'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -42,6 +42,19 @@ export default function ProjectsPage() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
   const [donateOpen, setDonateOpen] = useState(false)
   const [hoveredLater, setHoveredLater] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(null)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [menuOpen])
 
   const stats = useMemo(() => {
     const allCases = projectList.flatMap(p => Object.values(p.testCases).flat())
@@ -253,6 +266,7 @@ export default function ProjectsPage() {
               {/* Dropdown menu — outside the card link */}
               {menuOpen === p.id && (
                 <div
+                  ref={menuRef}
                   className="absolute top-11 right-3 z-30 py-1 min-w-[140px] border rounded-lg"
                   style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-lg)' }}
                 >

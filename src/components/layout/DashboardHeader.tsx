@@ -125,26 +125,34 @@ export function DashboardHeader() {
 
   return (
     <header
-      className="flex flex-col border-b flex-shrink-0"
+      className="relative flex flex-col border-b flex-shrink-0 overflow-hidden"
       style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
     >
-      <div className="flex items-center justify-between px-6 py-3">
+      {/* Background duck logo */}
+      <img
+        src="https://static.vecteezy.com/system/resources/thumbnails/067/162/149/small/cute-duck-meme-sticker-transparent-cute-illustration-free-png.png"
+        alt=""
+        className="absolute left-0 top-0 h-full object-contain pointer-events-none select-none"
+        style={{ opacity: 0.04, width: 'auto' }}
+      />
+
+      <div className="relative z-10 flex items-center justify-between px-6 py-3">
         <div className="flex items-center gap-4">
           <Link href="/projects" className="flex items-center gap-2.5">
             <div
-              className="w-10 h-10 rounded-lg overflow-hidden bg-white"
+              className="w-8 h-8 rounded-lg overflow-hidden bg-white"
               style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
             >
               <img
                 src="https://static.vecteezy.com/system/resources/thumbnails/067/162/149/small/cute-duck-meme-sticker-transparent-cute-illustration-free-png.png"
                 alt="Logo"
-                width={40}
-                height={40}
+                width={32}
+                height={32}
                 className="w-full h-full object-contain"
               />
             </div>
             <div>
-              <h1 className="text-base font-semibold tracking-tight leading-none" style={{ color: 'var(--text-primary)' }}>
+              <h1 className="text-sm font-semibold tracking-tight leading-none" style={{ color: 'var(--text-primary)' }}>
                 Test Lah!
               </h1>
               <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -154,18 +162,18 @@ export function DashboardHeader() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCardOpen(true)}
-            className="px-3 py-1.5 text-xs font-medium rounded-md border transition-colors hover:bg-[var(--bg-secondary)]"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-          >
-            My Card
-          </button>
-
-          <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border)' }} />
-
+        <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCardOpen(true)}
+              className="px-3 py-1.5 text-xs font-medium rounded-md border transition-colors hover:bg-[var(--bg-secondary)]"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+            >
+              My Card
+            </button>
+
+            <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border)' }} />
+
             <ProfileDropdown
               profile={profile}
               initials={profileInitials}
@@ -188,11 +196,11 @@ export function DashboardHeader() {
             </button>
           </div>
 
-          {/* Project dropdown — below profile */}
-          <div className="relative ml-1" ref={dropdownRef}>
+          {/* Project dropdown — below profile/logout */}
+          <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border transition-colors hover:border-[var(--border-hover)]"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] rounded-md border transition-colors hover:border-[var(--border-hover)]"
               style={{
                 borderColor: dropdownOpen ? 'var(--accent)' : 'var(--border)',
                 color: activeProject ? 'var(--text-primary)' : 'var(--text-tertiary)',
@@ -200,7 +208,13 @@ export function DashboardHeader() {
                 backgroundColor: dropdownOpen ? 'var(--bg-secondary)' : 'transparent',
               }}
             >
-              <span className="truncate max-w-[120px]">
+              <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="1" y="1" width="5" height="5" rx="1" />
+                <rect x="8" y="1" width="5" height="5" rx="1" />
+                <rect x="1" y="8" width="5" height="5" rx="1" />
+                <rect x="8" y="8" width="5" height="5" rx="1" />
+              </svg>
+              <span className="truncate max-w-[140px]">
                 {activeProject ? activeProject.name : 'Select project'}
               </span>
               <svg width="10" height="10" viewBox="0 0 12 12" fill="none" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>
@@ -262,7 +276,7 @@ export function DashboardHeader() {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 px-6 pb-0">
+      <div className="relative z-10 flex items-center gap-1 px-6 pb-0">
         <NavItem
           label="All Projects"
           href="/projects"
