@@ -107,10 +107,16 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setDonateOpen(true)}
-            className="px-4 py-2 text-sm font-medium rounded-md border transition-colors hover:bg-[var(--bg-secondary)]"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
+            className="px-4 py-2 text-sm font-medium rounded-md border transition-all hover:scale-105"
+            style={{
+              borderColor: '#6F4E37',
+              color: '#6F4E37',
+              borderRadius: 'var(--radius-pill)',
+              boxShadow: '0 0 12px rgba(111,78,55,0.3), 0 0 24px rgba(111,78,55,0.15)',
+              animation: 'glowPulse 2s ease-in-out infinite',
+            }}
           >
-            Donate
+            Donate Please 🥺👉👈
           </button>
           <button
             onClick={async () => {
@@ -335,14 +341,14 @@ export default function ProjectsPage() {
           onClick={() => setDonateOpen(false)}
         >
           <div
-            className="w-full max-w-sm mx-4 rounded-xl border overflow-hidden"
+            className="w-full max-w-lg mx-4 rounded-xl border overflow-hidden"
             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-lg)', animation: 'fadeInUp 200ms ease-out' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Coffee header */}
-            <div className="px-5 pt-5 pb-4 flex flex-col items-center text-center" style={{ background: 'linear-gradient(180deg, #FFF8E1 0%, var(--bg-card) 100%)' }}>
-              <div className="w-16 h-16 mb-3 flex items-center justify-center">
-                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <div className="px-6 pt-6 pb-5 flex flex-col items-center text-center" style={{ background: 'linear-gradient(180deg, #FFF8E1 0%, var(--bg-card) 100%)' }}>
+              <div className="w-20 h-20 mb-4 flex items-center justify-center">
+                <svg width="60" height="60" viewBox="0 0 48 48" fill="none">
                   <path d="M8 16h24v20a8 8 0 01-8 8H16a8 8 0 01-8-8V16z" fill="#6F4E37" />
                   <path d="M32 20h4a4 4 0 010 8h-4" stroke="#6F4E37" strokeWidth="2.5" strokeLinecap="round" />
                   <path d="M14 12c0-2 2-4 4-4s4 2 4 4" stroke="#BCAAA4" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
@@ -350,31 +356,28 @@ export default function ProjectsPage() {
                   <rect x="6" y="38" width="28" height="4" rx="2" fill="#D7CCC8" />
                 </svg>
               </div>
-              <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                Buy the Developer a Coffee!
+              <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                Buy the Developer a Slush Coffee!
               </h3>
-              <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                If Test Lah! has been helpful, consider buying Qois a coffee. Minimum 1 litre, please. He&apos;s very tired.
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                If Test Lah! has been helpful, consider buying Qois a <strong>Slush Coffee</strong>. Minimum <strong>1 litre</strong>, please. He&apos;s very tired.
               </p>
             </div>
 
             {/* Address */}
-            <div className="px-5 py-4 border-t" style={{ borderColor: 'var(--border)' }}>
+            <div className="px-6 py-4 border-t" style={{ borderColor: 'var(--border)' }}>
               <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-tertiary)' }}>Pickup Location</p>
-              <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Toko Kopi TUKU — BSD</p>
+              <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Toko Kopi TUKU — BSD</p>
               <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Ruko Sektor 1.3, Blok RB No. 1<br />
-                Jl. Griya Loka Raya No.1<br />
-                Rw. Buntu, Kec. Serpong<br />
-                Kota Tangerang Selatan, Banten 15310
+                Ruko Sektor 1.3, Blok RB No. 1, Jl. Griya Loka Raya No.1, Serpong, Tangerang Selatan
               </p>
             </div>
 
-            {/* Footer */}
-            <div className="px-5 py-3 border-t flex gap-2" style={{ borderColor: 'var(--border)' }}>
+            {/* Actions */}
+            <div className="px-6 py-4 border-t flex gap-2" style={{ borderColor: 'var(--border)' }}>
               <button
                 onClick={() => setDonateOpen(false)}
-                className="flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
+                className="flex-1 px-3 py-2.5 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
                 style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
               >
                 Maybe Later
@@ -383,11 +386,29 @@ export default function ProjectsPage() {
                 href="https://maps.google.com/?q=Toko+Kopi+TUKU+BSD"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 px-3 py-2 text-xs font-medium rounded-lg text-center transition-opacity hover:opacity-80"
+                className="flex-1 px-3 py-2.5 text-xs font-medium rounded-lg text-center transition-opacity hover:opacity-80"
                 style={{ backgroundColor: '#6F4E37', color: '#fff' }}
               >
                 Open in Maps
               </a>
+            </div>
+
+            {/* Quran verse footer */}
+            <div className="px-6 py-4 border-t" style={{ borderColor: 'var(--border)', backgroundColor: '#FAFAF8' }}>
+              <p className="text-xs text-center leading-relaxed mb-3" style={{ color: 'var(--text-secondary)', direction: 'rtl' }}>
+                اِنَّ الْمُصَّدِّقِيْنَ وَالْمُصَّدِّقٰتِ وَاَقْرَضُوا اللّٰهَ قَرْضًا حَسَنًا يُّضٰعَفُ لَهُمْ وَلَهُمْ اَجْرٌ كَرِيْمٌ ١٨
+              </p>
+              <p className="text-[10px] text-center leading-relaxed mb-3" style={{ color: 'var(--text-tertiary)' }}>
+                &ldquo;Sesungguhnya orang-orang yang bersedekah baik laki-laki maupun perempuan dan meminjamkan kepada Allah dengan pinjaman yang baik, akan dilipatgandakan (balasannya) bagi mereka; dan mereka akan mendapat pahala yang mulia.&rdquo; (QS Al Hadid: 18)
+              </p>
+              <div className="border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                <p className="text-[10px] text-center leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+                  Untuk mengakses berbagai layanan Kementerian Agama, kunjungi{' '}
+                  <a href="https://kemenag.go.id/layanan" target="_blank" rel="noopener noreferrer" style={{ color: '#6F4E37', textDecoration: 'underline' }}>kemenag.go.id/layanan</a>
+                  {' '}atau ikuti saluran WhatsApp{' '}
+                  <a href="https://whatsapp.com/channel/0029Vb9xP10Fy72KZA2gk81S" target="_blank" rel="noopener noreferrer" style={{ color: '#6F4E37', textDecoration: 'underline' }}>Kemenag</a>.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -401,6 +422,10 @@ export default function ProjectsPage() {
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(16px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes glowPulse {
+          0%, 100% { box-shadow: 0 0 12px rgba(111,78,55,0.3), 0 0 24px rgba(111,78,55,0.15); }
+          50% { box-shadow: 0 0 20px rgba(111,78,55,0.5), 0 0 40px rgba(111,78,55,0.25); }
         }
       `}</style>
     </div>
