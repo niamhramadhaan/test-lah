@@ -389,16 +389,43 @@ export default function ProjectsPage() {
             </div>
 
             {/* Actions */}
-            <div className="px-6 py-4 border-t flex gap-2 relative" style={{ borderColor: 'var(--border)' }}>
-              <button
-                onClick={() => setDonateOpen(false)}
+            <div className="px-6 py-4 border-t flex gap-2" style={{ borderColor: 'var(--border)' }}>
+              <div
+                className="flex-1 relative"
                 onMouseEnter={() => setHoveredLater(true)}
                 onMouseLeave={() => setHoveredLater(false)}
-                className="flex-1 px-3 py-2.5 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
               >
-                Maybe Later
-              </button>
+                <button
+                  onClick={() => setDonateOpen(false)}
+                  className="w-full px-3 py-2.5 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                >
+                  Maybe Later
+                </button>
+
+                {/* Pinterest tooltip — above button */}
+                {hoveredLater && (
+                  <div
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[410] rounded-xl border overflow-hidden"
+                    style={{
+                      width: 240,
+                      backgroundColor: 'var(--bg-card)',
+                      borderColor: 'var(--border)',
+                      boxShadow: 'var(--shadow-lg)',
+                      animation: 'fadeInUp 200ms ease-out',
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://i.pinimg.com/564x/82/74/4d/82744d1c73b0296c5f32e6f669ac05e6.jpg"
+                      alt="Maybe next time?"
+                      width={240}
+                      className="w-full h-auto block"
+                      style={{ borderRadius: 11 }}
+                    />
+                  </div>
+                )}
+              </div>
               <a
                 href="https://maps.google.com/?q=Toko+Kopi+TUKU+BSD"
                 target="_blank"
@@ -420,34 +447,6 @@ export default function ProjectsPage() {
               </p>
             </div>
           </div>
-
-          {/* Pinterest floating card — appears on Maybe Later hover */}
-          {hoveredLater && (
-            <div
-              className="absolute z-[410] rounded-xl border overflow-hidden hidden lg:block"
-              style={{
-                right: -370,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: 345,
-                backgroundColor: 'var(--bg-card)',
-                borderColor: 'var(--border)',
-                boxShadow: 'var(--shadow-lg)',
-                animation: 'fadeInRight 300ms ease-out',
-              }}
-            >
-              <div className="p-2">
-                <iframe
-                  src="https://assets.pinterest.com/ext/embed.html?id=620441286200289827"
-                  height="392"
-                  width="345"
-                  frameBorder="0"
-                  scrolling="no"
-                  style={{ borderRadius: 8 }}
-                />
-              </div>
-            </div>
-          )}
         </div>
       )}
 
