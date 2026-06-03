@@ -54,6 +54,7 @@ export function TestCasePanel({
   const [exportOpen, setExportOpen] = useState(false)
   const [generateOpen, setGenerateOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
+  const [expandAll, setExpandAll] = useState(false)
   const columnsTrayRef = useRef<HTMLDivElement>(null)
 
   const visibleColumns = fullscreen ? columns : columns.filter(c => c.key !== 'code')
@@ -126,6 +127,7 @@ export function TestCasePanel({
           <TestCaseTable
             testCases={testCases}
             columns={visibleColumns}
+            expandAll={expandAll}
             onUpdate={(tcId, patch) => onUpdateTestCase(selectedNode.id, tcId, patch)}
             onDelete={tcId => onDeleteTestCase(selectedNode.id, tcId)}
             onReorder={newOrder => onReorderTestCases(selectedNode.id, newOrder)}
@@ -136,67 +138,68 @@ export function TestCasePanel({
       {/* Summary footer */}
       <SummaryFooter stats={stats} />
 
-      {/* Columns tray — positioned above dock */}
-      {columnsOpen && (
-        <div
-          ref={columnsTrayRef}
-          className="absolute z-30 rounded-xl border"
-          style={{
-            bottom: 56,
-            right: 16,
-            backgroundColor: 'var(--bg-card)',
-            borderColor: 'var(--border)',
-            boxShadow: 'var(--shadow-lg)',
-            animation: 'fadeInUp 200ms ease-out',
-            width: 180,
-          }}
-        >
-          <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
-            <h4 className="text-[11px] font-semibold" style={{ color: 'var(--text-primary)' }}>Columns</h4>
-            <button
-              onClick={() => setColumnsOpen(false)}
-              className="text-[10px] opacity-50 hover:opacity-100"
-              style={{ color: 'var(--text-tertiary)' }}
-            >
-              ×
-            </button>
-          </div>
-          <div className="py-1 max-h-[240px] overflow-y-auto">
-            {visibleColumns.map(col => (
-              <button
-                key={col.key}
-                onClick={() => selectedNode && onToggleColumn(selectedNode.id, col.key)}
-                className="w-full px-3 py-1.5 text-[11px] text-left flex items-center gap-2 hover:bg-[var(--bg-secondary)] transition-colors"
-                style={{
-                  color: col.visible ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                }}
-              >
-                <span className="w-3 text-center">{col.visible ? '✓' : ''}</span>
-                <span>{col.label}</span>
-              </button>
-            ))}
-          </div>
-          <div className="border-t px-3 py-2" style={{ borderColor: 'var(--border)' }}>
-            <button
-              onClick={() => {
-                if (!selectedNode) return
-                const name = prompt('New column name:')
-                if (name?.trim()) {
-                  onAddColumn?.(selectedNode.id, name.trim())
-                }
-              }}
-              className="w-full text-[11px] text-left flex items-center gap-2 hover:bg-[var(--bg-secondary)] transition-colors rounded px-1 py-1"
-              style={{ color: 'var(--accent)' }}
-            >
-              <span>+</span>
-              <span>Add New Column</span>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Dock at bottom */}
       <div className="flex-shrink-0 border-t py-2 flex justify-center relative" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-primary)' }}>
+        {/* Columns tray — positioned above dock */}
+        {columnsOpen && (
+          <div
+            ref={columnsTrayRef}
+            className="absolute z-30 rounded-xl border"
+            style={{
+              bottom: '100%',
+              right: 16,
+              marginBottom: 8,
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border)',
+              boxShadow: 'var(--shadow-lg)',
+              animation: 'fadeInUp 200ms ease-out',
+              width: 180,
+            }}
+          >
+            <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
+              <h4 className="text-[11px] font-semibold" style={{ color: 'var(--text-primary)' }}>Columns</h4>
+              <button
+                onClick={() => setColumnsOpen(false)}
+                className="text-[10px] opacity-50 hover:opacity-100"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="py-1 max-h-[240px] overflow-y-auto">
+              {visibleColumns.map(col => (
+                <button
+                  key={col.key}
+                  onClick={() => selectedNode && onToggleColumn(selectedNode.id, col.key)}
+                  className="w-full px-3 py-1.5 text-[11px] text-left flex items-center gap-2 hover:bg-[var(--bg-secondary)] transition-colors"
+                  style={{
+                    color: col.visible ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  }}
+                >
+                  <span className="w-3 text-center">{col.visible ? '✓' : ''}</span>
+                  <span>{col.label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="border-t px-3 py-2" style={{ borderColor: 'var(--border)' }}>
+              <button
+                onClick={() => {
+                  if (!selectedNode) return
+                  const name = prompt('New column name:')
+                  if (name?.trim()) {
+                    onAddColumn?.(selectedNode.id, name.trim())
+                  }
+                }}
+                className="w-full text-[11px] text-left flex items-center gap-2 hover:bg-[var(--bg-secondary)] transition-colors rounded px-1 py-1"
+                style={{ color: 'var(--accent)' }}
+              >
+                <span>+</span>
+                <span>Add New Column</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         <Dock direction="middle" iconSize={32} iconMagnification={44} iconDistance={100}>
           {/* Summary */}
           <DockIcon>
@@ -277,6 +280,38 @@ export function TestCasePanel({
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
                 Columns
+              </div>
+            </div>
+          </DockIcon>
+
+          {/* Expand All */}
+          <DockIcon>
+            <div className="relative group">
+              <button
+                onClick={() => setExpandAll(prev => !prev)}
+                className="w-full h-full flex items-center justify-center rounded-full transition-colors"
+                style={{ backgroundColor: expandAll ? 'var(--bg-secondary)' : 'transparent' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={expandAll ? 'var(--accent)' : 'var(--text-secondary)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {expandAll ? (
+                    <>
+                      <polyline points="4 14 10 14 10 20" />
+                      <polyline points="20 10 14 10 14 4" />
+                      <line x1="14" y1="10" x2="21" y2="3" />
+                      <line x1="3" y1="21" x2="10" y2="14" />
+                    </>
+                  ) : (
+                    <>
+                      <polyline points="15 3 21 3 21 9" />
+                      <polyline points="9 21 3 21 3 15" />
+                      <line x1="21" y1="3" x2="14" y2="10" />
+                      <line x1="3" y1="21" x2="10" y2="14" />
+                    </>
+                  )}
+                </svg>
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
+                {expandAll ? 'Collapse All' : 'Expand All'}
               </div>
             </div>
           </DockIcon>

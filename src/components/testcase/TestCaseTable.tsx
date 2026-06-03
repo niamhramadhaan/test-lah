@@ -6,12 +6,13 @@ import { TestCaseRow } from './TestCaseRow'
 interface TestCaseTableProps {
   testCases: TestCase[]
   columns: ColumnConfig[]
+  expandAll: boolean
   onUpdate: (tcId: string, patch: Partial<TestCase>) => void
   onDelete: (tcId: string) => void
   onReorder: (newOrder: string[]) => void
 }
 
-export function TestCaseTable({ testCases, columns, onUpdate, onDelete, onReorder }: TestCaseTableProps) {
+export function TestCaseTable({ testCases, columns, expandAll, onUpdate, onDelete, onReorder }: TestCaseTableProps) {
   const visibleCols = columns.filter(c => c.visible)
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
@@ -63,6 +64,7 @@ export function TestCaseTable({ testCases, columns, onUpdate, onDelete, onReorde
               key={tc.id}
               tc={tc}
               visibleCols={visibleCols}
+              expandAll={expandAll}
               onUpdate={patch => onUpdate(tc.id, patch)}
               onDelete={() => onDelete(tc.id)}
               onDragStart={e => handleDragStart(e, tc.id)}

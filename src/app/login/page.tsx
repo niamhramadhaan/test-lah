@@ -98,14 +98,27 @@ export default function LoginPage() {
   if (success) {
     return (
       <div className="h-screen w-screen flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
-        <Particles className="absolute inset-0" quantity={100} color="#81C784" size={1.0} staticity={25} ease={60} />
+        <Particles className="absolute inset-0" quantity={100} color="#6F4E37" size={1.0} staticity={25} ease={60} />
         <div className="relative z-10 flex flex-col items-center justify-center">
           <MorphingText
             texts={['Halo,', greeting + '!']}
             className="text-5xl font-bold"
           />
-          <p className="text-sm mt-6" style={{ color: 'var(--text-tertiary)', animation: 'fadeInUp 0.6s ease-out 0.5s forwards', opacity: 0 }}>
-            Selamat datang di Test Lah!
+          <h1
+            className="text-2xl font-bold mt-4"
+            style={{
+              background: 'linear-gradient(90deg, #6F4E37 0%, #6F4E37 35%, #FFD54F 50%, #6F4E37 65%, #6F4E37 100%)',
+              backgroundSize: '200% 100%',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              animation: 'shimmerText 2.5s ease-in-out infinite',
+            }}
+          >
+            Hei, Test Lah!
+          </h1>
+          <p className="text-sm mt-3" style={{ color: 'var(--text-tertiary)', animation: 'fadeInUp 0.6s ease-out 0.5s forwards', opacity: 0 }}>
+            Let&apos;s get testing!
           </p>
         </div>
       </div>
@@ -114,10 +127,10 @@ export default function LoginPage() {
 
   return (
     <div className="h-screen w-screen flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: 'var(--bg-primary)' }}>
-      <Particles className="absolute inset-0" quantity={120} color="#81C784" size={1.2} staticity={20} ease={60} />
+      <Particles className="absolute inset-0" quantity={120} color="#6F4E37" size={1.2} staticity={20} ease={60} />
 
       <div className="absolute inset-0 pointer-events-none" style={{
-        background: 'radial-gradient(ellipse at 30% 20%, rgba(129,199,132,0.12) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(255,213,79,0.08) 0%, transparent 60%)'
+        background: 'radial-gradient(ellipse at 30% 20%, rgba(111,78,55,0.12) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(255,213,79,0.08) 0%, transparent 60%)'
       }} />
 
       {/* Main layout — two columns */}
@@ -287,6 +300,10 @@ export default function LoginPage() {
         @keyframes shimmer {
           0% { background-position: 0% 50%; }
           100% { background-position: 200% 50%; }
+        }
+        @keyframes shimmerText {
+          0% { background-position: 100% 50%; }
+          100% { background-position: -100% 50%; }
         }
       `}</style>
     </div>

@@ -7,6 +7,7 @@ import { StatusPill } from './StatusPill'
 interface TestCaseRowProps {
   tc: TestCase
   visibleCols: ColumnConfig[]
+  expandAll: boolean
   onUpdate: (patch: Partial<TestCase>) => void
   onDelete: () => void
   onDragStart: (e: React.DragEvent) => void
@@ -16,7 +17,7 @@ interface TestCaseRowProps {
 
 const STATUS_ORDER: Status[] = ['untested', 'pass', 'fail', 'skip']
 
-export function TestCaseRow({ tc, visibleCols, onUpdate, onDelete, onDragStart, onDragOver, onDrop }: TestCaseRowProps) {
+export function TestCaseRow({ tc, visibleCols, expandAll, onUpdate, onDelete, onDragStart, onDragOver, onDrop }: TestCaseRowProps) {
   const [editingKey, setEditingKey] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [hovered, setHovered] = useState(false)
@@ -144,13 +145,13 @@ export function TestCaseRow({ tc, visibleCols, onUpdate, onDelete, onDragStart, 
                     }
                   }}
                   onDoubleClick={() => startEdit(col.key)}
-                  title={isLongText(col.key) ? (expandedKey === col.key ? 'Click to collapse · Double-click to edit' : 'Click to expand · Double-click to edit') : 'Double-click to edit'}
+                  title={isLongText(col.key) ? (expandedKey === col.key || expandAll ? 'Click to collapse · Double-click to edit' : 'Click to expand · Double-click to edit') : 'Double-click to edit'}
                   style={{
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: expandedKey === col.key ? 'pre-wrap' : 'nowrap',
+                    whiteSpace: (expandedKey === col.key || (expandAll && isLongText(col.key))) ? 'pre-wrap' : 'nowrap',
                     display: 'block',
-                    maxHeight: expandedKey === col.key ? 'none' : '1.2em',
+                    maxHeight: (expandedKey === col.key || (expandAll && isLongText(col.key))) ? 'none' : '1.2em',
                     lineHeight: '1.2em',
                   }}
                 >
