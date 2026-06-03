@@ -164,7 +164,7 @@ export function TestCasePanel({
               bottom: '100%',
               left: '50%',
               transform: 'translateX(-50%)',
-              marginBottom: 8,
+              marginBottom: 2,
               backgroundColor: 'var(--bg-card)',
               borderColor: 'var(--border)',
               boxShadow: 'var(--shadow-lg)',

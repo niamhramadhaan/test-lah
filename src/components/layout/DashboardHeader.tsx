@@ -10,6 +10,7 @@ import { Modal } from '@/components/shared/Modal'
 import { ProfileDropdown } from './ProfileDropdown'
 import { ProfileCardModal } from './ProfileCardModal'
 import { useProgress } from '@/components/shared/GlobalProgress'
+import { ComicText } from '@/components/ui/comic-text'
 
 const FUN_ICONS: Array<{ icon: React.ReactNode; bg: string }> = [
   { icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z" /><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z" /></svg>, bg: '#F5F0EB' },
@@ -114,20 +115,35 @@ export function DashboardHeader() {
         <div className="flex items-center gap-3">
           <Link href="/projects" className="flex items-center gap-2">
             <div
-              className="w-7 h-7 rounded-md overflow-hidden bg-white flex-shrink-0"
+              className="w-8 h-8 rounded-md overflow-hidden bg-white flex-shrink-0"
               style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
             >
               <img
                 src="https://static.vecteezy.com/system/resources/thumbnails/067/162/149/small/cute-duck-meme-sticker-transparent-cute-illustration-free-png.png"
                 alt="Logo"
-                width={28}
-                height={28}
+                width={32}
+                height={32}
                 className="w-full h-full object-contain"
               />
             </div>
-            <span className="text-xs font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            <ComicText
+              fontSize={0.85}
+              style={{
+                transform: 'none',
+                filter: 'none',
+                WebkitTextStroke: '0px',
+                backgroundColor: 'transparent',
+                backgroundImage: 'none',
+                backgroundClip: 'unset',
+                WebkitBackgroundClip: 'unset',
+                WebkitTextFillColor: 'unset',
+                color: 'var(--text-primary)',
+                fontFamily: "'Bangers', 'Impact', sans-serif",
+                letterSpacing: '0.05em',
+              }}
+            >
               Test Lah!
-            </span>
+            </ComicText>
           </Link>
         </div>
 
