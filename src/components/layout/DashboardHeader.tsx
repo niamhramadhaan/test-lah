@@ -10,7 +10,6 @@ import { Modal } from '@/components/shared/Modal'
 import { ProfileDropdown } from './ProfileDropdown'
 import { ProfileCardModal } from './ProfileCardModal'
 import { useProgress } from '@/components/shared/GlobalProgress'
-import { ComicText } from '@/components/ui/comic-text'
 
 const FUN_ICONS: Array<{ icon: React.ReactNode; bg: string }> = [
   { icon: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z" /><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z" /></svg>, bg: '#F5F0EB' },
@@ -126,24 +125,19 @@ export function DashboardHeader() {
                 className="w-full h-full object-contain"
               />
             </div>
-            <ComicText
-              fontSize={0.85}
+            <span
+              className="shimmer-text text-sm font-bold tracking-wide select-none"
               style={{
-                transform: 'none',
-                filter: 'none',
-                WebkitTextStroke: '0px',
-                backgroundColor: 'transparent',
-                backgroundImage: 'none',
-                backgroundClip: 'unset',
-                WebkitBackgroundClip: 'unset',
-                WebkitTextFillColor: 'unset',
-                color: 'var(--text-primary)',
-                fontFamily: "'Bangers', 'Impact', sans-serif",
-                letterSpacing: '0.05em',
+                background: 'linear-gradient(90deg, var(--text-primary) 0%, var(--text-primary) 40%, #FFD54F 50%, var(--text-primary) 60%, var(--text-primary) 100%)',
+                backgroundSize: '200% 100%',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                animation: 'shimmerText 3s ease-in-out infinite',
               }}
             >
               Test Lah!
-            </ComicText>
+            </span>
           </Link>
         </div>
 

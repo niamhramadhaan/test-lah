@@ -172,6 +172,11 @@ input, textarea, select, button {
   100% { opacity: 0.3; }
 }
 
+@keyframes shimmerText {
+  0% { background-position: 100% 50%; }
+  100% { background-position: -100% 50%; }
+}
+
 @theme inline {
   @keyframes marquee {
   from {
