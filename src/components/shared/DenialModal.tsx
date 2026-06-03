@@ -87,9 +87,16 @@ const EWALLETS = [
 ]
 
 export function DenialModal({ open, onClose, onTryAgain }: DenialModalProps) {
+  const [page, setPage] = useState<'options' | 'payment'>('options')
   const [activeTab, setActiveTab] = useState<'qris' | 'ewallet' | 'va'>('qris')
+  const [toast, setToast] = useState<string | null>(null)
 
   if (!open) return null
+
+  const showToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 2500)
+  }
 
   return (
     <div
@@ -157,113 +164,200 @@ export function DenialModal({ open, onClose, onTryAgain }: DenialModalProps) {
             />
           </div>
 
-          {/* Content */}
-          <div className="px-6 pt-4 pb-2">
-            <p className="text-center text-sm mb-2 leading-relaxed" style={{ color: 'var(--text-primary)' }}>
-              Sepertinya kamu{' '}
-              <Highlighter action="underline" color="#FF5252" strokeWidth={2} animationDuration={800}>
-                <span className="font-semibold">bukan bagian dari SLTR Group</span>
-              </Highlighter>
-              {' '}ya?
-            </p>
-            <p className="text-center text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
-              Kamu harus{' '}
-              <Highlighter action="highlight" color="#FFD54F" animationDuration={1000}>
-                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>melamar terlebih dahulu</span>
-              </Highlighter>
-              {' '}untuk mendapatkan akses, atau{' '}
-              <Highlighter action="highlight" color="#FFD54F" animationDuration={1200}>
-                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>lakukan pembayaran ke Qois</span>
-              </Highlighter>
-              {' '}di bawah ini.
-            </p>
-          </div>
+          {/* Content — two pages */}
+          <div className="relative overflow-hidden">
+            {/* PAGE: Options */}
+            <div
+              className="px-6 pt-4 pb-2 transition-all duration-300"
+              style={{
+                maxHeight: page === 'options' ? '500px' : '0px',
+                opacity: page === 'options' ? 1 : 0,
+                overflow: 'hidden',
+              }}
+            >
+              <p className="text-center text-sm mb-2 leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                Sepertinya kamu{' '}
+                <Highlighter action="underline" color="#FF5252" strokeWidth={2} animationDuration={800}>
+                  <span className="font-semibold">bukan bagian dari SLTR Group</span>
+                </Highlighter>
+                {' '}ya?
+              </p>
+              <p className="text-center text-xs mb-5 leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+                Pilih salah satu opsi di bawah untuk mendapatkan akses.
+              </p>
 
-          {/* Mock Payment Section */}
-          <div className="px-6 pb-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-3 text-center" style={{ color: 'var(--text-secondary)' }}>
-              Atau, beli akses langsung
-            </p>
-
-            {/* Payment amount */}
-            <div className="text-center mb-3">
-              <span className="text-2xl font-bold" style={{ color: '#6F4E37' }}>Rp 999.999</span>
-            </div>
-
-            {/* Payment method tabs */}
-            <div className="flex rounded-lg border overflow-hidden mb-3" style={{ borderColor: 'var(--border)' }}>
-              {[
-                { key: 'qris' as const, label: 'QRIS' },
-                { key: 'ewallet' as const, label: 'E-Wallet' },
-                { key: 'va' as const, label: 'Virtual Account' },
-              ].map(tab => (
+              {/* Option buttons */}
+              <div className="space-y-2 mb-4">
+                {/* Lamar Kerja */}
                 <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className="flex-1 px-2 py-1.5 text-[10px] font-medium transition-colors"
-                  style={{
-                    backgroundColor: activeTab === tab.key ? '#6F4E37' : 'transparent',
-                    color: activeTab === tab.key ? '#fff' : 'var(--text-tertiary)',
-                  }}
+                  onClick={() => window.open('https://www.linkedin.com/in/irvan-baihaqi?originalSubdomain=id', '_blank')}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-all hover:bg-[var(--bg-secondary)] hover:border-[var(--border-hover)]"
+                  style={{ borderColor: 'var(--border)' }}
                 >
-                  {tab.label}
+                  <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ backgroundColor: '#E3F2FD' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1565C0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Lamar Kerja</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>Buka LinkedIn untuk melamar</p>
+                  </div>
                 </button>
-              ))}
+
+                {/* Memohon Akses */}
+                <button
+                  onClick={() => window.open('https://t.me/qsrmdhani', '_blank')}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-all hover:bg-[var(--bg-secondary)] hover:border-[var(--border-hover)]"
+                  style={{ borderColor: 'var(--border)' }}
+                >
+                  <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ backgroundColor: '#E3F2FD' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0088CC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Memohon Akses ke Qois</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>Chat via Telegram</p>
+                  </div>
+                </button>
+
+                {/* Bayar Akses */}
+                <button
+                  onClick={() => setPage('payment')}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-all hover:opacity-90"
+                  style={{ borderColor: '#6F4E37', backgroundColor: '#6F4E37' }}
+                >
+                  <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="1" x2="12" y2="23" />
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-semibold text-white">Bayar Akses</p>
+                    <p className="text-[10px]" style={{ color: 'rgba(255,255,255,0.7)' }}>Rp 999.999 — QRIS, e-wallet, VA</p>
+                  </div>
+                </button>
+
+                {/* Bayar dengan metode lain */}
+                <button
+                  onClick={() => showToast('Coming soon... or not 😏')}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-all hover:bg-[var(--bg-secondary)] hover:border-[var(--border-hover)]"
+                  style={{ borderColor: 'var(--border)', opacity: 0.7 }}
+                >
+                  <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                    <span className="text-sm">😏</span>
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>Bayar dengan metode lain</p>
+                  </div>
+                </button>
+              </div>
             </div>
 
-            {/* Payment content */}
-            <div className="rounded-lg border p-3 mb-3" style={{ borderColor: 'var(--border)', backgroundColor: '#FAFAF8' }}>
-              {activeTab === 'qris' && (
-                <div className="flex flex-col items-center">
-                  <div className="mb-2 p-2 bg-white rounded-lg border" style={{ borderColor: 'var(--border)' }}>
-                    <MockQRCode />
-                  </div>
-                  <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>Scan QR untuk bayar</p>
-                </div>
-              )}
+            {/* PAGE: Payment */}
+            <div
+              className="px-6 pt-4 pb-2 transition-all duration-300"
+              style={{
+                maxHeight: page === 'payment' ? '500px' : '0px',
+                opacity: page === 'payment' ? 1 : 0,
+                overflow: 'hidden',
+              }}
+            >
+              {/* Back button */}
+              <button
+                onClick={() => setPage('options')}
+                className="flex items-center gap-1.5 text-xs mb-4 transition-colors hover:opacity-80"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                Kembali
+              </button>
 
-              {activeTab === 'ewallet' && (
-                <div className="space-y-2">
-                  {EWALLETS.map(wallet => (
-                    <button
-                      key={wallet.name}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-colors hover:bg-white"
-                      style={{ borderColor: 'var(--border)' }}
-                    >
-                      <div className="w-7 h-7 rounded-md flex items-center justify-center overflow-hidden" style={{ backgroundColor: `${wallet.color}15` }}>
-                        {wallet.logo}
-                      </div>
-                      <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{wallet.name}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* Payment amount */}
+              <div className="text-center mb-3">
+                <span className="text-2xl font-bold" style={{ color: '#6F4E37' }}>Rp 999.999</span>
+              </div>
 
-              {activeTab === 'va' && (
-                <div>
-                  <p className="text-[10px] mb-1.5" style={{ color: 'var(--text-tertiary)' }}>Nomor Virtual Account</p>
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg border" style={{ borderColor: 'var(--border)', backgroundColor: '#fff' }}>
-                    <span className="flex-1 text-sm font-mono font-semibold tracking-wider" style={{ color: '#6F4E37' }}>
-                      8808 1234 5678 9012
-                    </span>
-                    <button
-                      className="text-[10px] px-2 py-1 rounded border transition-colors hover:bg-[var(--bg-secondary)]"
-                      style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
-                    >
-                      Salin
-                    </button>
+              {/* Payment method tabs */}
+              <div className="flex rounded-lg border overflow-hidden mb-3" style={{ borderColor: 'var(--border)' }}>
+                {[
+                  { key: 'qris' as const, label: 'QRIS' },
+                  { key: 'ewallet' as const, label: 'E-Wallet' },
+                  { key: 'va' as const, label: 'Virtual Account' },
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className="flex-1 px-2 py-1.5 text-[10px] font-medium transition-colors"
+                    style={{
+                      backgroundColor: activeTab === tab.key ? '#6F4E37' : 'transparent',
+                      color: activeTab === tab.key ? '#fff' : 'var(--text-tertiary)',
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Payment content */}
+              <div className="rounded-lg border p-3 mb-3" style={{ borderColor: 'var(--border)', backgroundColor: '#FAFAF8' }}>
+                {activeTab === 'qris' && (
+                  <div className="flex flex-col items-center">
+                    <div className="mb-2 p-2 bg-white rounded-lg border" style={{ borderColor: 'var(--border)' }}>
+                      <MockQRCode />
+                    </div>
+                    <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>Scan QR untuk bayar</p>
                   </div>
-                  <p className="text-[10px] mt-1.5" style={{ color: 'var(--text-tertiary)' }}>a/n Qois Ramadhani</p>
-                </div>
-              )}
+                )}
+
+                {activeTab === 'ewallet' && (
+                  <div className="space-y-2">
+                    {EWALLETS.map(wallet => (
+                      <button
+                        key={wallet.name}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border transition-colors hover:bg-white"
+                        style={{ borderColor: 'var(--border)' }}
+                      >
+                        <div className="w-7 h-7 rounded-md flex items-center justify-center overflow-hidden" style={{ backgroundColor: `${wallet.color}15` }}>
+                          {wallet.logo}
+                        </div>
+                        <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{wallet.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === 'va' && (
+                  <div>
+                    <p className="text-[10px] mb-1.5" style={{ color: 'var(--text-tertiary)' }}>Nomor Virtual Account</p>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg border" style={{ borderColor: 'var(--border)', backgroundColor: '#fff' }}>
+                      <span className="flex-1 text-sm font-mono font-semibold tracking-wider" style={{ color: '#6F4E37' }}>
+                        8808 1234 5678 9012
+                      </span>
+                      <button
+                        className="text-[10px] px-2 py-1 rounded border transition-colors hover:bg-[var(--bg-secondary)]"
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
+                      >
+                        Salin
+                      </button>
+                    </div>
+                    <p className="text-[10px] mt-1.5" style={{ color: 'var(--text-tertiary)' }}>a/n Qois Ramadhani</p>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-[9px] text-center mb-3" style={{ color: 'var(--text-tertiary)' }}>
+                *Ini cuma guyon. Jangan beneran bayar.
+              </p>
             </div>
-
-            <p className="text-[9px] text-center mb-3" style={{ color: 'var(--text-tertiary)' }}>
-              *Ini cuma guyon. Jangan beneran bayar.
-            </p>
           </div>
 
-          {/* Actions */}
+          {/* Actions — always visible */}
           <div className="px-6 pb-5 flex gap-2">
             <button
               onClick={onClose}
@@ -291,10 +385,30 @@ export function DenialModal({ open, onClose, onTryAgain }: DenialModalProps) {
         </div>
       </div>
 
+      {/* Toast */}
+      {toast && (
+        <div
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[600] px-4 py-2.5 rounded-lg border text-xs font-medium"
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            borderColor: 'var(--border)',
+            color: 'var(--text-secondary)',
+            boxShadow: 'var(--shadow-lg)',
+            animation: 'toastIn 300ms ease-out',
+          }}
+        >
+          {toast}
+        </div>
+      )}
+
       <style jsx>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(12px) scale(0.98); }
           to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes toastIn {
+          from { opacity: 0; transform: translate(-50%, 12px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
         }
       `}</style>
     </div>

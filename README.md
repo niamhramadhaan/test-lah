@@ -128,3 +128,5 @@ None required! All configuration (API keys, model selection) is stored in the us
 ## Credits
 
 Built by [Qois Ramadhani](https://github.com/niamhramadhaan)
+
+Duck logo — [Duck PNGs by Vecteezy](https://www.vecteezy.com/free-png/duck)
