@@ -154,13 +154,13 @@ export function DashboardHeader() {
       className="flex flex-col border-b flex-shrink-0 relative"
       style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
     >
-      {/* Background duck logo — clipped to header */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Background duck logo — centered watermark */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center">
         <img
           src="https://static.vecteezy.com/system/resources/thumbnails/067/162/149/small/cute-duck-meme-sticker-transparent-cute-illustration-free-png.png"
           alt=""
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-[90%] object-contain select-none"
-          style={{ opacity: 0.07 }}
+          className="h-[85%] object-contain select-none"
+          style={{ opacity: 0.06 }}
         />
       </div>
 

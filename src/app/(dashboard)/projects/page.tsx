@@ -173,6 +173,15 @@ export default function ProjectsPage() {
                   strokeDasharray="4 2"
                   className="text-neutral-400/20"
                 />
+                {/* Duck watermark */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <img
+                    src="https://static.vecteezy.com/system/resources/thumbnails/067/162/149/small/cute-duck-meme-sticker-transparent-cute-illustration-free-png.png"
+                    alt=""
+                    className="h-[70%] object-contain select-none"
+                    style={{ opacity: 0.08 }}
+                  />
+                </div>
                 {/* Decorative accent */}
                 <div
                   className="absolute bottom-0 left-0 right-0 h-1"
