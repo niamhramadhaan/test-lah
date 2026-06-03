@@ -160,6 +160,13 @@ export default function ProjectDetailPage() {
             )}
           </button>
           <button
+            onClick={() => router.push(`/projects/${projectId}/summary`)}
+            className="hidden md:block px-3 py-1 text-xs font-medium rounded-md border transition-colors hover:bg-[var(--bg-secondary)]"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+          >
+            Project Report
+          </button>
+          <button
             onClick={() => {
               setSaveFeedback(true)
               setTimeout(() => setSaveFeedback(false), 1500)

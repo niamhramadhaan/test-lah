@@ -12,6 +12,7 @@ import { ColumnConfigDropdown } from './ColumnConfig'
 import { SummaryFooter } from './SummaryFooter'
 import { ExportModal } from './ExportModal'
 import { GenerateTestModal } from './GenerateTestModal'
+import { NodeSummaryModal } from './NodeSummaryModal'
 import { Dock, DockIcon } from '@/components/ui/dock'
 import { Separator } from '@/components/ui/separator'
 import type { GeneratedTestCase } from '@/lib/llm'
@@ -57,6 +58,7 @@ export function TestCasePanel({
   const [notesOpen, setNotesOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [generateOpen, setGenerateOpen] = useState(false)
+  const [summaryOpen, setSummaryOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [expandAll, setExpandAll] = useState(false)
   const [addingColumn, setAddingColumn] = useState(false)
@@ -263,12 +265,11 @@ export function TestCasePanel({
         )}
 
         <Dock direction="middle" iconSize={32} iconMagnification={44} iconDistance={100}>
-          {/* Summary */}
+          {/* Summary — node-level */}
           <DockIcon>
             <div className="relative group">
               <button
-                onClick={() => router.push(`/projects/${projectId}/summary`)}
-                onMouseEnter={() => router.prefetch(`/projects/${projectId}/summary`)}
+                onClick={() => setSummaryOpen(true)}
                 className="w-full h-full flex items-center justify-center rounded-full hover:bg-[var(--bg-secondary)] transition-colors"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -280,7 +281,7 @@ export function TestCasePanel({
                 </svg>
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
-                Summary
+                Node Summary
               </div>
             </div>
           </DockIcon>
@@ -411,6 +412,13 @@ export function TestCasePanel({
         onClose={() => setGenerateOpen(false)}
         node={selectedNode}
         onGenerate={handleGenerate}
+      />
+      <NodeSummaryModal
+        open={summaryOpen}
+        onClose={() => setSummaryOpen(false)}
+        node={selectedNode}
+        testCases={testCases}
+        stats={stats}
       />
 
       <style jsx>{`
