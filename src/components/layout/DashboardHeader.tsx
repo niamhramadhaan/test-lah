@@ -132,19 +132,19 @@ export function DashboardHeader() {
         <div className="flex items-center gap-4">
           <Link href="/projects" className="flex items-center gap-2.5">
             <div
-              className="w-8 h-8 rounded-lg overflow-hidden bg-white"
+              className="w-10 h-10 rounded-lg overflow-hidden bg-white"
               style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
             >
               <img
                 src="https://static.vecteezy.com/system/resources/thumbnails/067/162/149/small/cute-duck-meme-sticker-transparent-cute-illustration-free-png.png"
                 alt="Logo"
-                width={32}
-                height={32}
+                width={40}
+                height={40}
                 className="w-full h-full object-contain"
               />
             </div>
             <div>
-              <h1 className="text-sm font-semibold tracking-tight leading-none" style={{ color: 'var(--text-primary)' }}>
+              <h1 className="text-base font-semibold tracking-tight leading-none" style={{ color: 'var(--text-primary)' }}>
                 Test Lah!
               </h1>
               <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -152,104 +152,6 @@ export function DashboardHeader() {
               </p>
             </div>
           </Link>
-
-          <div className="relative ml-2" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border transition-colors hover:border-[var(--border-hover)]"
-              style={{
-                borderColor: dropdownOpen ? 'var(--accent)' : 'var(--border)',
-                color: 'var(--text-primary)',
-                borderRadius: 'var(--radius-sm)',
-                backgroundColor: dropdownOpen ? 'var(--bg-secondary)' : 'transparent',
-              }}
-            >
-              {activeProject ? (
-                editingName ? (
-                  <input
-                    ref={nameInputRef}
-                    value={nameValue}
-                    onChange={e => setNameValue(e.target.value)}
-                    onBlur={commitRename}
-                    onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setEditingName(false) }}
-                    onClick={e => e.stopPropagation()}
-                    className="bg-transparent outline-none w-32 text-sm"
-                    style={{ color: 'var(--text-primary)' }}
-                  />
-                ) : (
-                  <span onDoubleClick={e => { e.stopPropagation(); startRename() }}>
-                    {activeProject.name}
-                  </span>
-                )
-              ) : (
-                <span style={{ color: 'var(--text-tertiary)' }}>Select project</span>
-              )}
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'none' }}>
-                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-
-            {dropdownOpen && (
-              <div
-                className="absolute top-full left-0 mt-1 w-64 py-1 border z-50"
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  borderColor: 'var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: 'var(--shadow-lg)',
-                  animation: 'fadeIn 150ms ease-out',
-                }}
-              >
-                <div className="px-3 py-1.5 mb-1">
-                  <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-                    Projects
-                  </span>
-                </div>
-                {projectList.map(p => (
-                  <Link
-                    key={p.id}
-                    href={`/projects/${p.id}`}
-                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[var(--bg-secondary)]"
-                    onClick={() => setDropdownOpen(false)}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: p.id === activeProjectId ? 'var(--accent)' : 'var(--border)' }}
-                      />
-                      <span
-                        className="text-sm truncate"
-                        style={{ color: p.id === activeProjectId ? 'var(--accent)' : 'var(--text-primary)', fontWeight: p.id === activeProjectId ? 600 : 400 }}
-                      >
-                        {p.name}
-                      </span>
-                    </div>
-                    <button
-                      onClick={e => handleDelete(p.id, e)}
-                      className="ml-2 text-xs opacity-0 group-hover:opacity-100 hover:opacity-100 px-1 py-0.5 rounded"
-                      style={{ color: 'var(--status-fail-text)' }}
-                    >
-                      x
-                    </button>
-                  </Link>
-                ))}
-                {projectList.length === 0 && (
-                  <div className="px-3 py-2 text-sm" style={{ color: 'var(--text-tertiary)' }}>No projects yet</div>
-                )}
-                <div className="border-t my-1" style={{ borderColor: 'var(--border)' }} />
-                <button
-                  onClick={handleNewProject}
-                  className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-[var(--bg-secondary)]"
-                  style={{ color: 'var(--accent)' }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                  New Project
-                </button>
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -263,26 +165,100 @@ export function DashboardHeader() {
 
           <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--border)' }} />
 
-          <ProfileDropdown
-            profile={profile}
-            initials={profileInitials}
-            onSetName={setProfileName}
-            onSetBannerColor={setProfileBannerColor}
-            onSetAvatarUrl={setProfileAvatarUrl}
-            onSetRole={setProfileRole}
-          />
+          <div className="flex items-center gap-2">
+            <ProfileDropdown
+              profile={profile}
+              initials={profileInitials}
+              onSetName={setProfileName}
+              onSetBannerColor={setProfileBannerColor}
+              onSetAvatarUrl={setProfileAvatarUrl}
+              onSetRole={setProfileRole}
+            />
 
-          {/* Logout button */}
-          <button
-            onClick={handleLogout}
-            className="w-7 h-7 flex items-center justify-center text-xs rounded-md border transition-colors hover:bg-[var(--bg-secondary)] hover:border-[var(--status-fail-text)]"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
-            title="Logout"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M5 2H3.5A1.5 1.5 0 002 3.5v7A1.5 1.5 0 003.5 12H5M9 10l3-3-3-3M6 7h6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+            {/* Logout button */}
+            <button
+              onClick={handleLogout}
+              className="w-7 h-7 flex items-center justify-center text-xs rounded-md border transition-colors hover:bg-[var(--bg-secondary)] hover:border-[var(--status-fail-text)]"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
+              title="Logout"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M5 2H3.5A1.5 1.5 0 002 3.5v7A1.5 1.5 0 003.5 12H5M9 10l3-3-3-3M6 7h6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Project dropdown — below profile */}
+          <div className="relative ml-1" ref={dropdownRef}>
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border transition-colors hover:border-[var(--border-hover)]"
+              style={{
+                borderColor: dropdownOpen ? 'var(--accent)' : 'var(--border)',
+                color: activeProject ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: dropdownOpen ? 'var(--bg-secondary)' : 'transparent',
+              }}
+            >
+              <span className="truncate max-w-[120px]">
+                {activeProject ? activeProject.name : 'Select project'}
+              </span>
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {dropdownOpen && (
+              <div
+                className="absolute top-full right-0 mt-1 w-56 py-1 border z-50"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  borderColor: 'var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  boxShadow: 'var(--shadow-lg)',
+                  animation: 'fadeIn 150ms ease-out',
+                }}
+              >
+                <div className="px-3 py-1.5 mb-1">
+                  <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
+                    Projects
+                  </span>
+                </div>
+                <div className="max-h-48 overflow-y-auto">
+                  {projectList.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => { switchProject(p.id); setDropdownOpen(false) }}
+                      className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-secondary)] transition-colors"
+                      style={{
+                        color: p.id === activeProject?.id ? 'var(--accent)' : 'var(--text-primary)',
+                        backgroundColor: p.id === activeProject?.id ? 'var(--bg-secondary)' : 'transparent',
+                      }}
+                    >
+                      <span className="flex-1 truncate">{p.name}</span>
+                      {p.id === activeProject?.id && (
+                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                          <path d="M3 7l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <div className="border-t mt-1 pt-1" style={{ borderColor: 'var(--border)' }}>
+                  <button
+                    onClick={handleNewProject}
+                    className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-[var(--bg-secondary)]"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                      <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                    New Project
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
