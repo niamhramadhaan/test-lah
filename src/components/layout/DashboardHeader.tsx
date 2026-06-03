@@ -155,12 +155,14 @@ export function DashboardHeader() {
       style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
     >
       {/* Background duck logo — centered watermark */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center">
+      <div className="absolute inset-0 overflow-hidden flex items-center justify-center pointer-events-none group/duck">
         <img
           src="https://static.vecteezy.com/system/resources/thumbnails/067/162/149/small/cute-duck-meme-sticker-transparent-cute-illustration-free-png.png"
           alt=""
-          className="h-[85%] object-contain select-none"
-          style={{ opacity: 0.06 }}
+          className="h-[85%] object-contain select-none transition-all duration-300 group-hover/duck:scale-110 group-hover/duck:opacity-[0.15] cursor-pointer"
+          style={{ opacity: 0.09, pointerEvents: 'auto' }}
+          onClick={() => router.push('/projects')}
+          title="Quack! 🦆"
         />
       </div>
 
