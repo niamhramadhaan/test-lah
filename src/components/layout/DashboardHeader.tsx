@@ -42,22 +42,14 @@ export function DashboardHeader() {
     projects, activeProject, activeProjectId,
     profile, profileInitials,
     setProfileName, setProfileBannerColor, setProfileAvatarUrl, setProfileRole,
-    canUndo, canRedo, undo, redo,
-    createProject, deleteProject, switchProject, renameProject,
-    promptDialog, confirmDialog,
+    confirmDialog,
   } = useDashboard()
 
   const { logout } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const { startProgress, completeProgress } = useProgress()
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [editingName, setEditingName] = useState(false)
-  const [nameValue, setNameValue] = useState('')
-  const [exportOpen, setExportOpen] = useState(false)
   const [cardOpen, setCardOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const nameInputRef = useRef<HTMLInputElement>(null)
 
   const projectList = Object.values(projects)
 
@@ -85,43 +77,6 @@ export function DashboardHeader() {
     }
   }, [projectList])
 
-  useEffect(() => {
-    if (editingName && nameInputRef.current) {
-      nameInputRef.current.focus()
-      nameInputRef.current.select()
-    }
-  }, [editingName])
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const handleNewProject = async () => {
-    const name = await promptDialog('New Project', 'Enter project name:')
-    if (name?.trim()) {
-      startProgress('Creating project...')
-      createProject(name.trim())
-      setTimeout(() => completeProgress('Project created!'), 500)
-    }
-    setDropdownOpen(false)
-  }
-
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    const ok = await confirmDialog('Delete Project', 'This project will be permanently deleted.')
-    if (ok) {
-      startProgress('Deleting project...')
-      deleteProject(id)
-      setTimeout(() => completeProgress('Project deleted!'), 500)
-    }
-  }
-
   const handleLogout = async () => {
     const ok = await confirmDialog('Logout', 'Are you sure you want to log out?')
     if (ok) {
@@ -132,17 +87,6 @@ export function DashboardHeader() {
         router.push('/login')
       }, 500)
     }
-  }
-
-  const startRename = () => {
-    if (!activeProject) return
-    setNameValue(activeProject.name)
-    setEditingName(true)
-  }
-
-  const commitRename = () => {
-    if (activeProject && nameValue.trim()) renameProject(activeProject.id, nameValue.trim())
-    setEditingName(false)
   }
 
   const activeNav = pathname.startsWith('/integrations')
@@ -223,114 +167,33 @@ export function DashboardHeader() {
         </div>
       </div>
 
-      {/* Project selector + Nav items row */}
-      <div className="relative z-10 flex items-center justify-between px-6 pb-1.5">
-        <div className="flex items-center gap-1">
-          <NavItem
-            label="All Projects"
-            href="/projects"
-            icon={
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                <rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
-                <rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
-                <rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
-                <rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
-              </svg>
-            }
-            active={activeNav === 'projects'}
-          />
-          <NavItem
-            label="Integrations"
-            href="/integrations"
-            icon={
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                <circle cx="5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
-                <circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
-                <path d="M7.5 5.5L6.5 8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-              </svg>
-            }
-            active={activeNav === 'integrations'}
-          />
-        </div>
-
-        {/* Project dropdown */}
-        <div className="relative z-30" ref={dropdownRef}>
-          <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-1.5 px-2 py-1 text-[10px] rounded-md border transition-colors hover:border-[var(--border-hover)]"
-            style={{
-              borderColor: dropdownOpen ? 'var(--accent)' : 'var(--border)',
-              color: activeProject ? 'var(--text-primary)' : 'var(--text-tertiary)',
-              backgroundColor: dropdownOpen ? 'var(--bg-secondary)' : 'transparent',
-            }}
-          >
-            {activeProject ? (
-              <span className="w-3.5 h-3.5 rounded flex items-center justify-center flex-shrink-0" style={{ backgroundColor: getFunIcon(activeProject.id).bg }}>
-                {getFunIcon(activeProject.id).icon}
-              </span>
-            ) : null}
-            <span className="truncate max-w-[120px]">
-              {pathname === '/projects' ? 'All Projects' : activeProject ? activeProject.name : 'Select project'}
-            </span>
-            <svg width="8" height="8" viewBox="0 0 12 12" fill="none" style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>
-              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Nav items row */}
+      <div className="relative z-10 flex items-center gap-1 px-6 pb-1.5">
+        <NavItem
+          label="All Projects"
+          href="/projects"
+          icon={
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+              <rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+              <rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
+              <rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.2" fill="none" />
             </svg>
-          </button>
-
-          {dropdownOpen && (
-            <div
-              className="absolute top-full right-0 mt-1 w-52 py-1 border z-40"
-              style={{
-                backgroundColor: 'var(--bg-card)',
-                borderColor: 'var(--border)',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: 'var(--shadow-lg)',
-                animation: 'fadeIn 150ms ease-out',
-              }}
-            >
-              <div className="px-3 py-1.5 mb-1">
-                <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
-                  Projects
-                </span>
-              </div>
-              <div className="max-h-48 overflow-y-auto">
-                {projectList.map(p => (
-                  <button
-                    key={p.id}
-                    onClick={() => { switchProject(p.id); setDropdownOpen(false) }}
-                    className="w-full text-left px-3 py-1.5 text-[11px] flex items-center gap-2 hover:bg-[var(--bg-secondary)] transition-colors"
-                    style={{
-                      color: p.id === activeProject?.id ? 'var(--accent)' : 'var(--text-primary)',
-                      backgroundColor: p.id === activeProject?.id ? 'var(--bg-secondary)' : 'transparent',
-                    }}
-                  >
-                    <span className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0" style={{ backgroundColor: getFunIcon(p.id).bg }}>
-                      {getFunIcon(p.id).icon}
-                    </span>
-                    <span className="flex-1 truncate">{p.name}</span>
-                    {p.id === activeProject?.id && (
-                      <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                        <path d="M3 7l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-              <div className="border-t mt-1 pt-1" style={{ borderColor: 'var(--border)' }}>
-                <button
-                  onClick={handleNewProject}
-                  className="w-full text-left px-3 py-1.5 text-[11px] flex items-center gap-2 hover:bg-[var(--bg-secondary)]"
-                  style={{ color: 'var(--accent)' }}
-                >
-                  <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                    <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                  New Project
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+          }
+          active={activeNav === 'projects'}
+        />
+        <NavItem
+          label="Integrations"
+          href="/integrations"
+          icon={
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <circle cx="5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+              <circle cx="9" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+              <path d="M7.5 5.5L6.5 8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+            </svg>
+          }
+          active={activeNav === 'integrations'}
+        />
       </div>
 
       <ProfileCardModal
