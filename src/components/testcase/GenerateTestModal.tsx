@@ -141,47 +141,18 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
 
           {/* Body */}
           <div className="px-5 py-4 space-y-4">
-            {/* Title + Language row */}
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                  Test Case Title
-                </label>
-                <input
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg outline-none border transition-colors focus:border-[var(--accent)]"
-                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                  placeholder="Feature name..."
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                  Language
-                </label>
-                <div className="flex rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
-                  <button
-                    onClick={() => setLanguage('en')}
-                    className="px-3 py-2 text-xs font-medium transition-colors"
-                    style={{
-                      backgroundColor: language === 'en' ? 'var(--accent)' : 'transparent',
-                      color: language === 'en' ? 'var(--bg-primary)' : 'var(--text-tertiary)',
-                    }}
-                  >
-                    EN
-                  </button>
-                  <button
-                    onClick={() => setLanguage('id')}
-                    className="px-3 py-2 text-xs font-medium transition-colors"
-                    style={{
-                      backgroundColor: language === 'id' ? 'var(--accent)' : 'transparent',
-                      color: language === 'id' ? 'var(--bg-primary)' : 'var(--text-tertiary)',
-                    }}
-                  >
-                    ID
-                  </button>
-                </div>
-              </div>
+            {/* Title */}
+            <div>
+              <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                Test Case Title
+              </label>
+              <input
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded-lg outline-none border transition-colors focus:border-[var(--accent)]"
+                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                placeholder="Feature name..."
+              />
             </div>
 
             {/* Prompt */}
@@ -225,6 +196,22 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
                 No AI provider configured. Go to Integrations to set up.
               </div>
             )}
+
+            {/* Language selector */}
+            <div>
+              <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                Language
+              </label>
+              <select
+                value={language}
+                onChange={e => setLanguage(e.target.value as 'en' | 'id')}
+                className="w-full px-3 py-2 text-sm rounded-lg border outline-none transition-colors cursor-pointer"
+                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}
+              >
+                <option value="en">English</option>
+                <option value="id">Bahasa Indonesia</option>
+              </select>
+            </div>
           </div>
 
           {/* Footer */}
