@@ -36,11 +36,11 @@ Open [http://localhost:3000](http://localhost:3000). Enter any name containing *
 
 ---
 
-## Test Flow: A Friday Afternoon Survival Story
+## Test Flow
 
-> _It's 3 PM on a Friday. Your product manager just Slacked you: "Hey, can you have the test case report ready before EOD? The client wants to see it Monday morning."_
+> _It's 3 PM on a Friday. Your annoying manager just Slacked you: "Hey, can you have the test case report ready before EOD? The client wants to see it Monday morning."_
 >
-> _Great. Another last-minute request. Noq, Test Lah!_
+> _Great. Another last-minute request. Now, Test Lah!_
 
 ### Step 1: Login
 
@@ -50,7 +50,7 @@ Open the app. Type your name (make sure it contains **"ayu"** ). You're in.
 
 ### Step 2: Create a Project
 
-Hit **"+ New Project"** and name it something like `"Sprint 42 - Checkout Flow"`. Your PM will be impressed by the naming convention.
+Hit **"+ New Project"** and name it something like `"Project Yang Jelas"`. Your PM will be impressed by the naming convention.
 
 ![Create Project]<img width="2218" height="916" alt="image" src="https://github.com/user-attachments/assets/1cd1a948-0188-4619-bdd1-a5f80903556d" />
 
@@ -67,25 +67,28 @@ Drag nodes around. Right-click to add children. This is the fun part — enjoy i
 <img width="1110" height="1103" alt="image" src="https://github.com/user-attachments/assets/2173efb3-cd85-4e3b-9bb0-e4120059dfcd" />
 
 
-### Step 4: Generate Test Cases (The AI Magic)
+### Step 4: Generate Test Cases
 
 Click on a node (say, "Checkout"). Hit the **Generate** button in the dock. Paste your ticket description or acceptance criteria. Pick your AI provider (Gemini, OpenAI, or DeepSeek).
 
 Watch the cat pictures while AI does the heavy lifting. In seconds, you have a full set of test cases.
+
+<img width="1337" height="896" alt="image" src="https://github.com/user-attachments/assets/18e3cbfd-d0c7-4530-898b-4cc1523b28d2" />
+
 
 <img width="1082" height="788" alt="image" src="https://github.com/user-attachments/assets/f16b4c36-95ea-456d-83a8-553f2cb639d4" />
 
 
 ### Step 5: Review & Update Status
 
-Go through each test case. Run them. Mark them as **Pass**, **Fail**, or **Skip**. Add notes for the ones that failed (blame the backend team, obviously).
+Go through each test case. Run them. Mark them as **Pass**, **Fail**, or **Skip**. Add notes for the ones that failed (blame the FE team, obviously).
 
 <img width="2217" height="1004" alt="image" src="https://github.com/user-attachments/assets/36fe61af-7ce7-4e21-a4e0-cb89e0f0d42f" />
 
 
 ### Step 6: Export & Share
 
-Click the export button. Download as **Markdown** for the wiki or **JSON** for the automation pipeline. Send it to your PM at 4:58 PM. Two minutes to spare.
+Click the export button. Download as **Markdown** for the wiki or **JSON** for the automation pipeline.
 
 <img width="585" height="446" alt="image" src="https://github.com/user-attachments/assets/abb7c331-a006-4617-af7a-6c8d9449b3c9" />
 
