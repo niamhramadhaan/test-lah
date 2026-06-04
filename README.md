@@ -76,7 +76,8 @@ Watch the cat pictures while AI does the heavy lifting. In seconds, you have a f
 <img width="1337" height="896" alt="image" src="https://github.com/user-attachments/assets/18e3cbfd-d0c7-4530-898b-4cc1523b28d2" />
 
 
-<img width="1082" height="788" alt="image" src="https://github.com/user-attachments/assets/f16b4c36-95ea-456d-83a8-553f2cb639d4" />
+<img width="781" height="754" alt="image" src="https://github.com/user-attachments/assets/5895f96f-d960-4e0a-84e5-8918f3dfd69c" />
+
 
 
 ### Step 5: Review & Update Status
