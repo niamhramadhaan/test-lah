@@ -4,7 +4,7 @@
 
 A fully client-side QA management tool with interactive mindmaps, test case tracking, and AI-powered test case generation.
 
-![Test Lah! Dashboard](./docs/screenshots/dashboard.png)
+<img width="1667" height="1106" alt="Screenshot 2026-06-03 232015" src="https://github.com/user-attachments/assets/ab0cc5ee-90c3-4d73-a053-568ee8333b92" />
 
 ## Features
 
