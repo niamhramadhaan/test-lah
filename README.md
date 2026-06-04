@@ -16,32 +16,6 @@ A fully client-side QA management tool with interactive mindmaps, test case trac
 - **Duplicate Projects** — Clone any project with one click
 - **Profile Card** — Your personal QA stats at a glance
 
-## Screenshots
-
-### Login
-
-![Login Page](./docs/screenshots/login.png)
-
-### Projects Dashboard
-
-![Projects Dashboard](./docs/screenshots/projects.png)
-
-### Mindmap Editor
-
-![Mindmap Editor](./docs/screenshots/mindmap.png)
-
-### Test Case Table
-
-![Test Case Table](./docs/screenshots/test-cases.png)
-
-### AI Generation
-
-![AI Generate](./docs/screenshots/ai-generate.png)
-
-### Integrations
-
-![Integrations](./docs/screenshots/integrations.png)
-
 ## Quick Start
 
 ```bash
@@ -66,19 +40,20 @@ Open [http://localhost:3000](http://localhost:3000). Enter any name containing *
 
 > _It's 3 PM on a Friday. Your product manager just Slacked you: "Hey, can you have the test case report ready before EOD? The client wants to see it Monday morning."_
 >
-> _Great. Another last-minute request. Good thing you have Test Lah!_
+> _Great. Another last-minute request. Noq, Test Lah!_
 
 ### Step 1: Login
 
-Open the app. Type your name (make sure it contains **"ayu"** — that's the magic word). You're in.
+Open the app. Type your name (make sure it contains **"ayu"** ). You're in.
 
-![Login](./docs/screenshots/login.png)
+<img width="938" height="897" alt="Screenshot 2026-06-03 095308" src="https://github.com/user-attachments/assets/1609f175-d94f-447d-b334-1f787530176a" />
 
 ### Step 2: Create a Project
 
 Hit **"+ New Project"** and name it something like `"Sprint 42 - Checkout Flow"`. Your PM will be impressed by the naming convention.
 
-![Create Project](./docs/screenshots/create-project.png)
+![Create Project]<img width="2218" height="916" alt="image" src="https://github.com/user-attachments/assets/1cd1a948-0188-4619-bdd1-a5f80903556d" />
+
 
 ### Step 3: Build Your Mindmap
 
@@ -89,7 +64,8 @@ Click into the project. Start adding nodes to map out the user flow:
 
 Drag nodes around. Right-click to add children. This is the fun part — enjoy it while it lasts.
 
-![Mindmap](./docs/screenshots/mindmap.png)
+<img width="1110" height="1103" alt="image" src="https://github.com/user-attachments/assets/2173efb3-cd85-4e3b-9bb0-e4120059dfcd" />
+
 
 ### Step 4: Generate Test Cases (The AI Magic)
 
@@ -97,25 +73,26 @@ Click on a node (say, "Checkout"). Hit the **Generate** button in the dock. Past
 
 Watch the cat pictures while AI does the heavy lifting. In seconds, you have a full set of test cases.
 
-![Generate](./docs/screenshots/ai-generate.png)
+<img width="1082" height="788" alt="image" src="https://github.com/user-attachments/assets/f16b4c36-95ea-456d-83a8-553f2cb639d4" />
+
 
 ### Step 5: Review & Update Status
 
 Go through each test case. Run them. Mark them as **Pass**, **Fail**, or **Skip**. Add notes for the ones that failed (blame the backend team, obviously).
 
-![Test Cases](./docs/screenshots/test-cases.png)
+<img width="2217" height="1004" alt="image" src="https://github.com/user-attachments/assets/36fe61af-7ce7-4e21-a4e0-cb89e0f0d42f" />
+
 
 ### Step 6: Export & Share
 
 Click the export button. Download as **Markdown** for the wiki or **JSON** for the automation pipeline. Send it to your PM at 4:58 PM. Two minutes to spare.
 
-![Export](./docs/screenshots/export.png)
+<img width="585" height="446" alt="image" src="https://github.com/user-attachments/assets/abb7c331-a006-4617-af7a-6c8d9449b3c9" />
+
 
 ### Step 7: Logout (If You Must)
 
-Click the logout button. A friendly modal asks: **"Mau Keluar? Sedekahnya mana??"** — because the developer would appreciate a coffee. You can either bail or buy them one.
-
-![Logout](./docs/screenshots/logout.png)
+Click the logout button. A friendly modal asks for Donation. because the developer would appreciate a coffee. You can either bail or buy them one.
 
 ---
 
