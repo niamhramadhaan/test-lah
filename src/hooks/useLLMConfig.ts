@@ -15,7 +15,7 @@ export interface LLMProvider {
 }
 
 export interface LLMConfig {
-  activeProvider: LLMProviderId
+  activeProvider: LLMProviderId | null
   providers: Record<LLMProviderId, LLMProvider>
 }
 
@@ -28,7 +28,7 @@ const EMPTY_PROVIDER: LLMProvider = {
 }
 
 const DEFAULT_CONFIG: LLMConfig = {
-  activeProvider: 'gemini',
+  activeProvider: null,
   providers: {
     gemini: { ...EMPTY_PROVIDER },
     openai: { ...EMPTY_PROVIDER },
@@ -46,7 +46,7 @@ function readConfig(): LLMConfig {
     if (parsed.provider && parsed.apiKey && !parsed.providers) {
       return {
         ...DEFAULT_CONFIG,
-        activeProvider: 'gemini',
+        activeProvider: null,
         providers: {
           ...DEFAULT_CONFIG.providers,
           gemini: { ...EMPTY_PROVIDER, apiKey: parsed.apiKey, connected: true },
@@ -103,8 +103,8 @@ export function useLLMConfig() {
     setConfig(next)
   }, [])
 
-  const activeProvider = config.providers[config.activeProvider]
-  const isConnected = loaded && activeProvider.apiKey.length > 0 && activeProvider.connected
+  const activeProvider = config.activeProvider ? config.providers[config.activeProvider] : null
+  const isConnected = loaded && !!activeProvider && activeProvider.apiKey.length > 0 && activeProvider.connected
 
   return {
     config,

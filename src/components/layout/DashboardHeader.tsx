@@ -42,7 +42,6 @@ export function DashboardHeader() {
     projects, activeProject, activeProjectId,
     profile, profileInitials,
     setProfileName, setProfileBannerColor, setProfileAvatarUrl, setProfileRole,
-    confirmDialog,
   } = useDashboard()
 
   const { logout } = useAuth()
@@ -50,6 +49,7 @@ export function DashboardHeader() {
   const pathname = usePathname()
   const { startProgress, completeProgress } = useProgress()
   const [cardOpen, setCardOpen] = useState(false)
+  const [logoutOpen, setLogoutOpen] = useState(false)
 
   const projectList = Object.values(projects)
 
@@ -77,16 +77,18 @@ export function DashboardHeader() {
     }
   }, [projectList])
 
-  const handleLogout = async () => {
-    const ok = await confirmDialog('Logout', 'Are you sure you want to log out?')
-    if (ok) {
-      startProgress('Logging out...')
-      logout()
-      setTimeout(() => {
-        completeProgress('Logged out!')
-        router.push('/login')
-      }, 500)
-    }
+  const handleLogout = () => {
+    setLogoutOpen(true)
+  }
+
+  const confirmLogout = () => {
+    setLogoutOpen(false)
+    startProgress('Logging out...')
+    logout()
+    setTimeout(() => {
+      completeProgress('Logged out!')
+      router.push('/login')
+    }, 500)
   }
 
   const activeNav = pathname.startsWith('/integrations')
@@ -213,6 +215,53 @@ export function DashboardHeader() {
         initials={profileInitials}
         stats={stats}
       />
+
+      {/* Logout confirmation modal */}
+      {logoutOpen && (
+        <div
+          className="fixed inset-0 z-[400] flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.3)', animation: 'fadeIn 150ms ease-out' }}
+          onClick={() => setLogoutOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm mx-4 rounded-xl border overflow-hidden"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-lg)', animation: 'fadeInUp 200ms ease-out' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-6 pt-6 pb-4 text-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--status-skip-bg)' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--status-skip-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </div>
+              <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                Mau Keluar? Sedekahnya mana??
+              </h3>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+                Sebelum keluar, mungkin bisa traktir developer secangkir kopi? ☕
+              </p>
+            </div>
+            <div className="px-6 pb-5 flex gap-2">
+              <button
+                onClick={() => setLogoutOpen(false)}
+                className="flex-1 px-3 py-2.5 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 px-3 py-2.5 text-xs font-medium rounded-lg transition-opacity hover:opacity-80"
+                style={{ backgroundColor: 'var(--status-fail-text)', color: '#fff' }}
+              >
+                Keluar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

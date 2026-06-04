@@ -23,10 +23,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.variable} style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
-        <Providers>
-          {children}
-        </Providers>
+      <body
+        className={inter.variable}
+        style={{ fontFamily: "Inter, system-ui, sans-serif" }}
+      >
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

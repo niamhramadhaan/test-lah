@@ -88,7 +88,7 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
     setError(null)
 
     try {
-      const cases = await generateTestCases(title, prompt, activeProvider.apiKey, activeProviderId, activeProvider.defaultModel, language)
+      const cases = await generateTestCases(title, prompt, activeProvider!.apiKey, activeProviderId ?? undefined, activeProvider!.defaultModel, language)
       onGenerate(cases)
       onClose()
     } catch (err: unknown) {

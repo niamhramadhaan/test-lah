@@ -66,6 +66,27 @@ export function useProject() {
     }))
   }, [setState])
 
+  const duplicateProject = useCallback((id: string) => {
+    setState(prev => {
+      const source = prev.projects[id]
+      if (!source) return prev
+      const newId = crypto.randomUUID()
+      const now = new Date().toISOString()
+      const clone: Project = {
+        ...JSON.parse(JSON.stringify(source)),
+        id: newId,
+        name: `${source.name} (Copy)`,
+        createdAt: now,
+      }
+      return {
+        ...prev,
+        projects: { ...prev.projects, [newId]: clone },
+        activeProjectId: newId,
+        selectedNodeId: null,
+      }
+    })
+  }, [setState])
+
   const setSelectedNodeId = useCallback((nodeId: string | null) => {
     setState(prev => ({ ...prev, selectedNodeId: nodeId }))
   }, [setState])
@@ -91,6 +112,7 @@ export function useProject() {
     selectedNodeId: state.selectedNodeId,
     createProject,
     deleteProject,
+    duplicateProject,
     switchProject,
     renameProject,
     setSelectedNodeId,

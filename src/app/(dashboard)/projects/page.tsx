@@ -36,7 +36,7 @@ function getFunIcon(id: string): { icon: React.ReactNode; bg: string } {
 }
 
 export default function ProjectsPage() {
-  const { projects, createProject, deleteProject, renameProject, profile, profileInitials, promptDialog, confirmDialog } = useDashboard()
+  const { projects, createProject, deleteProject, duplicateProject, renameProject, profile, profileInitials, promptDialog, confirmDialog } = useDashboard()
   const projectList = Object.values(projects)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
@@ -302,6 +302,14 @@ export default function ProjectsPage() {
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5l2 2-7 7H1.5v-2l7-7z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     Rename
                   </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); duplicateProject(p.id); setMenuOpen(null) }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-secondary)]"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="3.5" y="3.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" /><path d="M8.5 3.5V2.5a1 1 0 00-1-1h-5a1 1 0 00-1 1v5a1 1 0 001 1h1" stroke="currentColor" strokeWidth="1.2" /></svg>
+                    Duplicate
+                  </button>
                   <div className="border-t my-1" style={{ borderColor: 'var(--border)' }} />
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(p.id, p.name) }}
@@ -387,10 +395,10 @@ export default function ProjectsPage() {
                 </svg>
               </div>
               <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                Buy the Developer a Slush Coffee!
+                Please, Buy me a Coffee..
               </h3>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                If Test Lah! has been helpful, consider buying Qois a <strong>Slush Coffee</strong>. Minimum <strong>1 litre</strong>, please. He&apos;s very tired.
+                If Test Lah! has been helpful, consider buying Qois a coffee. Any size will do. He&apos;s very tired.
               </p>
             </div>
 

@@ -212,7 +212,7 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{info.name}</span>
-            {isActive && (
+            {isActive && provider.connected && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${info.color}15`, color: info.color }}>
                 Active
               </span>
