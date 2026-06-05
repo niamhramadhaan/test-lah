@@ -29,6 +29,8 @@ Open [http://localhost:3000](http://localhost:3000). Enter any name containing *
 
 ### AI Setup
 
+<img width="1427" height="1024" alt="image" src="https://github.com/user-attachments/assets/26840fcf-35ee-4bed-b666-d882064cbbb7" />
+
 1. Go to **Integrations** → choose a provider
 2. Enter API key → click **Test** → click **Connect**
 3. Select default model
@@ -46,7 +48,7 @@ Open [http://localhost:3000](http://localhost:3000). Enter any name containing *
 
 Open the app. Type your name (make sure it contains **"ayu"** ). You're in.
 
-<img width="938" height="897" alt="Screenshot 2026-06-03 095308" src="https://github.com/user-attachments/assets/1609f175-d94f-447d-b334-1f787530176a" />
+<img width="400" height="248" alt="cursorful-video-1780634327507" src="https://github.com/user-attachments/assets/fe2077c5-7f13-4218-b938-a76c10d32e87" />
 
 ### Step 2: Create a Project
 
@@ -64,7 +66,7 @@ Click into the project. Start adding nodes to map out the user flow:
 
 Drag nodes around. Right-click to add children. This is the fun part — enjoy it while it lasts.
 
-<img width="1110" height="1103" alt="image" src="https://github.com/user-attachments/assets/2173efb3-cd85-4e3b-9bb0-e4120059dfcd" />
+<img width="400" height="238" alt="cursorful-video-1780634587900" src="https://github.com/user-attachments/assets/be2aa7c5-792e-4560-a2a1-04e75b00c327" />
 
 
 ### Step 4: Generate Test Cases
@@ -73,11 +75,7 @@ Click on a node (say, "Checkout"). Hit the **Generate** button in the dock. Past
 
 Watch the cat pictures while AI does the heavy lifting. In seconds, you have a full set of test cases.
 
-<img width="1337" height="896" alt="image" src="https://github.com/user-attachments/assets/18e3cbfd-d0c7-4530-898b-4cc1523b28d2" />
-
-
-<img width="781" height="754" alt="image" src="https://github.com/user-attachments/assets/5895f96f-d960-4e0a-84e5-8918f3dfd69c" />
-
+<img width="400" height="240" alt="cursorful-video-1780634832516" src="https://github.com/user-attachments/assets/8e56ad2a-445e-4dc0-870e-d3d7b55a94bd" />
 
 
 ### Step 5: Review & Update Status
@@ -86,13 +84,11 @@ Go through each test case. Run them. Mark them as **Pass**, **Fail**, or **Skip*
 
 <img width="2217" height="1004" alt="image" src="https://github.com/user-attachments/assets/36fe61af-7ce7-4e21-a4e0-cb89e0f0d42f" />
 
-
 ### Step 6: Export & Share
 
 Click the export button. Download as **Markdown** for the wiki or **JSON** for the automation pipeline.
 
 <img width="585" height="446" alt="image" src="https://github.com/user-attachments/assets/abb7c331-a006-4617-af7a-6c8d9449b3c9" />
-
 
 ### Step 7: Logout (If You Must)
 
