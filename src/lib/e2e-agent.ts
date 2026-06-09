@@ -24,6 +24,7 @@ export interface StepResult {
 
 export interface E2ERunConfig {
   baseUrl: string
+  browser?: 'chromium' | 'firefox' | 'webkit' | 'edge'
   headless?: boolean
   timeout?: number
   screenshotOnFailure?: boolean
@@ -147,11 +148,20 @@ export async function executeTestCase(
 
   try {
     // Use dynamic import for Playwright in Node.js context
-    const { chromium } = await import('playwright')
+    const { chromium, firefox, webkit } = await import('playwright')
     
-    const browser = await chromium.launch({ 
-      headless: runConfig.headless ?? true 
-    })
+    // Select browser based on config
+    const browsers: Record<string, any> = { chromium, firefox, webkit }
+    const browserType = runConfig.browser === 'edge' ? 'chromium' : (runConfig.browser || 'chromium')
+    const browserEngine = browsers[browserType] || chromium
+    
+    // For Edge, use channel
+    const launchOptions: any = { headless: runConfig.headless ?? true }
+    if (runConfig.browser === 'edge') {
+      launchOptions.channel = 'msedge'
+    }
+    
+    const browser = await browserEngine.launch(launchOptions)
     const context = await browser.newContext()
     const page = await context.newPage()
     

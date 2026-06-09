@@ -25,6 +25,7 @@ export function E2ETestRunner({
   onClose 
 }: E2ETestRunnerProps) {
   const [baseUrl, setBaseUrl] = useState('http://localhost:3000')
+  const [browser, setBrowser] = useState<'chromium' | 'firefox' | 'webkit' | 'edge'>('chromium')
   const [headless, setHeadless] = useState(true)
   const [timeout, setTimeout] = useState(30000)
   const [state, setState] = useState<TestRunState>({
@@ -101,6 +102,7 @@ export function E2ETestRunner({
         body: JSON.stringify({
           testCases: testsToRun,
           baseUrl,
+          browser,
           headless,
           timeout,
           llmConfig,
@@ -146,7 +148,7 @@ export function E2ETestRunner({
         error: error instanceof Error ? error.message : String(error),
       }))
     }
-  }, [testCases, selectedTests, baseUrl, headless, timeout, onUpdateTestCase])
+  }, [testCases, selectedTests, baseUrl, browser, headless, timeout, onUpdateTestCase])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -247,15 +249,40 @@ export function E2ETestRunner({
               </div>
             </div>
 
-            <label className="flex items-center gap-2 text-xs cursor-pointer">
-              <input
-                type="checkbox"
-                checked={headless}
-                onChange={e => setHeadless(e.target.checked)}
-                className="accent-[var(--accent)]"
-              />
-              <span style={{ color: 'var(--text-secondary)' }}>Run headless</span>
-            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs block mb-1" style={{ color: 'var(--text-tertiary)' }}>
+                  Browser
+                </label>
+                <select
+                  value={browser}
+                  onChange={e => setBrowser(e.target.value as any)}
+                  className="w-full text-sm px-2 py-1.5 rounded"
+                  style={{ 
+                    backgroundColor: 'var(--bg-primary)', 
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-primary)'
+                  }}
+                >
+                  <option value="chromium">Chromium (Chrome)</option>
+                  <option value="firefox">Firefox</option>
+                  <option value="webkit">WebKit (Safari)</option>
+                  <option value="edge">Edge</option>
+                </select>
+              </div>
+              
+              <div className="flex items-end">
+                <label className="flex items-center gap-2 text-xs cursor-pointer pb-1.5">
+                  <input
+                    type="checkbox"
+                    checked={headless}
+                    onChange={e => setHeadless(e.target.checked)}
+                    className="accent-[var(--accent)]"
+                  />
+                  <span style={{ color: 'var(--text-secondary)' }}>Run headless</span>
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* Test Case Selection */}

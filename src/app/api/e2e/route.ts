@@ -6,9 +6,10 @@ import type { TestCase } from '@/types'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { testCases, baseUrl, headless, timeout, llmConfig } = body as {
+    const { testCases, baseUrl, browser, headless, timeout, llmConfig } = body as {
       testCases: TestCase[]
       baseUrl: string
+      browser?: 'chromium' | 'firefox' | 'webkit' | 'edge'
       headless?: boolean
       timeout?: number
       llmConfig: {
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
 
     const runConfig: E2ERunConfig = {
       baseUrl,
+      browser: browser || 'chromium',
       headless: headless ?? true,
       timeout: timeout ?? 30000,
       screenshotOnFailure: true,
