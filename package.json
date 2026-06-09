@@ -1,12 +1,27 @@
 {
   "name": "test-lah",
   "version": "1.0.0",
+  "description": "QA Test Case Management — AI-powered test case generation and management",
   "private": false,
+  "bin": {
+    "test-lah": "./bin/test-lah.js"
+  },
+  "files": [
+    ".next/standalone/**",
+    ".next/static/**",
+    "public/**",
+    "bin/**",
+    "scripts/**",
+    "next.config.mjs",
+    "package.json"
+  ],
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "node scripts/postinstall.js",
+    "prepare:publish": "npm run build && node scripts/prepare-publish.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.81",

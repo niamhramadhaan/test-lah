@@ -101,12 +101,12 @@ export const PROVIDER_REGISTRY: Record<string, ProviderDef> = {
     logoUrl:
       "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/xiaomi.svg",
     keyUrl: "https://platform.xiaomimimo.com/",
-    keyPlaceholder: "sk-...",
+    keyPlaceholder: "tp-...",
     color: "#FF6900",
     sdkProvider: "openai",
     baseURL: "https://token-plan-sgp.xiaomimimo.com/v1",
-    defaultModel: "mimo-7b",
-    popularModels: ["mimo-7b", "mimo-13b"],
+    defaultModel: "mimo-v2.5",
+    popularModels: ["mimo-v2.5", "mimo-v2.5-pro"],
   },
   openrouter: {
     id: "openrouter",

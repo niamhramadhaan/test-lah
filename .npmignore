@@ -1,0 +1,17 @@
+# Development files
+.git
+.github
+.env*
+!.env.example
+node_modules/
+src/
+*.ts
+*.tsx
+!*.d.ts
+tsconfig.json
+tailwind.config.ts
+postcss.config.mjs
+.eslintrc.json
+.next/cache/
+*.md
+!README.md

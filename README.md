@@ -18,6 +18,23 @@ A fully client-side QA management tool with interactive mindmaps, test case trac
 
 ## Quick Start
 
+### Option 1: Global Install (Recommended)
+
+```bash
+npm install -g test-lah
+test-lah
+```
+
+This starts the server and opens your browser automatically.
+
+```bash
+test-lah --port 8080    # Custom port
+test-lah --no-open      # Don't auto-open browser
+test-lah --help         # Show help
+```
+
+### Option 2: Development
+
 ```bash
 git clone https://github.com/niamhramadhaan/test-lah.git
 cd test-lah
