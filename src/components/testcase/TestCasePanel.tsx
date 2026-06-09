@@ -34,7 +34,7 @@ interface TestCasePanelProps {
   onUpdateNode: (id: string, patch: Partial<FlowNode>) => void
   onAddColumn?: (nodeId: string, label: string) => void
   onDeleteColumn?: (nodeId: string, key: string) => void
-  onReorderColumn?: (nodeId: string, key: string, direction: 'left' | 'right') => void
+  onReorderColumn?: (nodeId: string, key: string, direction: 'up' | 'down') => void
   confirmDialog?: (title: string, message: string) => Promise<boolean>
 }
 
@@ -227,22 +227,22 @@ export function TestCasePanel({
                     </button>
                     <div className="flex items-center gap-0.5 opacity-0 group-hover/col:opacity-100 transition-opacity">
                       <button
-                        onClick={() => selectedNode && onReorderColumn?.(selectedNode.id, col.key, 'left')}
+                        onClick={() => selectedNode && onReorderColumn?.(selectedNode.id, col.key, 'up')}
                         disabled={colIdx === 0}
                         className="w-4 h-4 flex items-center justify-center rounded text-[10px] disabled:opacity-20 hover:bg-[var(--bg-secondary)]"
                         style={{ color: 'var(--text-tertiary)' }}
-                        title="Move left"
+                        title="Move up"
                       >
-                        ‹
+                        ↑
                       </button>
                       <button
-                        onClick={() => selectedNode && onReorderColumn?.(selectedNode.id, col.key, 'right')}
+                        onClick={() => selectedNode && onReorderColumn?.(selectedNode.id, col.key, 'down')}
                         disabled={colIdx === visibleColumns.length - 1}
                         className="w-4 h-4 flex items-center justify-center rounded text-[10px] disabled:opacity-20 hover:bg-[var(--bg-secondary)]"
                         style={{ color: 'var(--text-tertiary)' }}
-                        title="Move right"
+                        title="Move down"
                       >
-                        ›
+                        ↓
                       </button>
                       {isCustom && (
                         <button

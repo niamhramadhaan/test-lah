@@ -17,7 +17,7 @@ interface TestCaseTableProps {
   onReorder: (newOrder: string[]) => void
 }
 
-const SORTABLE_KEYS = new Set(['case_type', 'status'])
+const SORTABLE_KEYS = new Set(['code', 'case_type', 'status'])
 
 export function TestCaseTable({ testCases, columns, expandAll, sortKey, sortDirection, onSortChange, onUpdate, onDelete, onReorder }: TestCaseTableProps) {
   const visibleCols = columns.filter(c => c.visible)

@@ -117,16 +117,26 @@ export function TestCaseRow({ tc, visibleCols, expandAll, onUpdate, onDelete, on
               col.key === 'links' ? (
                 <div className="flex items-center gap-1">
                   {tc.links ? (
-                    <a
-                      href={tc.links}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] underline hover:opacity-80 transition-opacity"
-                      style={{ color: 'var(--accent)' }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Open Link
-                    </a>
+                    <>
+                      <a
+                        href={tc.links}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] underline hover:opacity-80 transition-opacity"
+                        style={{ color: 'var(--accent)' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Open Link
+                      </a>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onUpdate({ links: '' }) }}
+                        className="text-[10px] opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity px-0.5"
+                        style={{ color: 'var(--status-fail-text)' }}
+                        title="Clear link"
+                      >
+                        ×
+                      </button>
+                    </>
                   ) : (
                     <span
                       className="cursor-text block text-[11px]"

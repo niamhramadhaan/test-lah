@@ -60,7 +60,7 @@ interface DashboardContextValue {
     toggleColumnVisibility: (nodeId: string, key: string) => void
     addColumn: (nodeId: string, label: string) => void
     deleteColumn: (nodeId: string, key: string) => void
-    reorderColumn: (nodeId: string, key: string, direction: 'left' | 'right') => void
+    reorderColumn: (nodeId: string, key: string, direction: 'up' | 'down') => void
   }
   dialog: ReturnType<typeof useDialog>['dialog']
   alertDialog: (title: string, message: string) => Promise<void>
