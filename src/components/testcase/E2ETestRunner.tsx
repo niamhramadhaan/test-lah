@@ -65,7 +65,27 @@ export function E2ETestRunner({
       alert('Please configure LLM in Integrations page first')
       return
     }
-    const llmConfig = JSON.parse(configStr)
+    const fullConfig = JSON.parse(configStr)
+    
+    // Extract active provider config
+    const activeProvider = fullConfig.activeProvider
+    if (!activeProvider || !fullConfig.providers?.[activeProvider]) {
+      alert('Please select an active provider in Integrations page')
+      return
+    }
+    
+    const providerConfig = fullConfig.providers[activeProvider]
+    if (!providerConfig.apiKey || !providerConfig.connected) {
+      alert('Please connect your LLM provider in Integrations page')
+      return
+    }
+    
+    const llmConfig = {
+      provider: activeProvider,
+      model: providerConfig.defaultModel,
+      apiKey: providerConfig.apiKey,
+      baseURL: providerConfig.baseURL,
+    }
 
     setState({
       status: 'running',
