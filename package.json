@@ -24,7 +24,8 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "node scripts/postinstall.js",
-    "prepare:publish": "npm run build && node scripts/prepare-publish.js"
+    "prepare:publish": "npm run build && node scripts/prepare-publish.js",
+    "publish:github": "set -a && . ./.env.local && set +a && npm publish"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.81",
