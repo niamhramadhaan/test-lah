@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useDashboard } from '@/context/DashboardContext'
+import { downloadJSON } from '@/lib/export'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { InteractiveGridPattern } from '@/components/ui/interactive-grid-pattern'
 import { GridPattern } from '@/components/ui/grid-pattern'
@@ -36,14 +37,16 @@ function getFunIcon(id: string): { icon: React.ReactNode; bg: string } {
 }
 
 export default function ProjectsPage() {
-  const { projects, createProject, deleteProject, duplicateProject, renameProject, profile, profileInitials, promptDialog, confirmDialog } = useDashboard()
+  const { projects, createProject, deleteProject, duplicateProject, importProject, renameProject, profile, profileInitials, promptDialog, confirmDialog } = useDashboard()
   const projectList = Object.values(projects)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
   const [donateOpen, setDonateOpen] = useState(false)
   const [hoveredLater, setHoveredLater] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const importRef = useRef<HTMLInputElement>(null)
 
   // Close menu on outside click
   useEffect(() => {
@@ -104,6 +107,19 @@ export default function ProjectsPage() {
     if (ok) deleteProject(id)
   }
 
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = importProject(reader.result as string)
+      if (!result.ok) setImportError(result.error || 'Import failed')
+      else setImportError(null)
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
   return (
     <div className="h-full overflow-auto relative">
       {/* Interactive grid pattern background */}
@@ -139,6 +155,20 @@ export default function ProjectsPage() {
             Donate Please 🥺👉👈
           </button>
           <button
+            onClick={() => importRef.current?.click()}
+            className="px-4 py-2 text-sm font-medium rounded-md border transition-opacity hover:opacity-80"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
+          >
+            Import Project
+          </button>
+          <input
+            ref={importRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleImport}
+          />
+          <button
             onClick={async () => {
               const name = await promptDialog('New Project', 'Enter project name:')
               if (name?.trim()) createProject(name.trim())
@@ -150,6 +180,14 @@ export default function ProjectsPage() {
           </button>
         </div>
       </div>
+
+      {/* Import error */}
+      {importError && (
+        <div className="mb-4 text-xs px-3 py-2 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'var(--status-fail-bg)', color: 'var(--status-fail-text)' }}>
+          <span>Import failed: {importError}</span>
+          <button onClick={() => setImportError(null)} className="ml-2 font-bold">\u00d7</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {projectList.map(p => {
@@ -309,6 +347,14 @@ export default function ProjectsPage() {
                   >
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="3.5" y="3.5" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" /><path d="M8.5 3.5V2.5a1 1 0 00-1-1h-5a1 1 0 00-1 1v5a1 1 0 001 1h1" stroke="currentColor" strokeWidth="1.2" /></svg>
                     Duplicate
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); downloadJSON(p); setMenuOpen(null) }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-secondary)]"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 7v3a1 1 0 01-1 1H3a1 1 0 01-1-1V7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /><polyline points="4 5 6 7 8 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /><line x1="6" y1="1" x2="6" y2="7" stroke="currentColor" strokeWidth="1.2" /></svg>
+                    Export JSON
                   </button>
                   <div className="border-t my-1" style={{ borderColor: 'var(--border)' }} />
                   <button

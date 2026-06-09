@@ -13,6 +13,7 @@ import { SummaryFooter } from './SummaryFooter'
 import { ExportModal } from './ExportModal'
 import { GenerateTestModal } from './GenerateTestModal'
 import { NodeSummaryModal } from './NodeSummaryModal'
+import { ImportTestCasesModal } from './ImportTestCasesModal'
 import { Dock, DockIcon } from '@/components/ui/dock'
 import { Separator } from '@/components/ui/separator'
 import { exportNodeAsMarkdown } from '@/lib/export'
@@ -64,6 +65,7 @@ export function TestCasePanel({
   const [exportOpen, setExportOpen] = useState(false)
   const [generateOpen, setGenerateOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [expandAll, setExpandAll] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -135,6 +137,13 @@ export function TestCasePanel({
   }, [columnsOpen])
 
   const handleGenerate = useCallback((cases: GeneratedTestCase[]) => {
+    if (!selectedNode) return
+    for (const tc of cases) {
+      onAddTestCase(selectedNode.id, tc.title, tc.steps, tc.expected)
+    }
+  }, [selectedNode, onAddTestCase])
+
+  const handleImport = useCallback((cases: Array<{ title: string; steps: string; expected: string }>) => {
     if (!selectedNode) return
     for (const tc of cases) {
       onAddTestCase(selectedNode.id, tc.title, tc.steps, tc.expected)
@@ -516,6 +525,25 @@ export function TestCasePanel({
 
           <Separator orientation="vertical" className="h-full" />
 
+          {/* Import */}
+          <DockIcon>
+            <div className="relative group">
+              <button
+                onClick={() => setImportOpen(true)}
+                className="w-full h-full flex items-center justify-center rounded-full hover:bg-[var(--bg-secondary)] transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
+                Import Cases
+              </div>
+            </div>
+          </DockIcon>
+
           {/* Generate */}
           <DockIcon>
             <div className="relative group">
@@ -555,6 +583,12 @@ export function TestCasePanel({
         node={selectedNode}
         testCases={testCases}
         stats={stats}
+      />
+      <ImportTestCasesModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={handleImport}
+        nodeLabel={selectedNode.label}
       />
 
       <style jsx>{`

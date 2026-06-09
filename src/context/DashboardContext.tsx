@@ -18,6 +18,7 @@ interface DashboardContextValue {
   createProject: (name: string) => string
   deleteProject: (id: string) => void
   duplicateProject: (id: string) => void
+  importProject: (json: string) => { ok: boolean; error?: string }
   switchProject: (id: string) => void
   renameProject: (id: string, name: string) => void
   setSelectedNodeId: (id: string | null) => void
@@ -88,6 +89,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     createProject: project.createProject,
     deleteProject: project.deleteProject,
     duplicateProject: project.duplicateProject,
+    importProject: project.importProject,
     switchProject: project.switchProject,
     renameProject: project.renameProject,
     setSelectedNodeId: project.setSelectedNodeId,
