@@ -72,6 +72,8 @@ export function TestCasePanel({
   const [expandAll, setExpandAll] = useState(false)
   const [copied, setCopied] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [sortKey, setSortKey] = useState<string | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [addingColumn, setAddingColumn] = useState(false)
   const [newColName, setNewColName] = useState('')
   const newColInputRef = useRef<HTMLInputElement>(null)
@@ -120,6 +122,24 @@ export function TestCasePanel({
     onBulkUpdate(selectedNode.id, Array.from(selectedIds), { status })
     setSelectedIds(new Set())
   }, [selectedNode, selectedIds, onBulkUpdate])
+
+  const handleSortChange = (key: string | null) => {
+    if (key === null) {
+      setSortKey(null)
+    } else if (sortKey === key) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDirection('asc')
+    }
+  }
+
+  const sortedTestCases = sortKey ? [...testCases].sort((a, b) => {
+    const aVal = (a[sortKey as keyof TestCase] as string) || ''
+    const bVal = (b[sortKey as keyof TestCase] as string) || ''
+    const cmp = aVal.localeCompare(bVal)
+    return sortDirection === 'asc' ? cmp : -cmp
+  }) : testCases
 
   // Focus new column input
   useEffect(() => {
@@ -250,12 +270,15 @@ export function TestCasePanel({
           <EmptyState message="No test cases yet. Use the quick-add bar or Generate button to add test cases." />
         ) : (
           <TestCaseTable
-            testCases={testCases}
+            testCases={sortedTestCases}
             columns={visibleColumns}
             expandAll={expandAll}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelect}
             onToggleSelectAll={toggleSelectAll}
+            sortKey={sortKey}
+            sortDirection={sortDirection}
+            onSortChange={handleSortChange}
             onUpdate={(tcId, patch) => onUpdateTestCase(selectedNode.id, tcId, patch)}
             onDelete={tcId => onDeleteTestCase(selectedNode.id, tcId)}
             onReorder={newOrder => onReorderTestCases(selectedNode.id, newOrder)}
@@ -296,7 +319,7 @@ export function TestCasePanel({
               </button>
             </div>
             <div className="py-1 max-h-[240px] overflow-y-auto">
-              {visibleColumns.map(col => {
+              {visibleColumns.map((col, colIdx) => {
                 const isCustom = !defaultKeys.includes(col.key)
                 return (
                   <div
@@ -311,27 +334,47 @@ export function TestCasePanel({
                       <span className="w-3 text-center">{col.visible ? '✓' : ''}</span>
                       <span>{col.label}</span>
                     </button>
-                    {isCustom && (
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover/col:opacity-100 transition-opacity">
                       <button
-                        onClick={async () => {
-                          if (!selectedNode || !onDeleteColumn) return
-                          const hasData = testCases.some(tc => {
-                            const val = (tc as unknown as Record<string, unknown>)[col.key]
-                            return val && typeof val === 'string' && val.trim() !== ''
-                          })
-                          if (hasData && confirmDialog) {
-                            const ok = await confirmDialog('Delete Column', `This column has data in some test cases. Delete "${col.label}" anyway?`)
-                            if (!ok) return
-                          }
-                          onDeleteColumn(selectedNode.id, col.key)
-                        }}
-                        className="w-4 h-4 flex items-center justify-center rounded opacity-0 group-hover/col:opacity-100 hover:opacity-100 transition-opacity text-[10px]"
-                        style={{ color: 'var(--status-fail-text)' }}
-                        title={`Delete ${col.label}`}
+                        onClick={() => selectedNode && onReorderColumn?.(selectedNode.id, col.key, 'up')}
+                        disabled={colIdx === 0}
+                        className="w-4 h-4 flex items-center justify-center rounded text-[10px] disabled:opacity-20 hover:bg-[var(--bg-secondary)]"
+                        style={{ color: 'var(--text-tertiary)' }}
+                        title="Move up"
                       >
-                        ×
+                        ↑
                       </button>
-                    )}
+                      <button
+                        onClick={() => selectedNode && onReorderColumn?.(selectedNode.id, col.key, 'down')}
+                        disabled={colIdx === visibleColumns.length - 1}
+                        className="w-4 h-4 flex items-center justify-center rounded text-[10px] disabled:opacity-20 hover:bg-[var(--bg-secondary)]"
+                        style={{ color: 'var(--text-tertiary)' }}
+                        title="Move down"
+                      >
+                        ↓
+                      </button>
+                      {isCustom && (
+                        <button
+                          onClick={async () => {
+                            if (!selectedNode || !onDeleteColumn) return
+                            const hasData = testCases.some(tc => {
+                              const val = (tc as unknown as Record<string, unknown>)[col.key]
+                              return val && typeof val === 'string' && val.trim() !== ''
+                            })
+                            if (hasData && confirmDialog) {
+                              const ok = await confirmDialog('Delete Column', `This column has data in some test cases. Delete "${col.label}" anyway?`)
+                              if (!ok) return
+                            }
+                            onDeleteColumn(selectedNode.id, col.key)
+                          }}
+                          className="w-4 h-4 flex items-center justify-center rounded hover:opacity-100 transition-opacity text-[10px]"
+                          style={{ color: 'var(--status-fail-text)' }}
+                          title={`Delete ${col.label}`}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )
               })}

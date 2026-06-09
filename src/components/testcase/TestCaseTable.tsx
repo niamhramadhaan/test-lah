@@ -10,6 +10,9 @@ interface TestCaseTableProps {
   selectedIds: Set<string>
   onToggleSelect: (tcId: string) => void
   onToggleSelectAll: () => void
+  sortKey: string | null
+  sortDirection: 'asc' | 'desc'
+  onSortChange: (key: string | null) => void
   onUpdate: (tcId: string, patch: Partial<TestCase>) => void
   onDelete: (tcId: string) => void
   onReorder: (newOrder: string[]) => void
@@ -22,6 +25,9 @@ export function TestCaseTable({
   selectedIds,
   onToggleSelect,
   onToggleSelectAll,
+  sortKey,
+  sortDirection,
+  onSortChange,
   onUpdate,
   onDelete,
   onReorder,
@@ -75,10 +81,16 @@ export function TestCaseTable({
             {visibleCols.map(col => (
               <th
                 key={col.key}
-                className="px-2 py-1.5 text-left text-[10px] font-medium uppercase tracking-wider border-b"
+                className="px-2 py-1.5 text-left text-[10px] font-medium uppercase tracking-wider border-b cursor-pointer select-none hover:bg-[var(--bg-secondary)] transition-colors"
                 style={{ color: 'var(--text-tertiary)', borderColor: 'var(--border)', whiteSpace: 'nowrap' }}
+                onClick={() => onSortChange(col.key)}
               >
-                {col.label}
+                <div className="flex items-center gap-1">
+                  <span>{col.label}</span>
+                  {sortKey === col.key && (
+                    <span className="text-[8px]">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </div>
               </th>
             ))}
             <th className="w-6 border-b" style={{ borderColor: 'var(--border)' }} />
