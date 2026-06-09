@@ -394,8 +394,8 @@ export function E2ETestRunner({
             {/* Left Panel - Config & Tests */}
             <div 
               className={`${
-                showSidebar ? 'max-h-[40vh] md:max-h-none' : 'max-h-0 md:max-h-none'
-              } md:w-72 border-b md:border-b-0 md:border-r overflow-auto transition-all duration-200`}
+                showSidebar ? 'max-h-[35vh] md:max-h-none' : 'max-h-0 md:max-h-none'
+              } md:w-72 border-b md:border-b-0 md:border-r overflow-auto transition-all duration-200 shrink-0`}
               style={{ borderColor: 'var(--border)' }}
             >
               <div className="p-3 md:p-4 space-y-3 md:space-y-4">
@@ -490,9 +490,9 @@ export function E2ETestRunner({
             </div>
 
             {/* Right Content Area */}
-            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+            <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
               {/* Logs */}
-              <div className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 flex flex-col min-h-0 max-h-[45vh] md:max-h-none">
                 <div className="p-3 border-b" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Execution Log</h3>
@@ -621,7 +621,7 @@ export function E2ETestRunner({
             </div>
 
             {/* Script Editor */}
-            <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 flex flex-col min-h-0 max-h-[45vh] md:max-h-none">
               {selectedScriptTest ? (
                 <>
                   <div className="p-3 border-b flex items-center justify-between shrink-0" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>
