@@ -395,7 +395,7 @@ export function E2ETestRunner({
             <div 
               className={`${
                 showSidebar ? 'max-h-[35vh] md:max-h-none' : 'max-h-0 md:max-h-none'
-              } md:w-72 border-b md:border-b-0 md:border-r overflow-auto transition-all duration-200 shrink-0`}
+              } md:flex-[0_0_25%] border-b md:border-b-0 md:border-r overflow-auto transition-all duration-200 shrink-0`}
               style={{ borderColor: 'var(--border)' }}
             >
               <div className="p-3 md:p-4 space-y-3 md:space-y-4">
@@ -528,10 +528,11 @@ export function E2ETestRunner({
                   maxHeight: showBrowserPreview ? '300px' : '36px',
                   minHeight: showBrowserPreview ? '200px' : '36px',
                   width: 'auto',
+                  flex: showBrowserPreview ? '0 0 30%' : '0 0 36px',
                   ...(typeof window !== 'undefined' && window.innerWidth >= 768 ? {
                     maxHeight: 'none',
                     minHeight: 'auto',
-                    width: showBrowserPreview ? '340px' : '36px'
+                    flex: showBrowserPreview ? '0 0 28%' : '0 0 36px'
                   } : {})
                 }}
               >
