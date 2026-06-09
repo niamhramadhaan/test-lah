@@ -15,6 +15,7 @@ import { GenerateTestModal } from './GenerateTestModal'
 import { NodeSummaryModal } from './NodeSummaryModal'
 import { Dock, DockIcon } from '@/components/ui/dock'
 import { Separator } from '@/components/ui/separator'
+import { exportNodeAsMarkdown } from '@/lib/export'
 import type { GeneratedTestCase } from '@/lib/llm'
 
 interface TestCasePanelProps {
@@ -61,6 +62,7 @@ export function TestCasePanel({
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [expandAll, setExpandAll] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [addingColumn, setAddingColumn] = useState(false)
   const [newColName, setNewColName] = useState('')
   const newColInputRef = useRef<HTMLInputElement>(null)
@@ -322,6 +324,37 @@ export function TestCasePanel({
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
                 Export
+              </div>
+            </div>
+          </DockIcon>
+
+          {/* Copy as Markdown */}
+          <DockIcon>
+            <div className="relative group">
+              <button
+                onClick={() => {
+                  const md = exportNodeAsMarkdown(selectedNode, testCases, columns)
+                  navigator.clipboard.writeText(md).then(() => {
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  })
+                }}
+                className="w-full h-full flex items-center justify-center rounded-full transition-colors"
+                style={{ backgroundColor: copied ? 'var(--bg-secondary)' : 'transparent' }}
+              >
+                {copied ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                  </svg>
+                )}
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
+                {copied ? 'Copied!' : 'Copy as Markdown'}
               </div>
             </div>
           </DockIcon>
