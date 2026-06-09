@@ -1,8 +1,11 @@
 {
-  "name": "test-lah",
+  "name": "@niamhramadhaan/test-lah",
   "version": "1.0.0",
   "description": "QA Test Case Management — AI-powered test case generation and management",
   "private": false,
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "bin": {
     "test-lah": "./bin/test-lah.js"
   },
