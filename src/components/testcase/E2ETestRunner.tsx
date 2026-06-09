@@ -13,7 +13,7 @@ interface E2ETestRunnerProps {
 
 interface LogEntry {
   time: Date
-  type: 'info' | 'ai' | 'success' | 'error' | 'warning'
+  type: 'info' | 'ai' | 'success' | 'error' | 'warning' | 'healing'
   message: string
 }
 
@@ -31,6 +31,8 @@ export function E2ETestRunner({
   const [results, setResults] = useState<E2ETestResult[]>([])
   const [currentTest, setCurrentTest] = useState<{ index: number; title: string } | null>(null)
   const [logs, setLogs] = useState<LogEntry[]>([])
+  const [healingReport, setHealingReport] = useState<string>('')
+  const [showHealingReport, setShowHealingReport] = useState(false)
   const logsEndRef = useRef<HTMLDivElement>(null)
 
   const [selectedTests, setSelectedTests] = useState<Set<string>>(
@@ -39,7 +41,6 @@ export function E2ETestRunner({
 
   const addLog = useCallback((type: LogEntry['type'], message: string) => {
     setLogs(prev => [...prev, { time: new Date(), type, message }])
-    // Auto-scroll to bottom
     window.setTimeout(() => logsEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
   }, [])
 
@@ -64,7 +65,6 @@ export function E2ETestRunner({
     const testsToRun = testCases.filter(tc => selectedTests.has(tc.id))
     if (testsToRun.length === 0) return
 
-    // Get LLM config from localStorage
     const configStr = localStorage.getItem('qa-llm-config')
     if (!configStr) {
       addLog('error', 'Please configure LLM in Integrations page first')
@@ -94,6 +94,8 @@ export function E2ETestRunner({
     setIsRunning(true)
     setResults([])
     setLogs([])
+    setHealingReport('')
+    setShowHealingReport(false)
     addLog('info', `Starting E2E test run with ${testsToRun.length} test(s)...`)
     addLog('info', `Target: ${baseUrl}`)
     addLog('info', `Browser: ${browser} | Headless: ${headless}`)
@@ -119,7 +121,6 @@ export function E2ETestRunner({
         return
       }
 
-      // Read SSE stream
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
@@ -162,18 +163,32 @@ export function E2ETestRunner({
                       addLog('error', `  ✗ ${data.message}`)
                     }
                     break
+                  case 'healing':
+                    addLog('healing', `  🔧 ${data.message}`)
+                    break
+                  case 'healingAction':
+                    addLog('healing', `  💊 ${data.message}`)
+                    break
+                  case 'healed':
+                    addLog('success', `  ✨ ${data.message}`)
+                    break
                   case 'aiAnalysis':
                     addLog('ai', `  📊 AI Analysis:\n${data.message}`)
                     break
                   case 'error':
                     addLog('error', `  ⚠ ${data.message}`)
                     break
+                  case 'healingReport':
+                    setHealingReport(data.report)
+                    if (data.report && !data.report.includes('All tests passed')) {
+                      setShowHealingReport(true)
+                    }
+                    break
                   case 'testComplete':
                     const statusIcon = data.status === 'pass' ? '✓' : '✗'
                     const statusColor = data.status === 'pass' ? 'success' : 'error'
                     addLog(statusColor, `\n  ${statusIcon} Test ${data.index} completed: ${data.status.toUpperCase()} (${data.duration}ms)`)
                     
-                    // Update test case status
                     const statusMap: Record<string, Status> = {
                       pass: 'pass',
                       fail: 'fail',
@@ -213,19 +228,21 @@ export function E2ETestRunner({
     setCurrentTest(null)
   }, [testCases, selectedTests, baseUrl, browser, headless, timeout, addLog, onUpdateTestCase])
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pass': return '✓'
-      case 'fail': return '✗'
-      case 'error': return '⚠'
-      default: return '○'
+  const getLogColor = (type: LogEntry['type']) => {
+    switch (type) {
+      case 'error': return 'var(--status-fail-text)'
+      case 'success': return 'var(--status-pass-text)'
+      case 'ai': return '#8b5cf6'
+      case 'healing': return '#f59e0b'
+      case 'warning': return 'var(--status-skip-text)'
+      default: return 'var(--text-secondary)'
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
       <div 
-        className="w-full max-w-4xl max-h-[85vh] rounded-lg shadow-xl flex flex-col"
+        className="w-full max-w-5xl max-h-[90vh] rounded-lg shadow-xl flex flex-col"
         style={{ 
           backgroundColor: 'var(--bg-primary)', 
           border: '1px solid var(--border)' 
@@ -241,7 +258,7 @@ export function E2ETestRunner({
               E2E Agentic Test Runner
             </h2>
             <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
-              AI-powered end-to-end testing with real-time progress
+              AI-powered testing with automatic healing
             </p>
           </div>
           <button
@@ -268,7 +285,7 @@ export function E2ETestRunner({
               
               <div>
                 <label className="text-xs block mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                  Base URL
+                  Target URL
                 </label>
                 <input
                   type="url"
@@ -356,7 +373,7 @@ export function E2ETestRunner({
               </div>
               
               <div 
-                className="max-h-[200px] overflow-auto rounded-lg"
+                className="max-h-[250px] overflow-auto rounded-lg"
                 style={{ border: '1px solid var(--border)' }}
               >
                 {testCases.map(tc => {
@@ -378,11 +395,11 @@ export function E2ETestRunner({
                         className="accent-[var(--accent)]"
                       />
                       <span className="flex-1 truncate" style={{ color: 'var(--text-primary)' }}>
-                        {tc.code}: {tc.title}
+                        {tc.code}
                       </span>
                       {result && (
                         <span style={{ color: result.status === 'pass' ? 'var(--status-pass-text)' : 'var(--status-fail-text)' }}>
-                          {getStatusIcon(result.status)}
+                          {result.status === 'pass' ? '✓' : '✗'}
                         </span>
                       )}
                     </label>
@@ -390,6 +407,21 @@ export function E2ETestRunner({
                 })}
               </div>
             </div>
+
+            {/* Healing Report Button */}
+            {healingReport && (
+              <button
+                onClick={() => setShowHealingReport(true)}
+                className="w-full px-3 py-2 text-xs rounded flex items-center justify-center gap-2"
+                style={{ 
+                  backgroundColor: 'var(--status-skip-bg)',
+                  border: '1px solid var(--status-skip-border)',
+                  color: 'var(--status-skip-text)'
+                }}
+              >
+                🔧 View Healing Report
+              </button>
+            )}
           </div>
 
           {/* Right Panel - Logs */}
@@ -420,13 +452,7 @@ export function E2ETestRunner({
                   <div 
                     key={i} 
                     className="py-0.5"
-                    style={{ 
-                      color: log.type === 'error' ? 'var(--status-fail-text)' 
-                        : log.type === 'success' ? 'var(--status-pass-text)'
-                        : log.type === 'ai' ? '#8b5cf6'
-                        : log.type === 'warning' ? 'var(--status-skip-text)'
-                        : 'var(--text-secondary)'
-                    }}
+                    style={{ color: getLogColor(log.type) }}
                   >
                     {log.message.split('\n').map((line, j) => (
                       <div key={j}>{line || '\u00A0'}</div>
@@ -454,7 +480,7 @@ export function E2ETestRunner({
                     ⚠ Error: {results.filter(r => r.status === 'error').length}
                   </span>
                   <span className="ml-auto" style={{ color: 'var(--text-tertiary)' }}>
-                    Total: {results.reduce((sum, r) => sum + r.duration, 0)}ms
+                    Total: {Math.round(results.reduce((sum, r) => sum + r.duration, 0) / 1000)}s
                   </span>
                 </div>
               </div>
@@ -510,6 +536,62 @@ export function E2ETestRunner({
           </div>
         </div>
       </div>
+
+      {/* Healing Report Modal */}
+      {showHealingReport && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <div 
+            className="w-full max-w-2xl max-h-[80vh] rounded-lg shadow-xl flex flex-col"
+            style={{ 
+              backgroundColor: 'var(--bg-primary)', 
+              border: '1px solid var(--border)' 
+            }}
+          >
+            <div 
+              className="flex items-center justify-between p-4 border-b"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              <div>
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  🔧 Healing Report
+                </h2>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                  AI-generated recommendations to fix failing tests
+                </p>
+              </div>
+              <button
+                onClick={() => setShowHealingReport(false)}
+                className="p-1 rounded hover:opacity-80"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-auto p-4">
+              <pre className="whitespace-pre-wrap text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
+                {healingReport}
+              </pre>
+            </div>
+            
+            <div 
+              className="p-4 border-t flex justify-end"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              <button
+                onClick={() => setShowHealingReport(false)}
+                className="px-4 py-2 text-sm rounded"
+                style={{ 
+                  backgroundColor: 'var(--accent)',
+                  color: 'white'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
