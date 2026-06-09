@@ -817,27 +817,43 @@ export function E2ETestRunner({
                 ) : (
                   <div className="space-y-2">
                     {e2e.runs.map(run => (
-                      <button
+                      <div
                         key={run.id}
-                        onClick={() => setSelectedRun(run)}
-                        className="w-full text-left p-3 rounded-lg"
+                        className="p-3 rounded-lg group relative"
                         style={{ 
                           backgroundColor: selectedRun?.id === run.id ? 'var(--bg-secondary)' : 'transparent',
                           border: selectedRun?.id === run.id ? '1px solid var(--border)' : '1px solid transparent'
                         }}
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-                            {new Date(run.timestamp).toLocaleString()}
-                          </span>
-                          <span className="text-xs" style={{ color: run.totalFailed > 0 ? 'var(--status-fail-text)' : 'var(--status-pass-text)' }}>
-                            {run.totalPassed}✓ {run.totalFailed}✗
-                          </span>
-                        </div>
-                        <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                          {run.config.baseUrl} • {run.config.browser} • {Math.round(run.totalDuration / 1000)}s
-                        </div>
-                      </button>
+                        <button
+                          onClick={() => setSelectedRun(run)}
+                          className="w-full text-left"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+                              {new Date(run.timestamp).toLocaleString()}
+                            </span>
+                            <span className="text-xs" style={{ color: run.totalFailed > 0 ? 'var(--status-fail-text)' : 'var(--status-pass-text)' }}>
+                              {run.totalPassed}✓ {run.totalFailed}✗
+                            </span>
+                          </div>
+                          <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                            {run.config.baseUrl} • {run.config.browser} • {Math.round(run.totalDuration / 1000)}s
+                          </div>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            e2e.deleteRun(run.id)
+                            if (selectedRun?.id === run.id) setSelectedRun(null)
+                          }}
+                          className="absolute top-2 right-2 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ color: 'var(--status-fail-text)' }}
+                          title="Delete run"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
