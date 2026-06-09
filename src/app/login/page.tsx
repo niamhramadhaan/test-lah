@@ -6,7 +6,6 @@ import { ShineBorder } from '@/components/ui/shine-border'
 import { Particles } from '@/components/ui/particles'
 import { MorphingText } from '@/components/ui/morphing-text'
 import { SparklesText } from '@/components/ui/sparkles-text'
-import { DenialModal } from '@/components/shared/DenialModal'
 import { useAuth } from '@/hooks/useAuth'
 import { useProgress } from '@/components/shared/GlobalProgress'
 import confetti from 'canvas-confetti'
@@ -24,8 +23,6 @@ export default function LoginPage() {
   const { login } = useAuth()
   const { startProgress, completeProgress } = useProgress()
   const [name, setName] = useState('')
-  const [denied, setDenied] = useState(false)
-  const [shaking, setShaking] = useState(false)
   const [success, setSuccess] = useState(false)
   const [greeting, setGreeting] = useState('')
   const [focused, setFocused] = useState(false)
@@ -80,19 +77,14 @@ export default function LoginPage() {
   const handleSubmit = useCallback((e?: React.FormEvent) => {
     e?.preventDefault()
     if (!name.trim()) return
-    if (name.trim().toLowerCase().includes('ayu')) {
-      setSuccess(true)
-      setGreeting(name.trim())
-      login(name.trim())
-      fireConfetti()
-      setTimeout(() => {
-        startProgress('Redirecting...')
-        router.push('/projects')
-      }, 2500)
-    } else {
-      setShaking(true)
-      setTimeout(() => { setShaking(false); setDenied(true) }, 400)
-    }
+    setSuccess(true)
+    setGreeting(name.trim())
+    login(name.trim())
+    fireConfetti()
+    setTimeout(() => {
+      startProgress('Redirecting...')
+      router.push('/projects')
+    }, 2500)
   }, [name, login, router, fireConfetti, startProgress])
 
   if (success) {
@@ -126,7 +118,7 @@ export default function LoginPage() {
         {/* Left: Login card */}
         <div
           className="w-full max-w-md flex-shrink-0"
-          style={{ animation: shaking ? 'shake 0.4s ease-in-out' : 'fadeInUp 0.6s ease-out' }}
+          style={{ animation: 'fadeInUp 0.6s ease-out' }}
         >
           <div className="relative">
             <ShineBorder
@@ -276,20 +268,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <DenialModal
-        open={denied}
-        onClose={() => setDenied(false)}
-        onTryAgain={() => { setDenied(false); setName('') }}
-      />
-
       <style jsx>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          20% { transform: translateX(-8px); }
-          40% { transform: translateX(8px); }
-          60% { transform: translateX(-4px); }
-          80% { transform: translateX(4px); }
-        }
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(16px); }
           to { opacity: 1; transform: translateY(0); }
