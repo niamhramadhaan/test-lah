@@ -43,13 +43,22 @@ const PROVIDERS: ProviderInfo[] = [
     color: '#4D6BFE',
   },
   {
-    id: 'mimo',
-    name: 'Xiaomi MiMo',
-    description: 'Xiaomi\'s reasoning model via Vercel AI Gateway.',
-    logoUrl: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/xiaomi.svg',
-    keyUrl: 'https://vercel.com/ai-gateway',
-    keyPlaceholder: 'Your Vercel AI Gateway API key',
-    color: '#FF6900',
+    id: 'openrouter',
+    name: 'OpenRouter',
+    description: 'Unified API for 100+ models. Use any model with one API key.',
+    logoUrl: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/openrouter.svg',
+    keyUrl: 'https://openrouter.ai/keys',
+    keyPlaceholder: 'sk-or-...',
+    color: '#6366F1',
+  },
+  {
+    id: 'custom',
+    name: 'Custom API',
+    description: 'Connect any OpenAI-compatible API. Enter your base URL and model.',
+    logoUrl: '',
+    keyUrl: '',
+    keyPlaceholder: 'sk-...',
+    color: '#6B7280',
   },
 ]
 
@@ -96,9 +105,13 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
   const { config, activeProviderId, updateProvider, setActiveProvider } = useLLMConfig()
   const provider = config.providers[info.id]
   const isActive = activeProviderId === info.id
+  const needsBaseUrl = info.id === 'custom'
+  const usesTextInput = info.id === 'custom'
 
   const [editingKey, setEditingKey] = useState(false)
   const [keyValue, setKeyValue] = useState(provider.apiKey)
+  const [baseUrlValue, setBaseUrlValue] = useState(provider.baseUrl)
+  const [modelInput, setModelInput] = useState('')
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ ok: boolean; error?: string } | null>(null)
   const [testedKey, setTestedKey] = useState<string | null>(null)
@@ -106,12 +119,14 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
   useEffect(() => {
     if (expanded && !provider.connected && !editingKey) {
       setKeyValue(provider.apiKey)
+      setBaseUrlValue(provider.baseUrl)
     }
   }, [expanded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTest = async () => {
     const key = keyValue.trim()
     if (!key) return
+    if (needsBaseUrl && !baseUrlValue.trim()) return
 
     setTesting(true)
     setTestResult(null)
@@ -121,7 +136,7 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
       const res = await fetch('/api/llm/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: info.id, apiKey: key }),
+        body: JSON.stringify({ provider: info.id, apiKey: key, baseUrl: baseUrlValue.trim() }),
       })
       const data = await res.json()
       setTestResult(data)
@@ -139,6 +154,7 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
   const handleConnect = async () => {
     const key = testedKey || keyValue.trim()
     if (!key) return
+    const url = baseUrlValue.trim()
 
     // If not tested yet, test first
     if (!testedKey) {
@@ -148,12 +164,12 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
 
     // Fetch models if we don't have them
     let models = provider.models
-    if (models.length === 0) {
+    if (models.length === 0 && !usesTextInput) {
       try {
         const res = await fetch('/api/llm/test', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ provider: info.id, apiKey: key }),
+          body: JSON.stringify({ provider: info.id, apiKey: key, baseUrl: url }),
         })
         const data = await res.json()
         if (data.ok && data.models) models = data.models
@@ -162,9 +178,10 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
 
     updateProvider(info.id, {
       apiKey: key,
+      baseUrl: url,
       connected: true,
       models,
-      defaultModel: provider.defaultModel || models[0] || '',
+      defaultModel: usesTextInput ? modelInput : (provider.defaultModel || models[0] || ''),
       secondaryModel: provider.secondaryModel || models[1] || '',
     })
     setEditingKey(false)
@@ -175,12 +192,15 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
   const handleDisconnect = () => {
     updateProvider(info.id, {
       apiKey: '',
+      baseUrl: needsBaseUrl ? '' : provider.baseUrl,
       connected: false,
       models: [],
       defaultModel: '',
       secondaryModel: '',
     })
     setKeyValue('')
+    setBaseUrlValue('')
+    setModelInput('')
     setEditingKey(false)
     setTestResult(null)
   }
@@ -207,16 +227,23 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
           className="w-11 h-11 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
           style={{ backgroundColor: `${info.color}10` }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={info.logoUrl}
-            alt={info.name}
-            width={24}
-            height={24}
-            className="opacity-80"
-            style={{ filter: 'brightness(0.5)' }}
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-          />
+          {info.logoUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={info.logoUrl}
+              alt={info.name}
+              width={24}
+              height={24}
+              className="opacity-80"
+              style={{ filter: 'brightness(0.5)' }}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={info.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -260,6 +287,19 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
           {/* API Key Section */}
           {editingKey || !provider.connected ? (
             <div className="space-y-2">
+              {needsBaseUrl && (
+                <div>
+                  <label className="text-[10px] font-medium uppercase tracking-wider block mb-1" style={{ color: 'var(--text-tertiary)' }}>Base URL</label>
+                  <input
+                    type="text"
+                    value={baseUrlValue}
+                    onChange={e => { setBaseUrlValue(e.target.value); setTestedKey(null); setTestResult(null) }}
+                    placeholder="https://api.example.com/v1"
+                    className="w-full px-3 py-2 text-sm rounded-lg outline-none border transition-colors focus:border-[var(--accent)]"
+                    style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+              )}
               <div className="flex gap-2">
                 <input
                   type="password"
@@ -316,43 +356,52 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
                 </div>
               )}
 
-              <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                Get your key at{' '}
-                <a href={info.keyUrl} target="_blank" rel="noopener noreferrer" style={{ color: info.color, textDecoration: 'underline' }}>
-                  {info.keyUrl.replace('https://', '').split('/')[0]}
-                </a>
-              </p>
+              {info.keyUrl && (
+                <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                  Get your key at{' '}
+                  <a href={info.keyUrl} target="_blank" rel="noopener noreferrer" style={{ color: info.color, textDecoration: 'underline' }}>
+                    {info.keyUrl.replace('https://', '').split('/')[0]}
+                  </a>
+                </p>
+              )}
             </div>
           ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setKeyValue(provider.apiKey); setEditingKey(true) }}
-                className="flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-all hover:bg-[var(--bg-secondary)]"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-              >
-                Update API Key
-              </button>
-              <button
-                onClick={handleDisconnect}
-                className="px-3 py-2 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--status-fail-bg)]"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
-              >
-                Disconnect
-              </button>
-              {!isActive && (
-                <button
-                  onClick={() => setActiveProvider(info.id)}
-                  className="px-3 py-2 text-xs font-medium rounded-lg transition-all hover:opacity-90"
-                  style={{ backgroundColor: info.color, color: '#fff' }}
-                >
-                  Set Active
-                </button>
+            <div className="space-y-2">
+              {needsBaseUrl && provider.baseUrl && (
+                <div className="text-[10px] px-3 py-2 rounded-lg border" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}>
+                  <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>Base URL:</span> {provider.baseUrl}
+                </div>
               )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setKeyValue(provider.apiKey); setBaseUrlValue(provider.baseUrl); setEditingKey(true) }}
+                  className="flex-1 px-3 py-2 text-xs font-medium rounded-lg border transition-all hover:bg-[var(--bg-secondary)]"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                >
+                  Update API Key
+                </button>
+                <button
+                  onClick={handleDisconnect}
+                  className="px-3 py-2 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--status-fail-bg)]"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
+                >
+                  Disconnect
+                </button>
+                {!isActive && (
+                  <button
+                    onClick={() => setActiveProvider(info.id)}
+                    className="px-3 py-2 text-xs font-medium rounded-lg transition-all hover:opacity-90"
+                    style={{ backgroundColor: info.color, color: '#fff' }}
+                  >
+                    Set Active
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
           {/* Model Selection */}
-          {provider.connected && provider.models.length > 0 && (
+          {provider.connected && !usesTextInput && provider.models.length > 0 && (
             <div className="pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -391,6 +440,28 @@ function ProviderAccordion({ info, expanded, onToggle }: { info: ProviderInfo; e
                 <div className="mt-2 text-[10px] flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
                   <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: info.color }} />
                   Using {provider.defaultModel}{provider.secondaryModel ? ` (fallback: ${provider.secondaryModel})` : ''}
+                </div>
+              )}
+            </div>
+          )}
+
+          {provider.connected && usesTextInput && (
+            <div className="pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+              <label className="text-[10px] font-medium uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                Model Name
+              </label>
+              <input
+                type="text"
+                value={provider.defaultModel}
+                onChange={e => handleModelChange('defaultModel', e.target.value)}
+                placeholder="e.g. gpt-4o, claude-3-sonnet, llama-3"
+                className="w-full px-3 py-2 text-sm rounded-lg outline-none border transition-colors focus:border-[var(--accent)]"
+                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+              />
+              {isActive && provider.defaultModel && (
+                <div className="mt-2 text-[10px] flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: info.color }} />
+                  Using {provider.defaultModel}
                 </div>
               )}
             </div>

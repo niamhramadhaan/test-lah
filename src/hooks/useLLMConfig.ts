@@ -4,10 +4,11 @@ import { useState, useCallback, useEffect } from 'react'
 
 const STORAGE_KEY = 'qa-llm-config'
 
-export type LLMProviderId = 'gemini' | 'openai' | 'deepseek' | 'mimo'
+export type LLMProviderId = 'gemini' | 'openai' | 'deepseek' | 'openrouter' | 'custom'
 
 export interface LLMProvider {
   apiKey: string
+  baseUrl: string
   defaultModel: string
   secondaryModel: string
   models: string[]
@@ -21,6 +22,7 @@ export interface LLMConfig {
 
 const EMPTY_PROVIDER: LLMProvider = {
   apiKey: '',
+  baseUrl: '',
   defaultModel: '',
   secondaryModel: '',
   models: [],
@@ -33,7 +35,8 @@ const DEFAULT_CONFIG: LLMConfig = {
     gemini: { ...EMPTY_PROVIDER },
     openai: { ...EMPTY_PROVIDER },
     deepseek: { ...EMPTY_PROVIDER },
-    mimo: { ...EMPTY_PROVIDER },
+    openrouter: { ...EMPTY_PROVIDER, baseUrl: 'https://openrouter.ai/api/v1' },
+    custom: { ...EMPTY_PROVIDER },
   },
 }
 
@@ -62,7 +65,8 @@ function readConfig(): LLMConfig {
         gemini: { ...EMPTY_PROVIDER, ...parsed.providers?.gemini },
         openai: { ...EMPTY_PROVIDER, ...parsed.providers?.openai },
         deepseek: { ...EMPTY_PROVIDER, ...parsed.providers?.deepseek },
-        mimo: { ...EMPTY_PROVIDER, ...parsed.providers?.mimo },
+        openrouter: { ...EMPTY_PROVIDER, ...DEFAULT_CONFIG.providers.openrouter, ...parsed.providers?.openrouter },
+        custom: { ...EMPTY_PROVIDER, ...parsed.providers?.custom },
       },
     }
   } catch {

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { createGateway } from 'ai'
 
 const GEMINI_MODELS = [
   'gemini-2.5-flash',
@@ -16,14 +15,9 @@ const DEEPSEEK_MODELS = [
   'deepseek-reasoner',
 ]
 
-const MIMO_MODELS = [
-  'xiaomi/mimo-v2.5-pro',
-  'xiaomi/mimo-v2-pro',
-]
-
 export async function POST(req: NextRequest) {
   try {
-    const { provider, apiKey } = await req.json()
+    const { provider, apiKey, baseUrl } = await req.json()
 
     if (!apiKey) {
       return NextResponse.json({ ok: false, error: 'API key required' }, { status: 400 })
@@ -35,8 +29,10 @@ export async function POST(req: NextRequest) {
       return await testOpenAI(apiKey)
     } else if (provider === 'deepseek') {
       return await testDeepSeek(apiKey)
-    } else if (provider === 'mimo') {
-      return await testMiMo(apiKey)
+    } else if (provider === 'openrouter') {
+      return await testOpenRouter(apiKey)
+    } else if (provider === 'custom') {
+      return await testCustom(apiKey, baseUrl)
     }
 
     return NextResponse.json({ ok: false, error: 'Unknown provider' }, { status: 400 })
@@ -101,20 +97,32 @@ async function testDeepSeek(apiKey: string) {
   }
 }
 
-async function testMiMo(apiKey: string) {
+async function testOpenRouter(apiKey: string) {
   try {
-    const gateway = createGateway({
-      apiKey,
-      baseURL: 'https://ai-gateway.vercel.sh/v1/ai',
-    })
-
-    const available = await gateway.getAvailableModels()
-    const models = available.models
-      .filter(m => m.id.startsWith('xiaomi/'))
+    const openai = new OpenAI({ apiKey, baseURL: 'https://openrouter.ai/api/v1' })
+    const res = await openai.models.list()
+    const models = res.data
       .map(m => m.id)
       .sort()
 
-    return NextResponse.json({ ok: true, models: models.length > 0 ? models : MIMO_MODELS })
+    return NextResponse.json({ ok: true, models: models.length > 0 ? models : ['openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', 'google/gemini-2.5-flash'] })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Connection failed'
+    return NextResponse.json({ ok: false, error: message })
+  }
+}
+
+async function testCustom(apiKey: string, baseUrl: string) {
+  if (!baseUrl) {
+    return NextResponse.json({ ok: false, error: 'Base URL is required for custom provider' }, { status: 400 })
+  }
+
+  try {
+    const openai = new OpenAI({ apiKey, baseURL: baseUrl })
+    const res = await openai.models.list()
+    const models = res.data.map(m => m.id).sort()
+
+    return NextResponse.json({ ok: true, models })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Connection failed'
     return NextResponse.json({ ok: false, error: message })

@@ -11,11 +11,12 @@ export async function generateTestCases(
   provider: string = 'gemini',
   model: string = '',
   language: string = 'en',
+  baseUrl: string = '',
 ): Promise<GeneratedTestCase[]> {
   const res = await fetch('/api/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, prompt, apiKey, provider, model, language }),
+    body: JSON.stringify({ title, prompt, apiKey, provider, model, language, baseUrl }),
   })
 
   if (!res.ok) {

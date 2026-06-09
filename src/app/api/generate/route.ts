@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import OpenAI from 'openai'
-import { generateText, createGateway } from 'ai'
 
 function getSystemPrompt(language: string = 'en'): string {
   const langInstruction = language === 'id'
@@ -26,7 +25,7 @@ Generate 3-8 test cases covering happy path, edge cases, and error scenarios.`
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, prompt, apiKey, provider, model, language } = await req.json()
+    const { title, prompt, apiKey, provider, model, language, baseUrl } = await req.json()
 
     if (!apiKey) {
       return NextResponse.json({ error: 'API key required' }, { status: 400 })
@@ -44,8 +43,10 @@ export async function POST(req: NextRequest) {
       testCases = await generateOpenAI(apiKey, model || 'gpt-4o-mini', systemPrompt, userPrompt)
     } else if (provider === 'deepseek') {
       testCases = await generateDeepSeek(apiKey, model || 'deepseek-chat', systemPrompt, userPrompt)
-    } else if (provider === 'mimo') {
-      testCases = await generateMiMo(apiKey, model || 'xiaomi/mimo-v2.5-pro', systemPrompt, userPrompt)
+    } else if (provider === 'openrouter') {
+      testCases = await generateOpenRouter(apiKey, model || 'openai/gpt-4o-mini', systemPrompt, userPrompt)
+    } else if (provider === 'custom') {
+      testCases = await generateCustom(apiKey, baseUrl, model, systemPrompt, userPrompt)
     } else {
       testCases = await generateGemini(apiKey, model || 'gemini-2.5-flash', systemPrompt, userPrompt)
     }
@@ -108,19 +109,39 @@ async function generateDeepSeek(apiKey: string, modelName: string, systemPrompt:
   return parseTestCases(text)
 }
 
-async function generateMiMo(apiKey: string, modelName: string, systemPrompt: string, userPrompt: string) {
-  const gateway = createGateway({
-    apiKey,
-    baseURL: 'https://ai-gateway.vercel.sh/v1/ai',
-  })
+async function generateOpenRouter(apiKey: string, modelName: string, systemPrompt: string, userPrompt: string) {
+  const openai = new OpenAI({ apiKey, baseURL: 'https://openrouter.ai/api/v1' })
 
-  const { text } = await generateText({
-    model: gateway(modelName),
-    system: systemPrompt,
-    prompt: userPrompt,
+  const result = await openai.chat.completions.create({
+    model: modelName,
     temperature: 0.4,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    response_format: { type: 'json_object' },
   })
 
+  const text = result.choices[0]?.message?.content || '[]'
+  return parseTestCases(text)
+}
+
+async function generateCustom(apiKey: string, baseUrl: string, modelName: string, systemPrompt: string, userPrompt: string) {
+  if (!baseUrl) throw new Error('Base URL is required for custom provider')
+
+  const openai = new OpenAI({ apiKey, baseURL: baseUrl })
+
+  const result = await openai.chat.completions.create({
+    model: modelName,
+    temperature: 0.4,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    response_format: { type: 'json_object' },
+  })
+
+  const text = result.choices[0]?.message?.content || '[]'
   return parseTestCases(text)
 }
 
