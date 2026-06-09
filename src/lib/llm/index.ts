@@ -104,17 +104,29 @@ export async function generateTestCases(
   title: string,
   prompt: string,
   language: string = 'en',
+  images?: string[],
 ): Promise<GeneratedTestCase[]> {
   const model = createModel(config)
 
   const systemPrompt = getSystemPrompt(language)
-  const userPrompt = `Feature: ${title}\n\nDescription / DoD / Acceptance Criteria:\n${prompt || '(no additional description provided)'}`
+  const userText = `Feature: ${title}\n\nDescription / DoD / Acceptance Criteria:\n${prompt || '(no additional description provided)'}${images?.length ? '\n\nThe user has attached screenshot(s) of the UI/feature. Use them as additional context to write more accurate and specific test cases.' : ''}`
+
+  // Build multimodal content if images are present
+  const content: Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = [
+    { type: 'text', text: userText },
+  ]
+
+  if (images?.length) {
+    for (const img of images) {
+      content.push({ type: 'image', image: img })
+    }
+  }
 
   const { output } = await generateText({
     model,
     output: Output.array({ element: TestCaseSchema }),
     system: systemPrompt,
-    prompt: userPrompt,
+    messages: [{ role: 'user', content }],
     temperature: 0.4,
   })
 

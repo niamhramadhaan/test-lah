@@ -13,11 +13,12 @@ export async function generateTestCases(
   model: string = '',
   language: string = 'en',
   baseURL?: string,
+  images?: string[],
 ): Promise<GeneratedTestCase[]> {
   const res = await fetch('/api/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, prompt, apiKey, provider, model, language, baseURL }),
+    body: JSON.stringify({ title, prompt, apiKey, provider, model, language, baseURL, images }),
   })
 
   if (!res.ok) {

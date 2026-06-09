@@ -8,6 +8,8 @@ interface TestCaseRowProps {
   tc: TestCase
   visibleCols: ColumnConfig[]
   expandAll: boolean
+  selected: boolean
+  onToggleSelect: () => void
   onUpdate: (patch: Partial<TestCase>) => void
   onDelete: () => void
   onDragStart: (e: React.DragEvent) => void
@@ -17,7 +19,7 @@ interface TestCaseRowProps {
 
 const STATUS_ORDER: Status[] = ['untested', 'pass', 'fail', 'skip']
 
-export function TestCaseRow({ tc, visibleCols, expandAll, onUpdate, onDelete, onDragStart, onDragOver, onDrop }: TestCaseRowProps) {
+export function TestCaseRow({ tc, visibleCols, expandAll, selected, onToggleSelect, onUpdate, onDelete, onDragStart, onDragOver, onDrop }: TestCaseRowProps) {
   const [editingKey, setEditingKey] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [hovered, setHovered] = useState(false)
@@ -75,6 +77,16 @@ export function TestCaseRow({ tc, visibleCols, expandAll, onUpdate, onDelete, on
         onDragOver={onDragOver}
         onDrop={onDrop}
       >
+        {/* Checkbox */}
+        <td className="px-2 py-1.5 border-b" style={{ borderColor: 'var(--border)', width: 28 }}>
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            className="cursor-pointer accent-[var(--accent)]"
+            style={{ width: 14, height: 14 }}
+          />
+        </td>
         {visibleCols.map(col => (
           <td
             key={col.key}

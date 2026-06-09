@@ -83,6 +83,30 @@ export function useTestCases(
     }))
   }, [project, updateProject])
 
+  const bulkDeleteTestCases = useCallback((nodeId: string, tcIds: string[]) => {
+    if (!project || tcIds.length === 0) return
+    const idSet = new Set(tcIds)
+    updateProject(project.id, p => ({
+      ...p,
+      testCases: {
+        ...p.testCases,
+        [nodeId]: (p.testCases[nodeId] ?? []).filter(tc => !idSet.has(tc.id)),
+      },
+    }))
+  }, [project, updateProject])
+
+  const bulkUpdateTestCases = useCallback((nodeId: string, tcIds: string[], patch: Partial<TestCase>) => {
+    if (!project || tcIds.length === 0) return
+    const idSet = new Set(tcIds)
+    updateProject(project.id, p => ({
+      ...p,
+      testCases: {
+        ...p.testCases,
+        [nodeId]: (p.testCases[nodeId] ?? []).map(tc => idSet.has(tc.id) ? { ...tc, ...patch } : tc),
+      },
+    }))
+  }, [project, updateProject])
+
   const reorderTestCases = useCallback((nodeId: string, newOrder: string[]) => {
     if (!project) return
     updateProject(project.id, p => {
@@ -143,6 +167,8 @@ export function useTestCases(
     addTestCase,
     updateTestCase,
     deleteTestCase,
+    bulkDeleteTestCases,
+    bulkUpdateTestCases,
     reorderTestCases,
     updateColumnConfig,
     toggleColumnVisibility,

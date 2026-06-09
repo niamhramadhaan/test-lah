@@ -5,13 +5,13 @@ import { decrypt } from '@/lib/crypto'
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, prompt, apiKey, provider, model, language, baseURL } = await req.json()
+    const { title, prompt, apiKey, provider, model, language, baseURL, images } = await req.json()
 
     if (!apiKey) {
       return NextResponse.json({ error: 'API key required' }, { status: 400 })
     }
-    if (!title && !prompt) {
-      return NextResponse.json({ error: 'Title or prompt required' }, { status: 400 })
+    if (!title && !prompt && (!images || images.length === 0)) {
+      return NextResponse.json({ error: 'Title, prompt, or image required' }, { status: 400 })
     }
 
     const def = getProviderDef(provider || 'google')
@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
       title,
       prompt,
       language,
+      images,
     )
 
     return NextResponse.json({ testCases })

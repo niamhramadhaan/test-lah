@@ -55,6 +55,8 @@ interface DashboardContextValue {
     addTestCase: (nodeId: string, title: string, steps?: string, expected?: string) => void
     updateTestCase: (nodeId: string, tcId: string, patch: Partial<TestCase>) => void
     deleteTestCase: (nodeId: string, tcId: string) => void
+    bulkDeleteTestCases: (nodeId: string, tcIds: string[]) => void
+    bulkUpdateTestCases: (nodeId: string, tcIds: string[], patch: Partial<TestCase>) => void
     reorderTestCases: (nodeId: string, newOrder: string[]) => void
     updateColumnConfig: (nodeId: string, key: string, label: string) => void
     toggleColumnVisibility: (nodeId: string, key: string) => void

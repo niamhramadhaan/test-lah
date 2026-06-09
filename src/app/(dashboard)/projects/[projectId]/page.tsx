@@ -310,6 +310,8 @@ export default function ProjectDetailPage() {
             onAddTestCase={testCases.addTestCase}
             onUpdateTestCase={testCases.updateTestCase}
             onDeleteTestCase={testCases.deleteTestCase}
+            onBulkDelete={testCases.bulkDeleteTestCases}
+            onBulkUpdate={testCases.bulkUpdateTestCases}
             onReorderTestCases={testCases.reorderTestCases}
             onToggleColumn={testCases.toggleColumnVisibility}
             onRenameColumn={testCases.updateColumnConfig}

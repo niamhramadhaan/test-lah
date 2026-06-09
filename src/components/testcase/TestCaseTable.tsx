@@ -7,13 +7,28 @@ interface TestCaseTableProps {
   testCases: TestCase[]
   columns: ColumnConfig[]
   expandAll: boolean
+  selectedIds: Set<string>
+  onToggleSelect: (tcId: string) => void
+  onToggleSelectAll: () => void
   onUpdate: (tcId: string, patch: Partial<TestCase>) => void
   onDelete: (tcId: string) => void
   onReorder: (newOrder: string[]) => void
 }
 
-export function TestCaseTable({ testCases, columns, expandAll, onUpdate, onDelete, onReorder }: TestCaseTableProps) {
+export function TestCaseTable({
+  testCases,
+  columns,
+  expandAll,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAll,
+  onUpdate,
+  onDelete,
+  onReorder,
+}: TestCaseTableProps) {
   const visibleCols = columns.filter(c => c.visible)
+  const allSelected = testCases.length > 0 && testCases.every(tc => selectedIds.has(tc.id))
+  const someSelected = testCases.some(tc => selectedIds.has(tc.id))
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
     e.dataTransfer.setData('text/plain', id)
@@ -46,6 +61,17 @@ export function TestCaseTable({ testCases, columns, expandAll, onUpdate, onDelet
       <table className="text-xs" style={{ minWidth: '900px', width: '100%' }}>
         <thead className="sticky top-0 z-10" style={{ backgroundColor: 'var(--bg-primary)' }}>
           <tr>
+            {/* Checkbox header */}
+            <th className="px-2 py-1.5 border-b" style={{ borderColor: 'var(--border)', width: 28 }}>
+              <input
+                type="checkbox"
+                checked={allSelected}
+                ref={el => { if (el) el.indeterminate = someSelected && !allSelected }}
+                onChange={onToggleSelectAll}
+                className="cursor-pointer accent-[var(--accent)]"
+                style={{ width: 14, height: 14 }}
+              />
+            </th>
             {visibleCols.map(col => (
               <th
                 key={col.key}
@@ -65,6 +91,8 @@ export function TestCaseTable({ testCases, columns, expandAll, onUpdate, onDelet
               tc={tc}
               visibleCols={visibleCols}
               expandAll={expandAll}
+              selected={selectedIds.has(tc.id)}
+              onToggleSelect={() => onToggleSelect(tc.id)}
               onUpdate={patch => onUpdate(tc.id, patch)}
               onDelete={() => onDelete(tc.id)}
               onDragStart={e => handleDragStart(e, tc.id)}

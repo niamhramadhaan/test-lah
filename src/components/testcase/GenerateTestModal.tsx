@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { FlowNode } from '@/types'
 import { generateTestCases, GeneratedTestCase } from '@/lib/llm'
 import { useLLMConfig } from '@/hooks/useLLMConfig'
@@ -27,6 +27,9 @@ const CAT_FACTS = [
   'Test cases incoming... meow!',
 ]
 
+const MAX_IMAGES = 5
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB per image
+
 export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateTestModalProps) {
   const { isConnected, activeProvider, activeProviderId } = useLLMConfig()
   const [title, setTitle] = useState('')
@@ -35,10 +38,15 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
   const [langOpen, setLangOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [images, setImages] = useState<string[]>([])
 
   const [catUrl, setCatUrl] = useState('')
   const [catFact, setCatFact] = useState(CAT_FACTS[0])
   const [catIndex, setCatIndex] = useState(0)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const dropZoneRef = useRef<HTMLDivElement>(null)
+  const [dragOver, setDragOver] = useState(false)
 
   const refreshCat = useCallback(async () => {
     try {
@@ -59,6 +67,7 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
       setPrompt('')
       setError(null)
       setLoading(false)
+      setImages([])
       setCatUrl('')
       setCatIndex(0)
     }
@@ -74,13 +83,122 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
     return () => clearInterval(interval)
   }, [loading, refreshCat])
 
+  // -----------------------------------------------------------------------
+  // Image helpers
+  // -----------------------------------------------------------------------
+
+  const fileToDataUri = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      if (!file.type.startsWith('image/')) {
+        reject(new Error('Not an image file'))
+        return
+      }
+      if (file.size > MAX_IMAGE_SIZE) {
+        reject(new Error(`Image too large (max ${MAX_IMAGE_SIZE / 1024 / 1024}MB)`))
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.readAsDataURL(file)
+    })
+
+  const addImages = useCallback(async (files: FileList | File[]) => {
+    const remaining = MAX_IMAGES - images.length
+    if (remaining <= 0) {
+      setError(`Maximum ${MAX_IMAGES} images allowed`)
+      return
+    }
+
+    const toAdd = Array.from(files).slice(0, remaining)
+    const dataUris: string[] = []
+
+    for (const file of toAdd) {
+      try {
+        const uri = await fileToDataUri(file)
+        dataUris.push(uri)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load image')
+      }
+    }
+
+    if (dataUris.length > 0) {
+      setImages(prev => [...prev, ...dataUris])
+      setError(null)
+    }
+  }, [images.length])
+
+  const removeImage = useCallback((index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index))
+  }, [])
+
+  // Clipboard paste
+  useEffect(() => {
+    if (!open) return
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      const imageFiles: File[] = []
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile()
+          if (file) imageFiles.push(file)
+        }
+      }
+
+      if (imageFiles.length > 0) {
+        e.preventDefault()
+        addImages(imageFiles)
+      }
+    }
+
+    document.addEventListener('paste', handlePaste)
+    return () => document.removeEventListener('paste', handlePaste)
+  }, [open, addImages])
+
+  // Drag & drop
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(false)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(false)
+
+    if (e.dataTransfer.files.length > 0) {
+      addImages(e.dataTransfer.files)
+    }
+  }, [addImages])
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      addImages(e.target.files)
+      e.target.value = '' // reset so same file can be selected again
+    }
+  }, [addImages])
+
+  // -----------------------------------------------------------------------
+  // Generate
+  // -----------------------------------------------------------------------
+
   const handleGenerate = async () => {
     if (!isConnected) {
       setError('Please configure an AI provider in Integrations first.')
       return
     }
-    if (!prompt.trim()) {
-      setError('Please describe the feature or paste a ticket description.')
+    if (!prompt.trim() && images.length === 0) {
+      setError('Please describe the feature, paste a ticket, or attach an image.')
       return
     }
 
@@ -88,7 +206,16 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
     setError(null)
 
     try {
-      const cases = await generateTestCases(title, prompt, activeProvider!.apiKey, activeProviderId ?? undefined, activeProvider!.defaultModel, language, activeProvider!.baseURL || undefined)
+      const cases = await generateTestCases(
+        title,
+        prompt,
+        activeProvider!.apiKey,
+        activeProviderId ?? undefined,
+        activeProvider!.defaultModel,
+        language,
+        activeProvider!.baseURL || undefined,
+        images.length > 0 ? images : undefined,
+      )
       onGenerate(cases)
       onClose()
     } catch (err: unknown) {
@@ -182,6 +309,80 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Image attachments */}
+            <div>
+              <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                Screenshots <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}>(optional)</span>
+              </label>
+
+              {/* Image previews */}
+              {images.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {images.map((img, i) => (
+                    <div
+                      key={i}
+                      className="relative group rounded-lg overflow-hidden border"
+                      style={{ borderColor: 'var(--border)', width: 72, height: 72 }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img}
+                        alt={`Screenshot ${i + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        onClick={() => removeImage(i)}
+                        className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: '#fff' }}
+                        title="Remove"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Drop zone / upload area */}
+              <div
+                ref={dropZoneRef}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-lg border-2 border-dashed cursor-pointer transition-colors"
+                style={{
+                  borderColor: dragOver ? 'var(--accent)' : 'var(--border)',
+                  backgroundColor: dragOver ? 'var(--accent)' + '08' : 'transparent',
+                  padding: images.length > 0 ? '8px' : '16px',
+                }}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+                    {images.length > 0
+                      ? `Add more (${images.length}/${MAX_IMAGES}) · paste, drop, or click`
+                      : 'Paste from clipboard, drop, or click to upload'}
+                  </span>
+                </div>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleFileSelect}
+              />
             </div>
 
             {/* Error */}

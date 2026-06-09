@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FlowNode, TestCase, ColumnConfig, DEFAULT_COLUMNS } from '@/types'
+import { FlowNode, TestCase, ColumnConfig, DEFAULT_COLUMNS, Status } from '@/types'
 import { TestStats } from '@/hooks/useTestCases'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ProgressBar } from '@/components/shared/ProgressBar'
@@ -28,6 +28,8 @@ interface TestCasePanelProps {
   onAddTestCase: (nodeId: string, title: string, steps?: string, expected?: string) => void
   onUpdateTestCase: (nodeId: string, tcId: string, patch: Partial<TestCase>) => void
   onDeleteTestCase: (nodeId: string, tcId: string) => void
+  onBulkDelete: (nodeId: string, tcIds: string[]) => void
+  onBulkUpdate: (nodeId: string, tcIds: string[], patch: Partial<TestCase>) => void
   onReorderTestCases: (nodeId: string, newOrder: string[]) => void
   onToggleColumn: (nodeId: string, key: string) => void
   onRenameColumn: (nodeId: string, key: string, label: string) => void
@@ -47,6 +49,8 @@ export function TestCasePanel({
   onAddTestCase,
   onUpdateTestCase,
   onDeleteTestCase,
+  onBulkDelete,
+  onBulkUpdate,
   onReorderTestCases,
   onToggleColumn,
   onRenameColumn,
@@ -63,6 +67,7 @@ export function TestCasePanel({
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [expandAll, setExpandAll] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [addingColumn, setAddingColumn] = useState(false)
   const [newColName, setNewColName] = useState('')
   const newColInputRef = useRef<HTMLInputElement>(null)
@@ -70,6 +75,47 @@ export function TestCasePanel({
 
   const visibleColumns = fullscreen ? columns : columns.filter(c => c.key !== 'code')
   const defaultKeys = DEFAULT_COLUMNS.map(c => c.key)
+
+  // Clear selection when node changes
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [selectedNode?.id])
+
+  // Selection helpers
+  const toggleSelect = useCallback((tcId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(tcId)) next.delete(tcId)
+      else next.add(tcId)
+      return next
+    })
+  }, [])
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedIds.size === testCases.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(testCases.map(tc => tc.id)))
+    }
+  }, [selectedIds.size, testCases])
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), [])
+
+  const handleBulkDelete = useCallback(async () => {
+    if (!selectedNode || selectedIds.size === 0) return
+    if (confirmDialog) {
+      const ok = await confirmDialog('Delete Test Cases', `Delete ${selectedIds.size} selected test case(s)?`)
+      if (!ok) return
+    }
+    onBulkDelete(selectedNode.id, Array.from(selectedIds))
+    setSelectedIds(new Set())
+  }, [selectedNode, selectedIds, onBulkDelete, confirmDialog])
+
+  const handleBulkStatus = useCallback((status: Status) => {
+    if (!selectedNode || selectedIds.size === 0) return
+    onBulkUpdate(selectedNode.id, Array.from(selectedIds), { status })
+    setSelectedIds(new Set())
+  }, [selectedNode, selectedIds, onBulkUpdate])
 
   // Focus new column input
   useEffect(() => {
@@ -136,6 +182,57 @@ export function TestCasePanel({
         />
       </div>
 
+      {/* Bulk action bar — appears when rows are selected */}
+      {selectedIds.size > 0 && (
+        <div
+          className="mx-4 mb-2 px-3 py-2 rounded-lg border flex items-center gap-3"
+          style={{
+            borderColor: 'var(--accent)',
+            backgroundColor: 'var(--accent)',
+            animation: 'fadeInUp 150ms ease-out',
+          }}
+        >
+          <span className="text-xs font-medium text-white">
+            {selectedIds.size} selected
+          </span>
+
+          <div className="flex-1" />
+
+          {/* Bulk status buttons */}
+          {(['pass', 'fail', 'skip', 'untested'] as const).map(status => (
+            <button
+              key={status}
+              onClick={() => handleBulkStatus(status)}
+              className="px-2 py-1 text-[10px] font-medium rounded-md transition-colors hover:bg-white/20"
+              style={{ color: '#fff' }}
+            >
+              Mark {status.charAt(0).toUpperCase() + status.slice(1)}
+            </button>
+          ))}
+
+          <div className="w-px h-4 bg-white/30" />
+
+          {/* Bulk delete */}
+          <button
+            onClick={handleBulkDelete}
+            className="px-2 py-1 text-[10px] font-medium rounded-md transition-colors hover:bg-white/20"
+            style={{ color: '#fff' }}
+          >
+            Delete
+          </button>
+
+          {/* Clear selection */}
+          <button
+            onClick={clearSelection}
+            className="px-1.5 py-1 text-[10px] font-medium rounded-md transition-colors hover:bg-white/20"
+            style={{ color: '#fff' }}
+            title="Clear selection"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Test case table */}
       <div className="flex-1 min-h-0 overflow-auto px-2">
         {testCases.length === 0 ? (
@@ -145,6 +242,9 @@ export function TestCasePanel({
             testCases={testCases}
             columns={visibleColumns}
             expandAll={expandAll}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={toggleSelectAll}
             onUpdate={(tcId, patch) => onUpdateTestCase(selectedNode.id, tcId, patch)}
             onDelete={tcId => onDeleteTestCase(selectedNode.id, tcId)}
             onReorder={newOrder => onReorderTestCases(selectedNode.id, newOrder)}
