@@ -28,6 +28,7 @@ export function E2ETestRunner({
   const [headless, setHeadless] = useState(true)
   const [timeout, setTimeout] = useState(30000)
   const [isRunning, setIsRunning] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const [results, setResults] = useState<E2ETestResult[]>([])
   const [currentTest, setCurrentTest] = useState<{ index: number; title: string } | null>(null)
   const [logs, setLogs] = useState<LogEntry[]>([])
@@ -96,6 +97,10 @@ export function E2ETestRunner({
     setLogs([])
     setHealingReport('')
     setShowHealingReport(false)
+    
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+    
     addLog('info', `Starting E2E test run with ${testsToRun.length} test(s)...`)
     addLog('info', `Target: ${baseUrl}`)
     addLog('info', `Browser: ${browser} | Headless: ${headless}`)
@@ -112,6 +117,7 @@ export function E2ETestRunner({
           timeout,
           llmConfig,
         }),
+        signal: abortController.signal,
       })
 
       if (!response.ok) {
@@ -212,6 +218,9 @@ export function E2ETestRunner({
                     const failCount = data.results.filter((r: E2ETestResult) => r.status === 'fail' || r.status === 'error').length
                     addLog('success', `Test run complete: ${passCount} passed, ${failCount} failed`)
                     break
+                  case 'aborted':
+                    addLog('warning', '\n━━━ Test run stopped by user ━━━')
+                    break
                 }
               } catch (e) {
                 // Ignore parse errors
@@ -221,12 +230,24 @@ export function E2ETestRunner({
         }
       }
     } catch (error) {
-      addLog('error', `Error: ${error instanceof Error ? error.message : String(error)}`)
+      if (error instanceof Error && error.name === 'AbortError') {
+        addLog('warning', '\n━━━ Test run stopped by user ━━━')
+      } else {
+        addLog('error', `Error: ${error instanceof Error ? error.message : String(error)}`)
+      }
     }
 
     setIsRunning(false)
     setCurrentTest(null)
+    abortControllerRef.current = null
   }, [testCases, selectedTests, baseUrl, browser, headless, timeout, addLog, onUpdateTestCase])
+
+  const stopTests = useCallback(() => {
+    if (abortControllerRef.current) {
+      addLog('warning', 'Stopping test run...')
+      abortControllerRef.current.abort()
+    }
+  }, [addLog])
 
   const getLogColor = (type: LogEntry['type']) => {
     switch (type) {
@@ -515,24 +536,30 @@ export function E2ETestRunner({
               Close
             </button>
             
-            <button
-              onClick={runTests}
-              disabled={isRunning || selectedTests.size === 0}
-              className="px-4 py-2 text-sm rounded disabled:opacity-50 flex items-center gap-2"
-              style={{ 
-                backgroundColor: 'var(--accent)',
-                color: 'white'
-              }}
-            >
-              {isRunning ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Running...
-                </>
-              ) : (
-                'Run Tests'
-              )}
-            </button>
+            {isRunning ? (
+              <button
+                onClick={stopTests}
+                className="px-4 py-2 text-sm rounded flex items-center gap-2"
+                style={{ 
+                  backgroundColor: '#ef4444',
+                  color: 'white'
+                }}
+              >
+                ■ Stop
+              </button>
+            ) : (
+              <button
+                onClick={runTests}
+                disabled={selectedTests.size === 0}
+                className="px-4 py-2 text-sm rounded disabled:opacity-50 flex items-center gap-2"
+                style={{ 
+                  backgroundColor: 'var(--accent)',
+                  color: 'white'
+                }}
+              >
+                Run Tests
+              </button>
+            )}
           </div>
         </div>
       </div>

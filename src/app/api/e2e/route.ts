@@ -14,6 +14,7 @@ interface AIAction {
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
+  const signal = request.signal
   const { testCases, baseUrl, browser, headless, timeout, llmConfig } = body as {
     testCases: TestCase[]
     baseUrl: string
@@ -54,9 +55,21 @@ export async function POST(request: NextRequest) {
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
     async start(controller) {
+      let aborted = false
+      
       const sendEvent = (data: any) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+        if (aborted) return
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+        } catch {}
       }
+      
+      // Listen for abort signal
+      signal.addEventListener('abort', () => {
+        aborted = true
+        sendEvent({ type: 'aborted', message: 'Test run stopped by user' })
+        try { controller.close() } catch {}
+      })
 
       try {
         sendEvent({ type: 'status', message: 'Initializing browser...' })
@@ -82,6 +95,9 @@ export async function POST(request: NextRequest) {
         const results: E2ETestResult[] = []
 
         for (let i = 0; i < testCases.length; i++) {
+          // Check if aborted
+          if (aborted || signal.aborted) break
+          
           const testCase = testCases[i]
           const startTime = Date.now()
           
@@ -121,6 +137,9 @@ export async function POST(request: NextRequest) {
             const steps = testCase.steps.split('\n').filter(s => s.trim())
             
             for (let stepIdx = 0; stepIdx < steps.length; stepIdx++) {
+              // Check if aborted
+              if (aborted || signal.aborted) break
+              
               const rawStep = steps[stepIdx]
               const step = rawStep.replace(/^\d+[\.\)]\s*/, '').trim()
               if (!step) continue
