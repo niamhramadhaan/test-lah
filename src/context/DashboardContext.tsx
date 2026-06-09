@@ -6,8 +6,9 @@ import { useProfile } from '@/hooks/useProfile'
 import { useUndoRedo } from '@/hooks/useUndoRedo'
 import { useMindmap } from '@/hooks/useMindmap'
 import { useTestCases } from '@/hooks/useTestCases'
+import { useE2E } from '@/hooks/useE2E'
 import { useDialog } from '@/components/shared/Dialog'
-import type { Project, UserProfile, FlowNode, TestCase, ConditionalEdge, ColumnConfig } from '@/types'
+import type { Project, UserProfile, FlowNode, TestCase, ConditionalEdge, ColumnConfig, E2EProjectData, E2ERun, E2ESavedScript, E2ERunConfig } from '@/types'
 import type { TestStats } from '@/hooks/useTestCases'
 
 interface DashboardContextValue {
@@ -65,6 +66,18 @@ interface DashboardContextValue {
     deleteColumn: (nodeId: string, key: string) => void
     reorderColumn: (nodeId: string, key: string, direction: 'up' | 'down') => void
   }
+  e2e: {
+    config: E2ERunConfig
+    runs: E2ERun[]
+    savedScripts: E2ESavedScript[]
+    saveConfig: (config: Partial<E2ERunConfig>) => void
+    saveRun: (run: Omit<E2ERun, 'id' | 'timestamp'>) => E2ERun
+    deleteRun: (runId: string) => void
+    clearRuns: () => void
+    saveScript: (testCaseId: string, title: string, code: string, script: string) => void
+    deleteScript: (testCaseId: string) => void
+    getScript: (testCaseId: string) => E2ESavedScript | undefined
+  }
   dialog: ReturnType<typeof useDialog>['dialog']
   alertDialog: (title: string, message: string) => Promise<void>
   confirmDialog: (title: string, message: string) => Promise<boolean>
@@ -80,6 +93,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const undoRedo = useUndoRedo(project.activeProject, project.updateProject)
   const mindmapHook = useMindmap(project.activeProject, project.updateProject, project.selectedNodeId, project.setSelectedNodeId)
   const testCasesHook = useTestCases(project.activeProject, project.updateProject, project.selectedNodeId)
+  const e2eHook = useE2E(project.activeProject, project.updateProject)
   const dialogs = useDialog()
 
   const value = useMemo<DashboardContextValue>(() => ({
@@ -108,12 +122,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     pushState: undoRedo.pushState,
     mindmap: mindmapHook,
     testCases: testCasesHook,
+    e2e: e2eHook,
     dialog: dialogs.dialog,
     alertDialog: dialogs.alert,
     confirmDialog: dialogs.confirm,
     promptDialog: dialogs.prompt,
     lastSaved: project.lastSaved,
-  }), [project, profileHook, undoRedo, mindmapHook, testCasesHook, dialogs])
+  }), [project, profileHook, undoRedo, mindmapHook, testCasesHook, e2eHook, dialogs])
 
   return (
     <DashboardContext.Provider value={value}>

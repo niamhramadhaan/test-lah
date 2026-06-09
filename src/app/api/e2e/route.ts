@@ -15,7 +15,7 @@ interface AIAction {
 export async function POST(request: NextRequest) {
   const body = await request.json()
   const signal = request.signal
-  const { testCases, baseUrl, browser, headless, timeout, llmConfig } = body as {
+  const { testCases, baseUrl, browser, headless, timeout, llmConfig, generateOnly } = body as {
     testCases: TestCase[]
     baseUrl: string
     browser?: 'chromium' | 'firefox' | 'webkit' | 'edge'
@@ -27,14 +27,11 @@ export async function POST(request: NextRequest) {
       apiKey: string
       baseURL?: string
     }
+    generateOnly?: boolean
   }
 
   if (!testCases?.length) {
     return new Response(JSON.stringify({ error: 'No test cases provided' }), { status: 400 })
-  }
-
-  if (!baseUrl) {
-    return new Response(JSON.stringify({ error: 'Base URL is required' }), { status: 400 })
   }
 
   if (!llmConfig?.apiKey) {
@@ -43,6 +40,19 @@ export async function POST(request: NextRequest) {
 
   const decryptedApiKey = await decrypt(llmConfig.apiKey)
   const decryptedConfig = { ...llmConfig, apiKey: decryptedApiKey }
+
+  // Generate-only mode: just return generated scripts without executing
+  if (generateOnly) {
+    const scripts: Record<string, string> = {}
+    for (const tc of testCases) {
+      scripts[tc.id] = generatePlaywrightScript(tc, baseUrl || 'http://localhost:3000')
+    }
+    return Response.json({ scripts })
+  }
+
+  if (!baseUrl) {
+    return new Response(JSON.stringify({ error: 'Base URL is required' }), { status: 400 })
+  }
 
   const runConfig: E2ERunConfig = {
     baseUrl,
@@ -86,6 +96,7 @@ export async function POST(request: NextRequest) {
         sendEvent({ type: 'status', message: `Launching ${browserType} browser...` })
         const browserInstance = await browserEngine.launch(launchOptions)
         const context = await browserInstance.newContext({
+          viewport: { width: 1280, height: 720 },
           userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         })
         
@@ -99,13 +110,17 @@ export async function POST(request: NextRequest) {
           const testCase = testCases[i]
           const startTime = Date.now()
           
+          // Generate the test script
+          const script = generatePlaywrightScript(testCase, runConfig.baseUrl)
+          
           sendEvent({ 
             type: 'testStart', 
             index: i + 1,
             total: testCases.length,
             testCaseId: testCase.id,
             title: testCase.title,
-            code: testCase.code
+            code: testCase.code,
+            script
           })
 
           const result: E2ETestResult = {
@@ -117,6 +132,19 @@ export async function POST(request: NextRequest) {
 
           const page = await context.newPage()
 
+          // Set up screenshot capture at key moments
+          const captureScreenshot = async (label: string) => {
+            try {
+              const screenshot = await page.screenshot({ type: 'jpeg', quality: 60 })
+              sendEvent({ 
+                type: 'screenshot', 
+                image: screenshot.toString('base64'),
+                label,
+                testCaseId: testCase.id
+              })
+            } catch {}
+          }
+
           try {
             sendEvent({ type: 'step', message: `Navigating to ${runConfig.baseUrl}...` })
             await page.goto(runConfig.baseUrl, { 
@@ -125,6 +153,9 @@ export async function POST(request: NextRequest) {
             })
             sendEvent({ type: 'step', message: 'Page loaded successfully' })
             await page.waitForTimeout(1000)
+            
+            // Capture initial page screenshot
+            await captureScreenshot('Page loaded')
 
             const pageContext = await getPageContext(page)
             const steps = testCase.steps.split('\n').filter(s => s.trim())
@@ -163,17 +194,27 @@ export async function POST(request: NextRequest) {
                 } else {
                   sendEvent({ 
                     type: 'aiAction', 
-                    message: `AI suggests: ${action.action} on "${action.selector}"${action.value ? ` with value "${action.value}"` : ''}` 
+                    message: `AI suggests: ${action.action} on "${action.selector}"${action.value ? ` with value "${action.value}"` : ''}`,
+                    action
                   })
+                  
                   await executePlaywrightAction(page, action, step, runConfig.timeout ?? 10000)
+                  
+                  // Capture screenshot after action
+                  await captureScreenshot(`After: ${step.substring(0, 40)}`)
+                  
                   sendEvent({ type: 'stepResult', status: 'pass', message: 'Step completed' })
                   stepResult.status = 'pass'
                 }
               } catch (stepError) {
+                // Capture failure screenshot
+                await captureScreenshot(`Failed: ${step.substring(0, 40)}`)
+                
                 sendEvent({ type: 'healing', message: 'Step failed. Attempting to heal...' })
                 const healed = await attemptHealing(page, decryptedConfig, step, stepError as Error, pageContext, sendEvent)
                 
                 if (healed) {
+                  await captureScreenshot(`Healed: ${step.substring(0, 40)}`)
                   sendEvent({ type: 'healed', message: 'Step healed successfully!' })
                   stepResult.status = 'pass'
                 } else {
@@ -245,7 +286,8 @@ export async function POST(request: NextRequest) {
             testCaseId: testCase.id,
             status: result.status,
             duration: result.duration,
-            result
+            result,
+            script
           })
         }
 
@@ -268,6 +310,34 @@ export async function POST(request: NextRequest) {
       'Connection': 'keep-alive',
     },
   })
+}
+
+// Generate Playwright test script from test case
+function generatePlaywrightScript(testCase: TestCase, baseUrl: string): string {
+  const steps = testCase.steps.split('\n').filter(s => s.trim())
+  const stepLines = steps.map((step, i) => {
+    const clean = step.replace(/^\d+[\.\)]\s*/, '').trim()
+    if (isAssumptionStep(clean)) {
+      return `    // Precondition: ${clean}`
+    }
+    return `    // Step ${i + 1}: ${clean}
+    // TODO: Implement with proper selectors`
+  }).join('\n')
+
+  return `import { test, expect } from '@playwright/test';
+
+test.describe('${testCase.code}: ${testCase.title.replace(/'/g, "\\'")}', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('${baseUrl}');
+  });
+
+  test('should execute test case', async ({ page }) => {
+${stepLines}
+
+    // Expected: ${testCase.expected || 'Verify expected result'}
+    // TODO: Add assertion
+  });
+});`
 }
 
 function isAssumptionStep(step: string): boolean {
@@ -305,20 +375,16 @@ async function getPageContext(page: any): Promise<any> {
   })
 }
 
-// Helper to clean AI JSON responses
 function parseAIJson(text: string): any {
   let clean = text.trim()
-  // Remove markdown code blocks
   if (clean.startsWith('```')) {
     clean = clean.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '')
   }
-  // Find JSON object
   const match = clean.match(/\{[^{}]*\}/)
   if (!match) throw new Error('No JSON found')
   return JSON.parse(match[0])
 }
 
-// Determine step type for better AI prompting
 function classifyStep(step: string): string {
   if (/navigate|go to|open|visit|browse to/i.test(step)) return 'navigate'
   if (/verify|check|assert|confirm|ensure|presence|visible|display|should be|should show/i.test(step)) return 'verify'
@@ -352,7 +418,6 @@ async function getAIAction(
 
   const stepType = classifyStep(step)
   
-  // Build element list with indices for reference
   const elements = pageContext.visibleElements?.slice(0, 40) || []
   const elementsList = elements.map((el: any, i: number) => {
     const attrs = []
@@ -412,7 +477,6 @@ Reply with ONLY this JSON (no markdown):
 
     const parsed = parseAIJson(text)
     
-    // Fix empty selectors
     if (!parsed.selector || parsed.selector === '') {
       if (stepType === 'navigate') {
         const urlMatch = step.match(/https?:\/\/[^\s]+/)
@@ -427,7 +491,6 @@ Reply with ONLY this JSON (no markdown):
       }
     }
     
-    // Ensure action is valid
     const validActions = ['click', 'fill', 'navigate', 'wait', 'assert', 'select', 'check', 'press', 'hover', 'scroll', 'skip']
     if (!validActions.includes(parsed.action)) {
       parsed.action = stepType === 'verify' ? 'assert' : 'wait'
@@ -440,7 +503,6 @@ Reply with ONLY this JSON (no markdown):
       return getAIAction(config, step, url, title, pageContext, retryCount + 1)
     }
     
-    // Fallback: return sensible default based on step type
     if (stepType === 'navigate') {
       const urlMatch = step.match(/https?:\/\/[^\s]+/)
       return { action: 'navigate', selector: urlMatch ? urlMatch[0] : url, value: url, description: step, skip: false }
@@ -589,7 +651,6 @@ function generateHealingReport(testCases: TestCase[], results: E2ETestResult[]):
 async function executePlaywrightAction(page: any, action: AIAction, step: string, timeout: number) {
   const maxRetries = 2
   
-  // Pre-validate navigate actions
   if (action.action === 'navigate') {
     const url = action.value || action.selector
     if (!url || !url.startsWith('http')) return

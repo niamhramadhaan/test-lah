@@ -65,6 +65,7 @@ export interface Project {
   userProfile: UserProfile
   nodeCounter: number
   tcCounter: Record<string, number>
+  e2eData?: E2EProjectData
 }
 
 export interface AppState {
@@ -85,6 +86,67 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
 ]
 
 export const CASE_TYPES: CaseType[] = ['General', 'Positive', 'Negative']
+
+// E2E Test Runner Types
+export interface E2ERunConfig {
+  baseUrl: string
+  browser: 'chromium' | 'firefox' | 'webkit' | 'edge'
+  headless: boolean
+  timeout: number
+}
+
+export interface E2EStepResult {
+  step: string
+  status: 'pass' | 'fail' | 'skip'
+  error?: string
+  screenshot?: string
+  aiAction?: {
+    action: string
+    selector: string
+    value?: string
+    description: string
+  }
+}
+
+export interface E2ETestResult {
+  testCaseId: string
+  testCaseTitle: string
+  testCaseCode: string
+  status: 'pass' | 'fail' | 'skip' | 'error'
+  error?: string
+  screenshot?: string
+  duration: number
+  steps: E2EStepResult[]
+  aiAnalysis?: string
+}
+
+export interface E2ERun {
+  id: string
+  projectId: string
+  timestamp: string
+  config: E2ERunConfig
+  results: E2ETestResult[]
+  totalPassed: number
+  totalFailed: number
+  totalDuration: number
+  healingReport?: string
+}
+
+export interface E2ESavedScript {
+  id: string
+  projectId: string
+  testCaseId: string
+  title: string
+  code: string
+  script: string
+  updatedAt: string
+}
+
+export interface E2EProjectData {
+  config: E2ERunConfig
+  runs: E2ERun[]
+  savedScripts: E2ESavedScript[]
+}
 
 export const AVATAR_COLORS = [
   '#E57373', '#F06292', '#BA68C8', '#9575CD',
