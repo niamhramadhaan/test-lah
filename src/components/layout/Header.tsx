@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Project, UserProfile } from '@/types'
-import { downloadMarkdown, downloadJSON } from '@/lib/export'
+import { downloadMarkdown, downloadJSON, downloadCSV, downloadXLSX } from '@/lib/export'
 import { Modal } from '@/components/shared/Modal'
 import { ProfileDropdown } from './ProfileDropdown'
 
@@ -351,6 +351,24 @@ export function Header({
             <span className="font-medium" style={{ color: 'var(--text-primary)' }}>JSON (.json)</span>
             <br />
             <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Full data backup</span>
+          </button>
+          <button
+            onClick={() => { if (activeProject) downloadCSV(activeProject); setExportOpen(false) }}
+            className="w-full text-left px-4 py-3 text-sm rounded-md border transition-colors hover:border-[var(--border-hover)]"
+            style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)' }}
+          >
+            <span className="font-medium" style={{ color: 'var(--text-primary)' }}>CSV (.csv)</span>
+            <br />
+            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Spreadsheet-compatible format</span>
+          </button>
+          <button
+            onClick={async () => { if (activeProject) await downloadXLSX(activeProject); setExportOpen(false) }}
+            className="w-full text-left px-4 py-3 text-sm rounded-md border transition-colors hover:border-[var(--border-hover)]"
+            style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)' }}
+          >
+            <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Excel (.xlsx)</span>
+            <br />
+            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Styled spreadsheet for reporting</span>
           </button>
         </div>
       </Modal>

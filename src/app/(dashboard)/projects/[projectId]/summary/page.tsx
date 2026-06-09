@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useDashboard } from '@/context/DashboardContext'
-import { downloadMarkdown, downloadJSON } from '@/lib/export'
+import { downloadMarkdown, downloadJSON, downloadCSV, downloadXLSX } from '@/lib/export'
 
 export default function SummaryPage() {
   const params = useParams()
@@ -189,6 +189,24 @@ function ExportModal({ open, onClose, project }: { open: boolean; onClose: () =>
             <span className="font-medium" style={{ color: 'var(--text-primary)' }}>JSON (.json)</span>
             <br />
             <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Full data backup</span>
+          </button>
+          <button
+            onClick={() => { downloadCSV(project); onClose() }}
+            className="w-full text-left px-4 py-3 text-sm rounded-lg border transition-colors hover:border-[var(--border-hover)]"
+            style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)' }}
+          >
+            <span className="font-medium" style={{ color: 'var(--text-primary)' }}>CSV (.csv)</span>
+            <br />
+            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Spreadsheet-compatible format</span>
+          </button>
+          <button
+            onClick={async () => { await downloadXLSX(project); onClose() }}
+            className="w-full text-left px-4 py-3 text-sm rounded-lg border transition-colors hover:border-[var(--border-hover)]"
+            style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)' }}
+          >
+            <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Excel (.xlsx)</span>
+            <br />
+            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Styled spreadsheet for reporting</span>
           </button>
         </div>
         <button

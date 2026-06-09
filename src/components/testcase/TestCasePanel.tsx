@@ -408,6 +408,7 @@ export function TestCasePanel({
         onClose={() => setExportOpen(false)}
         node={selectedNode}
         testCases={testCases}
+        columns={columns}
       />
       <GenerateTestModal
         open={generateOpen}
