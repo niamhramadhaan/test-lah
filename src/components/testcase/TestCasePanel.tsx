@@ -32,6 +32,7 @@ interface TestCasePanelProps {
   onBulkDelete: (nodeId: string, tcIds: string[]) => void
   onBulkUpdate: (nodeId: string, tcIds: string[], patch: Partial<TestCase>) => void
   onReorderTestCases: (nodeId: string, newOrder: string[]) => void
+  onReorderColumn?: (nodeId: string, key: string, direction: 'up' | 'down') => void
   onToggleColumn: (nodeId: string, key: string) => void
   onRenameColumn: (nodeId: string, key: string, label: string) => void
   onUpdateNode: (id: string, patch: Partial<FlowNode>) => void
@@ -53,6 +54,7 @@ export function TestCasePanel({
   onBulkDelete,
   onBulkUpdate,
   onReorderTestCases,
+  onReorderColumn,
   onToggleColumn,
   onRenameColumn,
   onUpdateNode,

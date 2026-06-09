@@ -318,6 +318,7 @@ export default function ProjectDetailPage() {
             onUpdateNode={mindmap.updateNode}
             onAddColumn={testCases.addColumn}
             onDeleteColumn={testCases.deleteColumn}
+            onReorderColumn={testCases.reorderColumn}
             confirmDialog={confirmDialog}
           />
         </div>

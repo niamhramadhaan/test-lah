@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { TestCase, Status, ColumnConfig } from '@/types'
+import { TestCase, Status, ColumnConfig, CASE_TYPES, type CaseType } from '@/types'
 import { StatusPill } from './StatusPill'
 
 interface TestCaseRowProps {
@@ -97,6 +97,11 @@ export function TestCaseRow({ tc, visibleCols, expandAll, selected, onToggleSele
               <StatusPill status={tc.status} onCycle={cycleStatus} />
             ) : col.key === 'code' ? (
               <span className="font-mono text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{tc.code || '—'}</span>
+            ) : col.key === 'case_type' ? (
+              <CaseTypePill
+                value={tc.case_type || 'General'}
+                onChange={val => onUpdate({ case_type: val })}
+              />
             ) : editingKey === col.key ? (
               col.key === 'steps' ? (
                 <textarea
@@ -124,16 +129,26 @@ export function TestCaseRow({ tc, visibleCols, expandAll, selected, onToggleSele
               col.key === 'links' ? (
                 <div className="flex items-center gap-1">
                   {tc.links ? (
-                    <a
-                      href={tc.links}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[11px] underline hover:opacity-80 transition-opacity"
-                      style={{ color: 'var(--accent)' }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Open Link
-                    </a>
+                    <>
+                      <a
+                        href={tc.links}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] underline hover:opacity-80 transition-opacity"
+                        style={{ color: 'var(--accent)' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Open Link
+                      </a>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onUpdate({ links: '' }) }}
+                        className="text-[10px] opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity px-0.5"
+                        style={{ color: 'var(--status-fail-text)' }}
+                        title="Clear link"
+                      >
+                        ×
+                      </button>
+                    </>
                   ) : (
                     <span
                       className="cursor-text block text-[11px]"
@@ -186,5 +201,27 @@ export function TestCaseRow({ tc, visibleCols, expandAll, selected, onToggleSele
         </td>
       </tr>
     </>
+  )
+}
+
+const CASE_TYPE_STYLES: Record<string, { bg: string; text: string }> = {
+  Positive: { bg: 'var(--status-pass-bg)', text: 'var(--status-pass-text)' },
+  Negative: { bg: 'var(--status-fail-bg)', text: 'var(--status-fail-text)' },
+  General: { bg: 'var(--bg-secondary)', text: 'var(--text-tertiary)' },
+}
+
+function CaseTypePill({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const style = CASE_TYPE_STYLES[value] || CASE_TYPE_STYLES.General
+  return (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="text-[10px] font-medium px-2 py-0.5 rounded-full border-0 outline-none cursor-pointer"
+      style={{ backgroundColor: style.bg, color: style.text }}
+    >
+      {CASE_TYPES.map(ct => (
+        <option key={ct} value={ct}>{ct}</option>
+      ))}
+    </select>
   )
 }
