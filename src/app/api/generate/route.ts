@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import OpenAI from 'openai'
+import { generateText, createGateway } from 'ai'
 
 function getSystemPrompt(language: string = 'en'): string {
   const langInstruction = language === 'id'
@@ -43,6 +44,8 @@ export async function POST(req: NextRequest) {
       testCases = await generateOpenAI(apiKey, model || 'gpt-4o-mini', systemPrompt, userPrompt)
     } else if (provider === 'deepseek') {
       testCases = await generateDeepSeek(apiKey, model || 'deepseek-chat', systemPrompt, userPrompt)
+    } else if (provider === 'mimo') {
+      testCases = await generateMiMo(apiKey, model || 'xiaomi/mimo-v2.5-pro', systemPrompt, userPrompt)
     } else {
       testCases = await generateGemini(apiKey, model || 'gemini-2.5-flash', systemPrompt, userPrompt)
     }
@@ -102,6 +105,22 @@ async function generateDeepSeek(apiKey: string, modelName: string, systemPrompt:
   })
 
   const text = result.choices[0]?.message?.content || '[]'
+  return parseTestCases(text)
+}
+
+async function generateMiMo(apiKey: string, modelName: string, systemPrompt: string, userPrompt: string) {
+  const gateway = createGateway({
+    apiKey,
+    baseURL: 'https://ai-gateway.vercel.sh/v1/ai',
+  })
+
+  const { text } = await generateText({
+    model: gateway(modelName),
+    system: systemPrompt,
+    prompt: userPrompt,
+    temperature: 0.4,
+  })
+
   return parseTestCases(text)
 }
 

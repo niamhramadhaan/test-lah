@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { createGateway } from 'ai'
 
 const GEMINI_MODELS = [
   'gemini-2.5-flash',
@@ -13,6 +14,11 @@ const GEMINI_MODELS = [
 const DEEPSEEK_MODELS = [
   'deepseek-chat',
   'deepseek-reasoner',
+]
+
+const MIMO_MODELS = [
+  'xiaomi/mimo-v2.5-pro',
+  'xiaomi/mimo-v2-pro',
 ]
 
 export async function POST(req: NextRequest) {
@@ -29,6 +35,8 @@ export async function POST(req: NextRequest) {
       return await testOpenAI(apiKey)
     } else if (provider === 'deepseek') {
       return await testDeepSeek(apiKey)
+    } else if (provider === 'mimo') {
+      return await testMiMo(apiKey)
     }
 
     return NextResponse.json({ ok: false, error: 'Unknown provider' }, { status: 400 })
@@ -87,6 +95,26 @@ async function testDeepSeek(apiKey: string) {
     const models = res.data.map(m => m.id).sort()
 
     return NextResponse.json({ ok: true, models: models.length > 0 ? models : DEEPSEEK_MODELS })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Connection failed'
+    return NextResponse.json({ ok: false, error: message })
+  }
+}
+
+async function testMiMo(apiKey: string) {
+  try {
+    const gateway = createGateway({
+      apiKey,
+      baseURL: 'https://ai-gateway.vercel.sh/v1/ai',
+    })
+
+    const available = await gateway.getAvailableModels()
+    const models = available.models
+      .filter(m => m.id.startsWith('xiaomi/'))
+      .map(m => m.id)
+      .sort()
+
+    return NextResponse.json({ ok: true, models: models.length > 0 ? models : MIMO_MODELS })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Connection failed'
     return NextResponse.json({ ok: false, error: message })

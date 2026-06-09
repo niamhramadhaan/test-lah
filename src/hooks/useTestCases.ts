@@ -49,6 +49,7 @@ export function useTestCases(
         steps: steps ?? '',
         expected: expected ?? '',
         status: 'untested',
+        case_type: 'General',
         notes: '',
         links: '',
         order: existing.length,
@@ -137,6 +138,23 @@ export function useTestCases(
     })
   }, [project, updateProject])
 
+  const reorderColumn = useCallback((nodeId: string, key: string, direction: 'left' | 'right') => {
+    if (!project) return
+    updateProject(project.id, p => {
+      const configs = { ...(p.columnConfigs ?? {}) }
+      const nodeConfig = [...(configs[nodeId] ?? [...DEFAULT_COLUMNS])]
+      const idx = nodeConfig.findIndex(c => c.key === key)
+      if (idx === -1) return p
+      const target = direction === 'left' ? idx - 1 : idx + 1
+      if (target < 0 || target >= nodeConfig.length) return p
+      const temp = nodeConfig[idx]
+      nodeConfig[idx] = nodeConfig[target]
+      nodeConfig[target] = temp
+      configs[nodeId] = nodeConfig
+      return { ...p, columnConfigs: configs }
+    })
+  }, [project, updateProject])
+
   return {
     testCases: cases,
     stats,
@@ -148,5 +166,6 @@ export function useTestCases(
     toggleColumnVisibility,
     addColumn,
     deleteColumn,
+    reorderColumn,
   }
 }

@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 
 const STORAGE_KEY = 'qa-llm-config'
 
-export type LLMProviderId = 'gemini' | 'openai' | 'deepseek'
+export type LLMProviderId = 'gemini' | 'openai' | 'deepseek' | 'mimo'
 
 export interface LLMProvider {
   apiKey: string
@@ -33,6 +33,7 @@ const DEFAULT_CONFIG: LLMConfig = {
     gemini: { ...EMPTY_PROVIDER },
     openai: { ...EMPTY_PROVIDER },
     deepseek: { ...EMPTY_PROVIDER },
+    mimo: { ...EMPTY_PROVIDER },
   },
 }
 
@@ -61,6 +62,7 @@ function readConfig(): LLMConfig {
         gemini: { ...EMPTY_PROVIDER, ...parsed.providers?.gemini },
         openai: { ...EMPTY_PROVIDER, ...parsed.providers?.openai },
         deepseek: { ...EMPTY_PROVIDER, ...parsed.providers?.deepseek },
+        mimo: { ...EMPTY_PROVIDER, ...parsed.providers?.mimo },
       },
     }
   } catch {

@@ -1,5 +1,7 @@
 export type Status = 'untested' | 'pass' | 'fail' | 'skip'
 
+export type CaseType = 'General' | 'Positive' | 'Negative'
+
 export type NodeShape = 'rect' | 'rounded' | 'diamond' | 'circle' | 'pill'
 
 export type EdgeType = 'pass' | 'fail' | 'default'
@@ -32,6 +34,7 @@ export interface TestCase {
   steps: string
   expected: string
   status: Status
+  case_type: string
   notes: string
   links: string
   order: number
@@ -76,9 +79,12 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'steps', label: 'Steps', visible: true },
   { key: 'expected', label: 'Expected Result', visible: true },
   { key: 'status', label: 'Status', visible: true },
+  { key: 'case_type', label: 'Case Type', visible: false },
   { key: 'notes', label: 'Notes', visible: true },
   { key: 'links', label: 'Links', visible: false },
 ]
+
+export const CASE_TYPES: CaseType[] = ['General', 'Positive', 'Negative']
 
 export const AVATAR_COLORS = [
   '#E57373', '#F06292', '#BA68C8', '#9575CD',

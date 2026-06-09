@@ -3,17 +3,37 @@
 import { TestCase, ColumnConfig } from '@/types'
 import { TestCaseRow } from './TestCaseRow'
 
+export type SortDirection = 'asc' | 'desc'
+
 interface TestCaseTableProps {
   testCases: TestCase[]
   columns: ColumnConfig[]
   expandAll: boolean
+  sortKey?: string | null
+  sortDirection?: SortDirection
+  onSortChange?: (key: string | null) => void
   onUpdate: (tcId: string, patch: Partial<TestCase>) => void
   onDelete: (tcId: string) => void
   onReorder: (newOrder: string[]) => void
 }
 
-export function TestCaseTable({ testCases, columns, expandAll, onUpdate, onDelete, onReorder }: TestCaseTableProps) {
+const SORTABLE_KEYS = new Set(['case_type', 'status'])
+
+export function TestCaseTable({ testCases, columns, expandAll, sortKey, sortDirection, onSortChange, onUpdate, onDelete, onReorder }: TestCaseTableProps) {
   const visibleCols = columns.filter(c => c.visible)
+
+  const handleHeaderClick = (key: string) => {
+    if (!SORTABLE_KEYS.has(key) || !onSortChange) return
+    if (sortKey === key) {
+      if (sortDirection === 'asc') {
+        onSortChange(key)
+      } else {
+        onSortChange(null)
+      }
+    } else {
+      onSortChange(key)
+    }
+  }
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
     e.dataTransfer.setData('text/plain', id)
@@ -46,15 +66,25 @@ export function TestCaseTable({ testCases, columns, expandAll, onUpdate, onDelet
       <table className="text-xs" style={{ minWidth: '900px', width: '100%' }}>
         <thead className="sticky top-0 z-10" style={{ backgroundColor: 'var(--bg-primary)' }}>
           <tr>
-            {visibleCols.map(col => (
-              <th
-                key={col.key}
-                className="px-2 py-1.5 text-left text-[10px] font-medium uppercase tracking-wider border-b"
-                style={{ color: 'var(--text-tertiary)', borderColor: 'var(--border)', whiteSpace: 'nowrap' }}
-              >
-                {col.label}
-              </th>
-            ))}
+            {visibleCols.map(col => {
+              const isSortable = SORTABLE_KEYS.has(col.key)
+              const isActive = sortKey === col.key
+              return (
+                <th
+                  key={col.key}
+                  className={`px-2 py-1.5 text-left text-[10px] font-medium uppercase tracking-wider border-b ${isSortable ? 'cursor-pointer select-none hover:text-[var(--text-secondary)]' : ''}`}
+                  style={{ color: isActive ? 'var(--text-secondary)' : 'var(--text-tertiary)', borderColor: 'var(--border)', whiteSpace: 'nowrap' }}
+                  onClick={() => handleHeaderClick(col.key)}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    {col.label}
+                    {isActive && (
+                      <span className="text-[8px]">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+                    )}
+                  </span>
+                </th>
+              )
+            })}
             <th className="w-6 border-b" style={{ borderColor: 'var(--border)' }} />
           </tr>
         </thead>

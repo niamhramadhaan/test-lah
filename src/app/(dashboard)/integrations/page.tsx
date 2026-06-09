@@ -42,6 +42,15 @@ const PROVIDERS: ProviderInfo[] = [
     keyPlaceholder: 'sk-...',
     color: '#4D6BFE',
   },
+  {
+    id: 'mimo',
+    name: 'Xiaomi MiMo',
+    description: 'Xiaomi\'s reasoning model via Vercel AI Gateway.',
+    logoUrl: 'https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/xiaomi.svg',
+    keyUrl: 'https://vercel.com/ai-gateway',
+    keyPlaceholder: 'Your Vercel AI Gateway API key',
+    color: '#FF6900',
+  },
 ]
 
 export default function IntegrationsPage() {
