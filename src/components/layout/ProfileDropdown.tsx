@@ -25,6 +25,7 @@ const AVATAR_URLS_ROW3 = [
   'https://i.pinimg.com/736x/78/d4/b1/78d4b1787a4fd23c2a8d21e4fbbc016f.jpg',
   'https://i.pinimg.com/1200x/87/de/e6/87dee6d33b04f1df28bc85702ee12d4b.jpg',
   'https://i.pinimg.com/1200x/3b/e3/95/3be395c4a94705f95e0603afb04f9d56.jpg',
+  'https://media.licdn.com/dms/image/v2/D5603AQHBu4wrzFWoTw/profile-displayphoto-crop_800_800/B56Zq.Sy6LKsAI-/0/1764129191465?e=1782345600&v=beta&t=79y6xLivwcpvwy53sy1TuVopK4FMp6O8uAu7QxlIxDo',
 ]
 
 const ROLES = [
