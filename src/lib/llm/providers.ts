@@ -18,7 +18,7 @@ export interface ProviderDef {
   keyPlaceholder: string;
   color: string;
   /** For native providers: the AI SDK provider package name. For compatible: always 'openai' */
-  sdkProvider: "openai" | "google" | "anthropic";
+  sdkProvider: "openai" | "google" | "anthropic" | "groq";
   /** Default baseURL for openai-compatible providers */
   baseURL?: string;
   /** Default model ID */
@@ -130,6 +130,28 @@ export const PROVIDER_REGISTRY: Record<string, ProviderDef> = {
       "mistralai/mistral-small-3.2-24b:free",
       "qwen/qwen3-235b-a22b:free",
       "microsoft/phi-4-reasoning-plus:free",
+    ],
+  },
+  groq: {
+    id: "groq",
+    name: "Groq",
+    type: "native",
+    description:
+      "Ultra-fast inference with LPU hardware. Blazing speed for Llama, Mixtral, and Gemma models.",
+    logoUrl:
+      "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/groq.svg",
+    keyUrl: "https://console.groq.com/keys",
+    keyPlaceholder: "gsk_...",
+    color: "#F55036",
+    sdkProvider: "groq",
+    defaultModel: "llama-3.3-70b-versatile",
+    popularModels: [
+      "llama-3.3-70b-versatile",
+      "llama-3.1-8b-instant",
+      "mixtral-8x7b-32768",
+      "gemma2-9b-it",
+      "meta-llama/llama-4-scout-17b-16e-instruct",
+      "qwen-qwq-32b",
     ],
   },
   custom: {

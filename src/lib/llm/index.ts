@@ -10,6 +10,7 @@ import { generateText, Output } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createAnthropic } from '@ai-sdk/anthropic'
+import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
 import { type ProviderDef } from './providers'
 
@@ -51,6 +52,10 @@ export function createModel(config: ProviderConfig) {
       }
       case 'anthropic': {
         const provider = createAnthropic({ apiKey })
+        return provider(model || def.defaultModel)
+      }
+      case 'groq': {
+        const provider = createGroq({ apiKey })
         return provider(model || def.defaultModel)
       }
       default:
