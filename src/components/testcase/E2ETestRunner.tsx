@@ -47,7 +47,10 @@ export function E2ETestRunner({
   const [screenshots, setScreenshots] = useState<ScreenshotEntry[]>([])
   const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null)
   const [showBrowserPreview, setShowBrowserPreview] = useState(true)
+  const [browserPreviewWidth, setBrowserPreviewWidth] = useState(22) // percentage
   const [showSidebar, setShowSidebar] = useState(true)
+  const isResizingRef = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [healingReport, setHealingReport] = useState<string>('')
   const [showHealingReport, setShowHealingReport] = useState(false)
   
@@ -80,6 +83,34 @@ export function E2ETestRunner({
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Resize handlers for browser preview
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isResizingRef.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizingRef.current || !containerRef.current) return
+      const containerRect = containerRef.current.getBoundingClientRect()
+      const mouseX = e.clientX
+      const containerRight = containerRect.right
+      const newWidth = ((containerRight - mouseX) / containerRect.width) * 100
+      setBrowserPreviewWidth(Math.min(Math.max(newWidth, 15), 50)) // 15% min, 50% max
+    }
+
+    const handleMouseUp = () => {
+      isResizingRef.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
   }, [])
 
   // Load saved scripts
@@ -490,109 +521,118 @@ export function E2ETestRunner({
             </div>
 
             {/* Right Content Area */}
-            <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
-              {/* Logs */}
-              <div className="flex-1 flex flex-col min-h-0 max-h-[45vh] md:max-h-none">
-                <div className="p-3 border-b" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Execution Log</h3>
-                    {isRunning && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-xs truncate max-w-[150px]" style={{ color: 'var(--text-tertiary)' }}>
-                          {currentTest ? currentTest.title : 'Processing...'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex-1 overflow-auto p-3 font-mono text-xs" style={{ backgroundColor: 'var(--bg-primary)' }}>
-                  {logs.length === 0 ? (
-                    <div className="text-center py-8" style={{ color: 'var(--text-tertiary)' }}>Click "Run Tests" to start</div>
-                  ) : (
-                    logs.map((log, i) => (
-                      <div key={i} className="py-0.5" style={{ color: getLogColor(log.type) }}>
-                        {log.message.split('\n').map((line, j) => (<div key={j}>{line || '\u00A0'}</div>))}
-                      </div>
-                    ))
-                  )}
-                  <div ref={logsEndRef} />
-                </div>
-              </div>
-
-              {/* Browser Preview - Collapsible */}
-              <div 
-                className="border-t md:border-t-0 md:border-l flex flex-col transition-all duration-200"
-                style={{ 
-                  borderColor: 'var(--border)',
-                  maxHeight: showBrowserPreview ? '300px' : '36px',
-                  minHeight: showBrowserPreview ? '200px' : '36px',
-                  width: 'auto',
-                  flex: showBrowserPreview ? '0 0 22%' : '0 0 36px',
-                  ...(typeof window !== 'undefined' && window.innerWidth >= 768 ? {
-                    maxHeight: 'none',
-                    minHeight: 'auto',
-                    flex: showBrowserPreview ? '0 0 22%' : '0 0 36px'
-                  } : {})
-                }}
-              >
-                <div 
-                  className="p-2 md:p-3 border-b cursor-pointer flex items-center gap-2 shrink-0"
-                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}
-                  onClick={() => setShowBrowserPreview(!showBrowserPreview)}
-                >
-                  <span className="text-sm">🖥️</span>
-                  {showBrowserPreview && (
-                    <>
-                      <h3 className="text-sm font-medium flex-1" style={{ color: 'var(--text-primary)' }}>Browser Preview</h3>
-                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                        {screenshots.length > 0 ? `${screenshots.length} screenshots` : ''}
-                      </span>
-                    </>
-                  )}
-                </div>
-                {showBrowserPreview && (
-                  <>
-                    <div className="flex-1 overflow-auto p-2" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                      {currentScreenshot ? (
-                        <img src={`data:image/jpeg;base64,${currentScreenshot}`} alt="Browser preview" className="w-full rounded" />
-                      ) : (
-                        <div className="flex items-center justify-center h-full min-h-[100px] text-xs" style={{ color: '#666' }}>
-                          {isRunning ? 'Waiting...' : 'Preview during execution'}
+            <div ref={containerRef} className="flex-1 flex flex-col overflow-hidden min-h-0">
+              <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
+                {/* Logs */}
+                <div className="flex-1 flex flex-col min-h-0 max-h-[45vh] md:max-h-none">
+                  <div className="p-3 border-b" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Execution Log</h3>
+                      {isRunning && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                          <span className="text-xs truncate max-w-[150px]" style={{ color: 'var(--text-tertiary)' }}>
+                            {currentTest ? currentTest.title : 'Processing...'}
+                          </span>
                         </div>
                       )}
                     </div>
-                    {screenshots.length > 0 && (
-                      <div className="p-2 border-t overflow-x-auto flex gap-1 shrink-0" style={{ borderColor: 'var(--border)' }}>
-                        {screenshots.slice(-6).map((ss, i) => (
-                          <button key={i} onClick={() => setCurrentScreenshot(ss.image)}
-                            className="flex-shrink-0 w-10 h-7 md:w-12 md:h-8 rounded overflow-hidden border"
-                            style={{ border: currentScreenshot === ss.image ? '2px solid var(--accent)' : '1px solid var(--border)' }}
-                            title={ss.label}
-                          >
-                            <img src={`data:image/jpeg;base64,${ss.image}`} alt={ss.label} className="w-full h-full object-cover" />
-                          </button>
-                        ))}
-                      </div>
+                  </div>
+                  <div className="flex-1 overflow-auto p-3 font-mono text-xs" style={{ backgroundColor: 'var(--bg-primary)' }}>
+                    {logs.length === 0 ? (
+                      <div className="text-center py-8" style={{ color: 'var(--text-tertiary)' }}>Click "Run Tests" to start</div>
+                    ) : (
+                      logs.map((log, i) => (
+                        <div key={i} className="py-0.5" style={{ color: getLogColor(log.type) }}>
+                          {log.message.split('\n').map((line, j) => (<div key={j}>{line || '\u00A0'}</div>))}
+                        </div>
+                      ))
                     )}
-                  </>
-                )}
-              </div>
-            </div>
+                    <div ref={logsEndRef} />
+                  </div>
+                </div>
 
-            {/* Summary Bar */}
-            {results.length > 0 && (
-              <div className="p-2 md:p-3 border-t shrink-0" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>
-                <div className="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm">
-                  <span style={{ color: 'var(--status-pass-text)' }}>✓ {results.filter(r => r.status === 'pass').length}</span>
-                  <span style={{ color: 'var(--status-fail-text)' }}>✗ {results.filter(r => r.status === 'fail').length}</span>
-                  <span style={{ color: 'var(--status-fail-text)' }}>⚠ {results.filter(r => r.status === 'error').length}</span>
-                  <span className="ml-auto" style={{ color: 'var(--text-tertiary)' }}>
-                    {Math.round(results.reduce((sum, r) => sum + r.duration, 0) / 1000)}s
-                  </span>
+                {/* Resize Handle */}
+                <div
+                  className="w-1 md:w-1.5 cursor-col-resize hover:bg-[var(--accent)] transition-colors shrink-0"
+                  style={{ backgroundColor: 'var(--border)' }}
+                  onMouseDown={handleResizeStart}
+                />
+
+                {/* Browser Preview - Collapsible */}
+                <div 
+                  className="border-t md:border-t-0 md:border-l flex flex-col transition-all duration-200"
+                  style={{ 
+                    borderColor: 'var(--border)',
+                    maxHeight: showBrowserPreview ? '300px' : '36px',
+                    minHeight: showBrowserPreview ? '200px' : '36px',
+                    width: 'auto',
+                    flex: showBrowserPreview ? `0 0 ${browserPreviewWidth}%` : '0 0 36px',
+                    ...(typeof window !== 'undefined' && window.innerWidth >= 768 ? {
+                      maxHeight: 'none',
+                      minHeight: 'auto',
+                      flex: showBrowserPreview ? `0 0 ${browserPreviewWidth}%` : '0 0 36px'
+                    } : {})
+                  }}
+                >
+                  <div 
+                    className="p-2 md:p-3 border-b cursor-pointer flex items-center gap-2 shrink-0"
+                    style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}
+                    onClick={() => setShowBrowserPreview(!showBrowserPreview)}
+                  >
+                    <span className="text-sm">🖥️</span>
+                    {showBrowserPreview && (
+                      <>
+                        <h3 className="text-sm font-medium flex-1" style={{ color: 'var(--text-primary)' }}>Browser Preview</h3>
+                        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                          {screenshots.length > 0 ? `${screenshots.length} screenshots` : ''}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {showBrowserPreview && (
+                    <>
+                      <div className="flex-1 overflow-auto p-2" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                        {currentScreenshot ? (
+                          <img src={`data:image/jpeg;base64,${currentScreenshot}`} alt="Browser preview" className="w-full rounded" />
+                        ) : (
+                          <div className="flex items-center justify-center h-full min-h-[100px] text-xs" style={{ color: '#666' }}>
+                            {isRunning ? 'Waiting...' : 'Preview during execution'}
+                          </div>
+                        )}
+                      </div>
+                      {screenshots.length > 0 && (
+                        <div className="p-2 border-t overflow-x-auto flex gap-1 shrink-0" style={{ borderColor: 'var(--border)' }}>
+                          {screenshots.slice(-6).map((ss, i) => (
+                            <button key={i} onClick={() => setCurrentScreenshot(ss.image)}
+                              className="flex-shrink-0 w-10 h-7 md:w-12 md:h-8 rounded overflow-hidden border"
+                              style={{ border: currentScreenshot === ss.image ? '2px solid var(--accent)' : '1px solid var(--border)' }}
+                              title={ss.label}
+                            >
+                              <img src={`data:image/jpeg;base64,${ss.image}`} alt={ss.label} className="w-full h-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
-            )}
+
+              {/* Summary Bar - Bottom of right content */}
+              {results.length > 0 && (
+                <div className="p-2 md:p-3 border-t shrink-0" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>
+                  <div className="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm">
+                    <span style={{ color: 'var(--status-pass-text)' }}>✓ {results.filter(r => r.status === 'pass').length}</span>
+                    <span style={{ color: 'var(--status-fail-text)' }}>✗ {results.filter(r => r.status === 'fail').length}</span>
+                    <span style={{ color: 'var(--status-fail-text)' }}>⚠ {results.filter(r => r.status === 'error').length}</span>
+                    <span className="ml-auto" style={{ color: 'var(--text-tertiary)' }}>
+                      {Math.round(results.reduce((sum, r) => sum + r.duration, 0) / 1000)}s
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
