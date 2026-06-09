@@ -14,6 +14,7 @@ import { ExportModal } from './ExportModal'
 import { GenerateTestModal } from './GenerateTestModal'
 import { NodeSummaryModal } from './NodeSummaryModal'
 import { ImportTestCasesModal } from './ImportTestCasesModal'
+import { E2ETestRunner } from './E2ETestRunner'
 import { Dock, DockIcon } from '@/components/ui/dock'
 import { Separator } from '@/components/ui/separator'
 import { exportNodeAsMarkdown } from '@/lib/export'
@@ -68,6 +69,7 @@ export function TestCasePanel({
   const [generateOpen, setGenerateOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  const [e2eRunnerOpen, setE2eRunnerOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [expandAll, setExpandAll] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -589,6 +591,24 @@ export function TestCasePanel({
             </div>
           </DockIcon>
 
+          {/* E2E Test Runner */}
+          <DockIcon>
+            <div className="relative group">
+              <button
+                onClick={() => setE2eRunnerOpen(true)}
+                className="w-full h-full flex items-center justify-center rounded-full hover:bg-[var(--bg-secondary)] transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
+                E2E Test
+              </div>
+            </div>
+          </DockIcon>
+
           {/* Generate */}
           <DockIcon>
             <div className="relative group">
@@ -635,6 +655,15 @@ export function TestCasePanel({
         onImport={handleImport}
         nodeLabel={selectedNode.label}
       />
+
+      {e2eRunnerOpen && selectedNode && (
+        <E2ETestRunner
+          testCases={testCases}
+          projectId={projectId}
+          onUpdateTestCase={(tcId, patch) => onUpdateTestCase(selectedNode.id, tcId, patch)}
+          onClose={() => setE2eRunnerOpen(false)}
+        />
+      )}
 
       <style jsx>{`
         @keyframes fadeInUp {

@@ -29,14 +29,14 @@ export type GeneratedTestCase = z.infer<typeof TestCaseSchema>
 // Provider factory — returns an AI SDK model instance
 // ---------------------------------------------------------------------------
 
-interface ProviderConfig {
+export interface ProviderConfig {
   def: ProviderDef
   apiKey: string
   model: string
   baseURL?: string
 }
 
-function createModel(config: ProviderConfig) {
+export function createModel(config: ProviderConfig) {
   const { def, apiKey, model, baseURL } = config
 
   if (def.type === 'native') {
