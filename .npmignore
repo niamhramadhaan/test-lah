@@ -15,3 +15,4 @@ postcss.config.mjs
 .next/cache/
 *.md
 !README.md
+scripts/

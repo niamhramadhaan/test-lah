@@ -20,15 +20,20 @@ A fully client-side QA management tool with interactive mindmaps, test case trac
 
 ### Option 1: Global Install (Recommended)
 
+**From npmjs.com:**
 ```bash
-npm install -g @niamhramadhaan/test-lah
+npm install -g test-lah
 test-lah
 ```
 
-> **Note:** If you get a 404 error, you may need to authenticate with GitHub Packages first:
-> ```bash
-> npm login --registry=https://npm.pkg.github.com
-> ```
+**From GitHub Packages:**
+```bash
+# One-time setup
+npm login --registry=https://npm.pkg.github.com
+
+npm install -g @niamhramadhaan/test-lah
+test-lah
+```
 
 This starts the server and opens your browser automatically.
 

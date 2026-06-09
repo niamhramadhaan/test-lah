@@ -1,11 +1,8 @@
 {
-  "name": "@niamhramadhaan/test-lah",
-  "version": "1.0.0",
+  "name": "test-lah",
+  "version": "1.0.1",
   "description": "QA Test Case Management — AI-powered test case generation and management",
   "private": false,
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "bin": {
     "test-lah": "./bin/test-lah.js"
   },
@@ -25,7 +22,8 @@
     "lint": "next lint",
     "postinstall": "node scripts/postinstall.js",
     "prepare:publish": "npm run build && node scripts/prepare-publish.js",
-    "publish:github": "set -a && . ./.env.local && set +a && npm publish"
+    "publish:github": "npm run prepare:publish && set -a && . ./.env.local && set +a && npm version patch --no-git-tag-version && npm publish --registry=https://npm.pkg.github.com",
+    "publish:npm": "npm run prepare:publish && npm pkg set name=test-lah && npm version patch --no-git-tag-version && npm publish --registry=https://registry.npmjs.org --otp=$OTP && npm pkg set name=@niamhramadhaan/test-lah"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.81",
@@ -40,7 +38,7 @@
     "exceljs": "^4.4.0",
     "lucide-react": "^1.17.0",
     "motion": "^12.40.0",
-    "next": "14.2.35",
+    "next": "^15.5.18",
     "next-themes": "^0.4.6",
     "react": "^18",
     "react-dom": "^18",
