@@ -341,7 +341,7 @@ export function E2ETestRunner({
         style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-3 md:p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-center justify-between p-3 md:p-4 border-b shrink-0 sticky top-0 z-20" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-primary)' }}>
           <div className="min-w-0 flex-1">
             <h2 className="text-base md:text-lg font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
               E2E Agentic Test Runner
@@ -370,7 +370,7 @@ export function E2ETestRunner({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b overflow-x-auto" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex border-b overflow-x-auto shrink-0 sticky top-0 z-10" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-primary)' }}>
           {tabs.map(tab => (
             <button
               key={tab.id}
