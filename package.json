@@ -1,6 +1,6 @@
 {
-  "name": "test-lah",
-  "version": "1.0.1",
+  "name": "@niamhramadhaan/test-lah",
+  "version": "1.0.2",
   "description": "QA Test Case Management — AI-powered test case generation and management",
   "private": false,
   "bin": {
