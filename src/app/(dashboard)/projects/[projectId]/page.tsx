@@ -37,20 +37,25 @@ export default function ProjectDetailPage() {
   } = useDashboard()
 
   const project = projects[projectId] ?? null
+  const switchCalledRef = useRef<string | null>(null)
+
+  // Use project directly while activeProjectId syncs via effect
+  const activeProj = activeProjectId === projectId ? activeProject : project
 
   useEffect(() => {
-    if (project && activeProjectId !== projectId) {
+    if (projects[projectId] && switchCalledRef.current !== projectId) {
+      switchCalledRef.current = projectId
       switchProject(projectId)
     }
-  }, [projectId, activeProjectId, project, switchProject])
+  }, [projectId, projects, switchProject])
 
   useEffect(() => {
     setSelectedNodeId(null)
   }, [projectId, setSelectedNodeId])
 
   const selectedNode = useMemo(
-    () => activeProject?.flows.find(n => n.id === selectedNodeId) ?? null,
-    [activeProject, selectedNodeId],
+    () => activeProj?.flows.find(n => n.id === selectedNodeId) ?? null,
+    [activeProj, selectedNodeId],
   )
 
   const [mobileTab, setMobileTab] = useState<'mindmap' | 'testcases'>('mindmap')
@@ -98,7 +103,7 @@ export default function ProjectDetailPage() {
     )
   }
 
-  if (!activeProject || activeProject.id !== projectId) {
+  if (!activeProj) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Loading project...</div>
@@ -203,7 +208,7 @@ export default function ProjectDetailPage() {
           <MindmapPanel
             nodes={mindmap.nodes}
             edges={mindmap.edges}
-            testCases={activeProject.testCases ?? {}}
+            testCases={activeProj.testCases ?? {}}
             selectedNodeId={selectedNodeId}
             onSelect={mindmap.selectNode}
             onAddNode={(parentId, label, position, direction) => {
@@ -304,7 +309,7 @@ export default function ProjectDetailPage() {
             selectedNode={selectedNode}
             testCases={testCases.testCases}
             stats={testCases.stats}
-            columns={selectedNodeId ? (activeProject.columnConfigs?.[selectedNodeId] ?? activeProject.columnConfig ?? []) : (activeProject.columnConfig ?? [])}
+            columns={selectedNodeId ? (activeProj.columnConfigs?.[selectedNodeId] ?? activeProj.columnConfig ?? []) : (activeProj.columnConfig ?? [])}
             projectId={projectId}
             fullscreen={tcFullscreen}
             onAddTestCase={testCases.addTestCase}
