@@ -6,7 +6,7 @@ import { useLLMConfig, type LLMProvider } from '@/hooks/useLLMConfig'
 import { PROVIDER_LIST, type ProviderDef } from '@/lib/llm/providers'
 
 export default function IntegrationsPage() {
-  const { activeProviderId } = useLLMConfig()
+  const { activeProviderId, setActiveProvider } = useLLMConfig()
   const [expandedId, setExpandedId] = useState<string | null>(activeProviderId)
 
   useEffect(() => {
@@ -36,6 +36,8 @@ export default function IntegrationsPage() {
               def={def}
               expanded={expandedId === def.id}
               onToggle={() => setExpandedId(prev => prev === def.id ? null : def.id)}
+              isActive={activeProviderId === def.id}
+              onSetActive={() => setActiveProvider(def.id)}
             />
           ))}
         </div>
@@ -44,10 +46,9 @@ export default function IntegrationsPage() {
   )
 }
 
-function ProviderAccordion({ def, expanded, onToggle }: { def: ProviderDef; expanded: boolean; onToggle: () => void }) {
-  const { config, activeProviderId, updateProvider, setActiveProvider } = useLLMConfig()
+function ProviderAccordion({ def, expanded, onToggle, isActive, onSetActive }: { def: ProviderDef; expanded: boolean; onToggle: () => void; isActive: boolean; onSetActive: () => void }) {
+  const { config, updateProvider } = useLLMConfig()
   const provider = config.providers[def.id]
-  const isActive = activeProviderId === def.id
 
   const [editingKey, setEditingKey] = useState(false)
   const [keyValue, setKeyValue] = useState(provider?.apiKey || '')
@@ -343,7 +344,7 @@ function ProviderAccordion({ def, expanded, onToggle }: { def: ProviderDef; expa
               </button>
               {!isActive && (
                 <button
-                  onClick={() => setActiveProvider(def.id)}
+                  onClick={onSetActive}
                   className="px-3 py-2 text-xs font-medium rounded-lg transition-all hover:opacity-90"
                   style={{ backgroundColor: accentColor, color: '#fff' }}
                 >
