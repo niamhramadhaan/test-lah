@@ -104,6 +104,8 @@ Generate 3-8 test cases covering happy path, edge cases, and error scenarios.`
 // Public API
 // ---------------------------------------------------------------------------
 
+export type VideoInputMode = 'frames'
+
 export async function generateTestCases(
   config: ProviderConfig,
   title: string,
@@ -114,18 +116,25 @@ export async function generateTestCases(
   const model = createModel(config)
 
   const systemPrompt = getSystemPrompt(language)
-  const userText = `Feature: ${title}\n\nDescription / DoD / Acceptance Criteria:\n${prompt || '(no additional description provided)'}${images?.length ? '\n\nThe user has attached screenshot(s) of the UI/feature. Use them as additional context to write more accurate and specific test cases.' : ''}`
+  const hasMedia = images && images.length > 0
+  const userText = `Feature: ${title}\n\nDescription / DoD / Acceptance Criteria:\n${prompt || '(no additional description provided)'}${hasMedia ? '\n\nThe user has attached screenshot(s) of the UI/feature. Use them as additional context to write more accurate and specific test cases.' : ''}`
 
-  // Build multimodal content if images are present
-  const content: Array<{ type: 'text'; text: string } | { type: 'image'; image: string }> = [
+  // Build multimodal content
+  const content: Array<
+    | { type: 'text'; text: string }
+    | { type: 'image'; image: string }
+  > = [
     { type: 'text', text: userText },
   ]
 
+  // Add images
   if (images?.length) {
     for (const img of images) {
       content.push({ type: 'image', image: img })
     }
   }
+
+  const maxOutputTokens = 4096
 
   // Try structured output first, fall back to text parsing for models that don't support it
   try {
@@ -135,6 +144,7 @@ export async function generateTestCases(
       system: systemPrompt,
       messages: [{ role: 'user', content }],
       temperature: 0.4,
+      maxOutputTokens,
     })
     return output
   } catch (structuredError) {
@@ -149,6 +159,7 @@ export async function generateTestCases(
       system: jsonPrompt,
       messages: [{ role: 'user', content }],
       temperature: 0.4,
+      maxOutputTokens,
     })
 
     // Extract JSON from response
@@ -164,6 +175,23 @@ export async function generateTestCases(
     const arrayMatch = jsonStr.match(/\[\s*\{[\s\S]*\}\s*\]/)
     if (arrayMatch) {
       jsonStr = arrayMatch[0]
+    }
+
+    // Try to fix truncated JSON by closing open brackets
+    const openBrackets = (jsonStr.match(/\[/g) || []).length
+    const closeBrackets = (jsonStr.match(/\]/g) || []).length
+    const openBraces = (jsonStr.match(/\{/g) || []).length
+    const closeBraces = (jsonStr.match(/\}/g) || []).length
+
+    if (openBraces > closeBraces) {
+      // Close any open string if needed
+      if ((jsonStr.match(/"/g) || []).length % 2 !== 0) {
+        jsonStr += '"'
+      }
+      jsonStr += '}'.repeat(openBraces - closeBraces)
+    }
+    if (openBrackets > closeBrackets) {
+      jsonStr += ']'.repeat(openBrackets - closeBrackets)
     }
 
     try {

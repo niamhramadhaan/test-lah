@@ -53,6 +53,10 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
   const [dragOver, setDragOver] = useState(false)
   const [videoProcessing, setVideoProcessing] = useState(false)
   const [videoProgress, setVideoProgress] = useState<string | null>(null)
+  const [extractedFrames, setExtractedFrames] = useState<string[]>([])
+  const [selectedFrameIndices, setSelectedFrameIndices] = useState<Set<number>>(new Set())
+  const [showFrameSelector, setShowFrameSelector] = useState(false)
+  const [zoomedFrame, setZoomedFrame] = useState<string | null>(null)
 
   const refreshCat = useCallback(async () => {
     try {
@@ -74,6 +78,9 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
       setError(null)
       setLoading(false)
       setImages([])
+      setExtractedFrames([])
+      setSelectedFrameIndices(new Set())
+      setShowFrameSelector(false)
       setCatUrl('')
       setCatIndex(0)
     }
@@ -119,12 +126,6 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
       return
     }
 
-    const remaining = MAX_IMAGES - images.length
-    if (remaining <= 0) {
-      setError(`Maximum ${MAX_IMAGES} images/frames allowed`)
-      return
-    }
-
     setVideoProcessing(true)
     setVideoProgress('Loading video...')
 
@@ -138,22 +139,62 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
         return
       }
 
-      setVideoProgress(`Extracting ${result.frames.length} frames...`)
+      setVideoProgress(`Extracted ${result.frames.length} frames. Select which to include...`)
 
-      // Take only what we have room for
-      const framesToAdd = result.frames.slice(0, remaining)
-
-      if (framesToAdd.length > 0) {
-        setImages(prev => [...prev, ...framesToAdd])
-        setError(null)
-      }
+      // Show frame selector
+      setExtractedFrames(result.frames)
+      setSelectedFrameIndices(new Set(result.frames.map((_, i) => i))) // select all by default
+      setShowFrameSelector(true)
+      setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to process video')
     } finally {
       setVideoProcessing(false)
       setVideoProgress(null)
     }
-  }, [images.length])
+  }, [])
+
+  const confirmFrameSelection = useCallback(() => {
+    const remaining = MAX_IMAGES - images.length
+    const selected = extractedFrames.filter((_, i) => selectedFrameIndices.has(i))
+    const toAdd = selected.slice(0, remaining)
+
+    if (toAdd.length > 0) {
+      setImages(prev => [...prev, ...toAdd])
+    }
+
+    // Reset frame selector
+    setExtractedFrames([])
+    setSelectedFrameIndices(new Set())
+    setShowFrameSelector(false)
+  }, [extractedFrames, selectedFrameIndices, images.length])
+
+  const cancelFrameSelection = useCallback(() => {
+    setExtractedFrames([])
+    setSelectedFrameIndices(new Set())
+    setShowFrameSelector(false)
+  }, [])
+
+  const toggleFrame = useCallback((index: number) => {
+    setSelectedFrameIndices(prev => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else if (next.size < MAX_IMAGES) {
+        next.add(index)
+      }
+      return next
+    })
+  }, [])
+
+  const selectAllFrames = useCallback(() => {
+    const maxSelectable = Math.min(extractedFrames.length, MAX_IMAGES)
+    setSelectedFrameIndices(new Set(Array.from({ length: maxSelectable }, (_, i) => i)))
+  }, [extractedFrames])
+
+  const deselectAllFrames = useCallback(() => {
+    setSelectedFrameIndices(new Set())
+  }, [])
 
   const addImages = useCallback(async (files: FileList | File[]) => {
     const remaining = MAX_IMAGES - images.length
@@ -185,7 +226,7 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
     }
 
     // Process first video (if any)
-    if (videoFiles.length > 0 && images.length + dataUris.length < MAX_IMAGES) {
+    if (videoFiles.length > 0) {
       await processVideo(videoFiles[0])
     }
   }, [images.length, processVideo])
@@ -442,11 +483,11 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
                 </div>
               </div>
 
-              {/* Video upload button */}
-              {images.length < MAX_IMAGES && (
-                <>
+              {/* Video section */}
+              {!showFrameSelector && images.length < MAX_IMAGES && (
+                <div className="mt-2">
                   {videoProcessing ? (
-                    <div className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                       <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" strokeDasharray="30 70" />
                       </svg>
@@ -458,17 +499,131 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click() }}
-                      className="flex items-center gap-2 mt-2 px-3 py-1.5 text-[11px] rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
+                      className="flex items-center gap-2 px-3 py-1.5 text-[11px] rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
                       style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polygon points="23 7 16 12 23 17 23 7" />
                         <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
                       </svg>
-                      Upload video (extracts key frames)
+                      Upload video (extract key frames)
                     </button>
                   )}
-                </>
+                </div>
+              )}
+
+              {/* Frame selector */}
+              {showFrameSelector && extractedFrames.length > 0 && (
+                <div className="mt-2 p-3 rounded-lg border" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+                      Select frames <span style={{ color: 'var(--text-tertiary)' }}>({selectedFrameIndices.size}/{MAX_IMAGES} max)</span>
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={selectAllFrames}
+                        className="text-[10px] px-1.5 py-0.5 rounded hover:bg-[var(--bg-card)]"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={deselectAllFrames}
+                        className="text-[10px] px-1.5 py-0.5 rounded hover:bg-[var(--bg-card)]"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        None
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Frame thumbnails */}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {extractedFrames.map((frame, i) => (
+                      <div
+                        key={i}
+                        className="relative group rounded-md overflow-hidden border-2 transition-all cursor-pointer"
+                        style={{
+                          width: 80,
+                          height: 80,
+                          borderColor: selectedFrameIndices.has(i) ? 'var(--accent)' : 'var(--border)',
+                          opacity: selectedFrameIndices.has(i) ? 1 : 0.5,
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleFrame(i)}
+                          className="w-full h-full"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={frame}
+                            alt={`Frame ${i + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                        {/* Zoom button */}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setZoomedFrame(frame) }}
+                          className="absolute top-0.5 left-0.5 w-6 h-6 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ backgroundColor: 'rgba(0,0,0,0.7)', color: '#fff' }}
+                          title="Zoom"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            <line x1="11" y1="8" x2="11" y2="14" />
+                            <line x1="8" y1="11" x2="14" y2="11" />
+                          </svg>
+                        </button>
+                        {/* Selection checkmark */}
+                        {selectedFrameIndices.has(i) && (
+                          <div
+                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: 'var(--accent)', color: '#fff' }}
+                          >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </div>
+                        )}
+                        <span
+                          className="absolute bottom-0 left-0 right-0 text-center text-[9px] py-0.5"
+                          style={{ backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff' }}
+                        >
+                          {i + 1}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={cancelFrameSelection}
+                      className="flex-1 px-3 py-1.5 text-[11px] rounded-md border transition-colors hover:bg-[var(--bg-card)]"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmFrameSelection}
+                      disabled={selectedFrameIndices.size === 0}
+                      className="flex-1 px-3 py-1.5 text-[11px] rounded-md transition-colors hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundColor: 'var(--accent)',
+                        color: '#fff',
+                      }}
+                    >
+                      Add {selectedFrameIndices.size} frame{selectedFrameIndices.size !== 1 ? 's' : ''}
+                    </button>
+                  </div>
+                </div>
               )}
 
               <input
@@ -634,6 +789,34 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
           </div>
         </div>
       </div>
+
+      {/* Frame zoom overlay */}
+      {zoomedFrame && (
+        <div
+          className="fixed inset-0 z-[400] flex items-center justify-center p-8"
+          style={{ backgroundColor: 'rgba(0,0,0,0.85)', animation: 'fadeIn 150ms ease-out' }}
+          onClick={(e) => { e.stopPropagation(); setZoomedFrame(null) }}
+        >
+          <div className="relative max-w-4xl max-h-full" onClick={e => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={zoomedFrame}
+              alt="Frame preview"
+              className="max-w-full max-h-[80vh] object-contain rounded-lg"
+              style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}
+            />
+            <button
+              onClick={() => setZoomedFrame(null)}
+              className="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:opacity-80"
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', boxShadow: 'var(--shadow-lg)' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
