@@ -73,6 +73,7 @@ export function TestCasePanel({
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [expandAll, setExpandAll] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
@@ -99,13 +100,18 @@ export function TestCasePanel({
     })
   }, [])
 
+  // Filter by status
+  const filteredTestCases = statusFilter === 'all'
+    ? testCases
+    : testCases.filter(tc => tc.status === statusFilter)
+
   const toggleSelectAll = useCallback(() => {
-    if (selectedIds.size === testCases.length) {
+    if (selectedIds.size === filteredTestCases.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(testCases.map(tc => tc.id)))
+      setSelectedIds(new Set(filteredTestCases.map(tc => tc.id)))
     }
-  }, [selectedIds.size, testCases])
+  }, [selectedIds.size, filteredTestCases])
 
   const clearSelection = useCallback(() => setSelectedIds(new Set()), [])
 
@@ -136,12 +142,12 @@ export function TestCasePanel({
     }
   }
 
-  const sortedTestCases = sortKey ? [...testCases].sort((a, b) => {
+  const sortedTestCases = sortKey ? [...filteredTestCases].sort((a, b) => {
     const aVal = (a[sortKey as keyof TestCase] as string) || ''
     const bVal = (b[sortKey as keyof TestCase] as string) || ''
     const cmp = aVal.localeCompare(bVal)
     return sortDirection === 'asc' ? cmp : -cmp
-  }) : testCases
+  }) : filteredTestCases
 
   // Focus new column input
   useEffect(() => {
@@ -190,6 +196,45 @@ export function TestCasePanel({
           {selectedNode.label}
         </h2>
         <ProgressBar value={stats.passRate} />
+
+        {/* Status filter pills */}
+        <div className="flex items-center gap-1.5 mt-2">
+          {([['all', 'All'], ['untested', 'Untested'], ['pass', 'Pass'], ['fail', 'Fail'], ['skip', 'Skip']] as const).map(([value, label]) => {
+            const isActive = statusFilter === value
+            const count = value === 'all' ? testCases.length : testCases.filter(tc => tc.status === value).length
+            const colors: Record<string, { bg: string; text: string }> = {
+              all: { bg: 'var(--bg-secondary)', text: 'var(--text-secondary)' },
+              untested: { bg: 'var(--status-untested-bg)', text: 'var(--status-untested-text)' },
+              pass: { bg: 'var(--status-pass-bg)', text: 'var(--status-pass-text)' },
+              fail: { bg: 'var(--status-fail-bg)', text: 'var(--status-fail-text)' },
+              skip: { bg: 'var(--status-skip-bg)', text: 'var(--status-skip-text)' },
+            }
+            const c = colors[value]
+            return (
+              <button
+                key={value}
+                onClick={() => setStatusFilter(value)}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full border transition-colors"
+                style={{
+                  backgroundColor: isActive ? c.bg : 'transparent',
+                  color: isActive ? c.text : 'var(--text-tertiary)',
+                  borderColor: isActive ? 'transparent' : 'var(--border)',
+                }}
+              >
+                {label}
+                <span
+                  className="px-1 py-0 text-[9px] rounded-full min-w-[16px] text-center"
+                  style={{
+                    backgroundColor: isActive ? 'rgba(0,0,0,0.1)' : 'var(--bg-secondary)',
+                    color: isActive ? c.text : 'var(--text-tertiary)',
+                  }}
+                >
+                  {count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Notes section */}
@@ -489,7 +534,7 @@ export function TestCasePanel({
             <div className="relative group">
               <button
                 onClick={() => {
-                  const md = exportNodeAsMarkdown(selectedNode, testCases, columns)
+                  const md = exportNodeAsMarkdown(selectedNode, filteredTestCases, columns)
                   navigator.clipboard.writeText(md).then(() => {
                     setCopied(true)
                     setTimeout(() => setCopied(false), 2000)
