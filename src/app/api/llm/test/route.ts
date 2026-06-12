@@ -5,7 +5,7 @@ import { decrypt } from "@/lib/crypto";
 
 export async function POST(req: NextRequest) {
   try {
-    const { provider, apiKey, baseURL } = await req.json();
+    const { provider, apiKey, baseURL, model } = await req.json();
 
     if (!apiKey) {
       return NextResponse.json(
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const result = await testConnection({
       def,
       apiKey: decryptedKey,
-      model: def.defaultModel,
+      model: model || def.defaultModel,
       baseURL,
     });
 

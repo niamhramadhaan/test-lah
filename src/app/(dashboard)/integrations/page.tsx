@@ -54,6 +54,8 @@ function ProviderAccordion({ def, expanded, onToggle, isActive, onSetActive }: {
   const [keyValue, setKeyValue] = useState(provider?.apiKey || '')
   const [baseURLValue, setBaseURLValue] = useState(provider?.baseURL || def.baseURL || '')
   const [testing, setTesting] = useState(false)
+  // For custom provider, use the current model value for testing
+  const testModel = provider?.defaultModel || def.defaultModel
   const [testResult, setTestResult] = useState<{ ok: boolean; error?: string } | null>(null)
   const [testedKey, setTestedKey] = useState<string | null>(null)
 
@@ -94,7 +96,7 @@ function ProviderAccordion({ def, expanded, onToggle, isActive, onSetActive }: {
       const res = await fetch('/api/llm/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: def.id, apiKey: key, baseURL: baseURLValue.trim() || undefined }),
+        body: JSON.stringify({ provider: def.id, apiKey: key, baseURL: baseURLValue.trim() || undefined, model: testModel }),
       })
       const data = await res.json()
       setTestResult(data)
@@ -355,8 +357,7 @@ function ProviderAccordion({ def, expanded, onToggle, isActive, onSetActive }: {
           )}
 
           {/* Model Selection */}
-          {provider.connected && (
-            <div className="pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+          <div className="pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-medium uppercase tracking-wider block mb-1.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -380,14 +381,13 @@ function ProviderAccordion({ def, expanded, onToggle, isActive, onSetActive }: {
                   />
                 </div>
               </div>
-              {isActive && (
+              {isActive && provider.connected && (
                 <div className="mt-2 text-[10px] flex items-center gap-1.5" style={{ color: 'var(--text-tertiary)' }}>
                   <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accentColor }} />
                   Using {provider.defaultModel}{provider.secondaryModel ? ` (fallback: ${provider.secondaryModel})` : ''}
                 </div>
               )}
             </div>
-          )}
         </div>
       </div>
     </div>

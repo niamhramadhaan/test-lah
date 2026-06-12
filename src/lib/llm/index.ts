@@ -127,15 +127,53 @@ export async function generateTestCases(
     }
   }
 
-  const { output } = await generateText({
-    model,
-    output: Output.array({ element: TestCaseSchema }),
-    system: systemPrompt,
-    messages: [{ role: 'user', content }],
-    temperature: 0.4,
-  })
+  // Try structured output first, fall back to text parsing for models that don't support it
+  try {
+    const { output } = await generateText({
+      model,
+      output: Output.array({ element: TestCaseSchema }),
+      system: systemPrompt,
+      messages: [{ role: 'user', content }],
+      temperature: 0.4,
+    })
+    return output
+  } catch (structuredError) {
+    // Fallback: request JSON in text and parse manually
+    // This handles models like MiniMax that don't support response_format/json_schema
+    console.warn('Structured output failed, falling back to text parsing:', structuredError)
 
-  return output
+    const jsonPrompt = `${systemPrompt}\n\nIMPORTANT: Respond with ONLY a valid JSON array. No markdown, no code fences, no explanation, no thinking tags. Just the raw JSON array.\n\nEach object must have exactly these keys: "title" (string), "steps" (string with numbered steps separated by newlines), "expected" (string).`
+
+    const { text } = await generateText({
+      model,
+      system: jsonPrompt,
+      messages: [{ role: 'user', content }],
+      temperature: 0.4,
+    })
+
+    // Extract JSON from response
+    let jsonStr = text.trim()
+    // Strip thinking tags (MiniMax returns <think>...</think> in content)
+    jsonStr = jsonStr.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+    // Strip markdown code fences
+    const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
+    if (fenceMatch) {
+      jsonStr = fenceMatch[1].trim()
+    }
+    // Extract JSON array from response
+    const arrayMatch = jsonStr.match(/\[\s*\{[\s\S]*\}\s*\]/)
+    if (arrayMatch) {
+      jsonStr = arrayMatch[0]
+    }
+
+    try {
+      const parsed = JSON.parse(jsonStr)
+      const result = z.array(TestCaseSchema).parse(parsed)
+      return result
+    } catch (parseError) {
+      throw new Error(`Model returned unparseable response. Raw text: ${text.slice(0, 500)}`)
+    }
+  }
 }
 
 export async function testConnection(
