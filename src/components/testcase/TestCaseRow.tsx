@@ -42,9 +42,8 @@ export function TestCaseRow({ tc, visibleCols, expandAll, selected, onToggleSele
     }
   }
 
-  const cycleStatus = () => {
-    const idx = STATUS_ORDER.indexOf(tc.status)
-    onUpdate({ status: STATUS_ORDER[(idx + 1) % STATUS_ORDER.length] })
+  const updateStatus = (status: Status) => {
+    onUpdate({ status })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -94,7 +93,7 @@ export function TestCaseRow({ tc, visibleCols, expandAll, selected, onToggleSele
             style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', maxWidth: col.key === 'steps' || col.key === 'expected' ? 300 : undefined }}
           >
             {col.key === 'status' ? (
-              <StatusPill status={tc.status} onCycle={cycleStatus} />
+              <StatusPill status={tc.status} onChange={updateStatus} />
             ) : col.key === 'code' ? (
               <span className="font-mono text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{tc.code || '—'}</span>
             ) : col.key === 'case_type' ? (

@@ -69,7 +69,10 @@ export const MindmapNode = memo(function MindmapNode({
   const { w, h } = getNodeSize(depth)
 
   const hasFail = testCases.some(tc => tc.status === 'fail')
-  const allPass = testCases.length > 0 && testCases.every(tc => tc.status === 'pass' || tc.status === 'skip')
+  const hasSkip = testCases.some(tc => tc.status === 'skip')
+  const hasUntested = testCases.some(tc => tc.status === 'untested')
+  const hasUnpassed = hasFail || hasSkip || hasUntested
+  const allPass = testCases.length > 0 && testCases.every(tc => tc.status === 'pass')
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -253,10 +256,11 @@ export const MindmapNode = memo(function MindmapNode({
 
       {/* Paper card */}
       {(() => {
-        const tintFill = hasFail ? 'var(--status-fail-bg)' : allPass ? 'var(--status-pass-bg)' : null
+        const tintFill = hasFail ? 'var(--status-fail-bg)' : hasUnpassed ? 'var(--status-skip-bg)' : allPass ? 'var(--status-pass-bg)' : null
+        const tintOpacity = hasFail ? 0.2 : hasUnpassed ? 0.15 : 0.15
         return (
           <>
-            {tintFill && <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={rx} fill={tintFill} opacity={0.15} />}
+            {tintFill && <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={rx} fill={tintFill} opacity={tintOpacity} />}
             <rect
               x={-w / 2} y={-h / 2} width={w} height={h} rx={rx}
               fill={`url(#fill-${uid})`}
@@ -281,6 +285,37 @@ export const MindmapNode = memo(function MindmapNode({
           </>
         )
       })()}
+
+      {/* Test case status badge */}
+      {testCases.length > 0 && !deleteMode && (
+        <g
+          transform={`translate(${w / 2 - 6}, ${h / 2 - 6})`}
+          style={{ opacity: hovered || isSelected ? 1 : 0.7, transition: 'opacity 150ms ease-out' }}
+        >
+          {/* Badge background */}
+          <rect
+            x={-12} y={-8}
+            width={24} height={16}
+            rx={8}
+            fill={hasFail ? 'var(--status-fail-bg)' : hasUnpassed ? 'var(--status-skip-bg)' : 'var(--status-pass-bg)'}
+            stroke={hasFail ? 'var(--status-fail-text)' : hasUnpassed ? 'var(--status-skip-text)' : 'var(--status-pass-text)'}
+            strokeWidth={0.75}
+          />
+          {/* Count text */}
+          <text
+            textAnchor="middle"
+            dominantBaseline="central"
+            style={{
+              fill: hasFail ? 'var(--status-fail-text)' : hasUnpassed ? 'var(--status-skip-text)' : 'var(--status-pass-text)',
+              fontSize: 9,
+              fontWeight: 600,
+              fontFamily: 'monospace',
+            }}
+          >
+            {hasFail ? testCases.filter(tc => tc.status === 'fail').length : hasUnpassed ? testCases.filter(tc => tc.status !== 'pass').length : testCases.length}/{testCases.length}
+          </text>
+        </g>
+      )}
 
       {/* Delete checkbox */}
       {deleteMode && (

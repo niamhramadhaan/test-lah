@@ -7,6 +7,7 @@ import { useDashboard } from '@/context/DashboardContext'
 import { MindmapPanel } from '@/components/mindmap/MindmapPanel'
 import { TestCasePanel } from '@/components/testcase/TestCasePanel'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { TestCaseSearch } from '@/components/testcase/TestCaseSearch'
 
 function formatLastSaved(isoString: string): string {
   const date = new Date(isoString)
@@ -59,6 +60,7 @@ export default function ProjectDetailPage() {
   )
 
   const [mobileTab, setMobileTab] = useState<'mindmap' | 'testcases'>('mindmap')
+  const [searchOpen, setSearchOpen] = useState(false)
   const [splitRatio, setSplitRatio] = useState(0.5)
   const [isDragging, setIsDragging] = useState(false)
   const [dividerHovered, setDividerHovered] = useState(false)
@@ -93,6 +95,18 @@ export default function ProjectDetailPage() {
       window.removeEventListener('mouseup', handleMouseUp)
     }
   }, [isDragging])
+
+  // Keyboard shortcut for search (Ctrl+K / Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   if (!project) {
     return (
@@ -148,6 +162,19 @@ export default function ProjectDetailPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] transition-colors hover:bg-[var(--bg-secondary)]"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
+            title="Search test cases (Ctrl+K)"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span className="hidden sm:inline">Search</span>
+            <kbd className="text-[9px] px-1 py-0.5 rounded border ml-1 hidden sm:inline" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>⌘K</kbd>
+          </button>
           <button
             onClick={() => setTcFullscreen(prev => !prev)}
             className="p-1 rounded transition-colors hover:bg-[var(--bg-secondary)]"
@@ -336,6 +363,19 @@ export default function ProjectDetailPage() {
           }
         }
       `}</style>
+
+      {/* Test case search overlay */}
+      {searchOpen && activeProj && (
+        <TestCaseSearch
+          nodes={activeProj.flows}
+          testCases={activeProj.testCases ?? {}}
+          onSelectNode={(nodeId) => {
+            setSelectedNodeId(nodeId)
+            mindmap.selectNode(nodeId)
+          }}
+          onClose={() => setSearchOpen(false)}
+        />
+      )}
     </div>
   )
 }
