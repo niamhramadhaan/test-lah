@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { FlowNode } from '@/types'
 import { generateTestCases, GeneratedTestCase } from '@/lib/llm'
 import { useLLMConfig } from '@/hooks/useLLMConfig'
+import { extractVideoFrames } from '@/lib/video-frames'
 
 interface GenerateTestModalProps {
   open: boolean
@@ -29,6 +30,8 @@ const CAT_FACTS = [
 
 const MAX_IMAGES = 5
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB per image
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB per video
+const MAX_VIDEO_DURATION = 120 // 2 minutes
 
 export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateTestModalProps) {
   const { isConnected, activeProvider, activeProviderId } = useLLMConfig()
@@ -45,8 +48,11 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
   const [catIndex, setCatIndex] = useState(0)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [videoProcessing, setVideoProcessing] = useState(false)
+  const [videoProgress, setVideoProgress] = useState<string | null>(null)
 
   const refreshCat = useCallback(async () => {
     try {
@@ -103,14 +109,65 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
       reader.readAsDataURL(file)
     })
 
-  const addImages = useCallback(async (files: FileList | File[]) => {
-    const remaining = MAX_IMAGES - images.length
-    if (remaining <= 0) {
-      setError(`Maximum ${MAX_IMAGES} images allowed`)
+  const processVideo = useCallback(async (file: File) => {
+    if (!file.type.startsWith('video/')) {
+      setError('Not a video file')
+      return
+    }
+    if (file.size > MAX_VIDEO_SIZE) {
+      setError(`Video too large (max ${MAX_VIDEO_SIZE / 1024 / 1024}MB)`)
       return
     }
 
-    const toAdd = Array.from(files).slice(0, remaining)
+    const remaining = MAX_IMAGES - images.length
+    if (remaining <= 0) {
+      setError(`Maximum ${MAX_IMAGES} images/frames allowed`)
+      return
+    }
+
+    setVideoProcessing(true)
+    setVideoProgress('Loading video...')
+
+    try {
+      const result = await extractVideoFrames(file)
+
+      if (result.duration > MAX_VIDEO_DURATION) {
+        setError(`Video too long (${Math.round(result.duration)}s). Max ${MAX_VIDEO_DURATION}s.`)
+        setVideoProcessing(false)
+        setVideoProgress(null)
+        return
+      }
+
+      setVideoProgress(`Extracting ${result.frames.length} frames...`)
+
+      // Take only what we have room for
+      const framesToAdd = result.frames.slice(0, remaining)
+
+      if (framesToAdd.length > 0) {
+        setImages(prev => [...prev, ...framesToAdd])
+        setError(null)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to process video')
+    } finally {
+      setVideoProcessing(false)
+      setVideoProgress(null)
+    }
+  }, [images.length])
+
+  const addImages = useCallback(async (files: FileList | File[]) => {
+    const remaining = MAX_IMAGES - images.length
+    if (remaining <= 0) {
+      setError(`Maximum ${MAX_IMAGES} images/frames allowed`)
+      return
+    }
+
+    const fileArray = Array.from(files)
+    const imageFiles = fileArray.filter(f => f.type.startsWith('image/'))
+    const videoFiles = fileArray.filter(f => f.type.startsWith('video/'))
+
+    // Process images
+    const toAdd = imageFiles.slice(0, remaining)
     const dataUris: string[] = []
 
     for (const file of toAdd) {
@@ -126,7 +183,12 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
       setImages(prev => [...prev, ...dataUris])
       setError(null)
     }
-  }, [images.length])
+
+    // Process first video (if any)
+    if (videoFiles.length > 0 && images.length + dataUris.length < MAX_IMAGES) {
+      await processVideo(videoFiles[0])
+    }
+  }, [images.length, processVideo])
 
   const removeImage = useCallback((index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index))
@@ -180,6 +242,11 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
       addImages(e.dataTransfer.files)
     }
   }, [addImages])
+
+  // Handle video file selection from dedicated button
+  const handleVideoSelect = useCallback(async (file: File) => {
+    await processVideo(file)
+  }, [processVideo])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -311,10 +378,10 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
               </div>
             </div>
 
-            {/* Image attachments */}
+            {/* Image & Video attachments */}
             <div>
               <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                Screenshots <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}>(optional)</span>
+                Screenshots & Videos <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}>(optional)</span>
               </label>
 
               {/* Image previews */}
@@ -375,6 +442,35 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
                 </div>
               </div>
 
+              {/* Video upload button */}
+              {images.length < MAX_IMAGES && (
+                <>
+                  {videoProcessing ? (
+                    <div className="flex items-center gap-2 mt-2 px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                      <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" strokeDasharray="30 70" />
+                      </svg>
+                      <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                        {videoProgress}
+                      </span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click() }}
+                      className="flex items-center gap-2 mt-2 px-3 py-1.5 text-[11px] rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="23 7 16 12 23 17 23 7" />
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                      </svg>
+                      Upload video (extracts key frames)
+                    </button>
+                  )}
+                </>
+              )}
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -382,6 +478,19 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
                 multiple
                 className="hidden"
                 onChange={handleFileSelect}
+              />
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    await processVideo(file)
+                    e.target.value = ''
+                  }
+                }}
               />
             </div>
 
