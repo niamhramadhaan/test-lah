@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FlowNode, TestCase, ColumnConfig, DEFAULT_COLUMNS } from '@/types'
+import { FlowNode, TestCase, ColumnConfig, DEFAULT_COLUMNS, Status } from '@/types'
 import { TestStats } from '@/hooks/useTestCases'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ProgressBar } from '@/components/shared/ProgressBar'
@@ -13,6 +13,8 @@ import { SummaryFooter } from './SummaryFooter'
 import { ExportModal } from './ExportModal'
 import { GenerateTestModal } from './GenerateTestModal'
 import { NodeSummaryModal } from './NodeSummaryModal'
+import { ImportTestCasesModal } from './ImportTestCasesModal'
+import { E2ETestRunner } from './E2ETestRunner'
 import { Dock, DockIcon } from '@/components/ui/dock'
 import { Separator } from '@/components/ui/separator'
 import { exportNodeAsMarkdown } from '@/lib/export'
@@ -28,13 +30,15 @@ interface TestCasePanelProps {
   onAddTestCase: (nodeId: string, title: string, steps?: string, expected?: string) => void
   onUpdateTestCase: (nodeId: string, tcId: string, patch: Partial<TestCase>) => void
   onDeleteTestCase: (nodeId: string, tcId: string) => void
+  onBulkDelete: (nodeId: string, tcIds: string[]) => void
+  onBulkUpdate: (nodeId: string, tcIds: string[], patch: Partial<TestCase>) => void
   onReorderTestCases: (nodeId: string, newOrder: string[]) => void
+  onReorderColumn?: (nodeId: string, key: string, direction: 'up' | 'down') => void
   onToggleColumn: (nodeId: string, key: string) => void
   onRenameColumn: (nodeId: string, key: string, label: string) => void
   onUpdateNode: (id: string, patch: Partial<FlowNode>) => void
   onAddColumn?: (nodeId: string, label: string) => void
   onDeleteColumn?: (nodeId: string, key: string) => void
-  onReorderColumn?: (nodeId: string, key: string, direction: 'up' | 'down') => void
   confirmDialog?: (title: string, message: string) => Promise<boolean>
 }
 
@@ -48,13 +52,15 @@ export function TestCasePanel({
   onAddTestCase,
   onUpdateTestCase,
   onDeleteTestCase,
+  onBulkDelete,
+  onBulkUpdate,
   onReorderTestCases,
+  onReorderColumn,
   onToggleColumn,
   onRenameColumn,
   onUpdateNode,
   onAddColumn,
   onDeleteColumn,
-  onReorderColumn,
   confirmDialog,
 }: TestCasePanelProps) {
   const router = useRouter()
@@ -62,9 +68,13 @@ export function TestCasePanel({
   const [exportOpen, setExportOpen] = useState(false)
   const [generateOpen, setGenerateOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [e2eRunnerOpen, setE2eRunnerOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
   const [expandAll, setExpandAll] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [addingColumn, setAddingColumn] = useState(false)
@@ -74,6 +84,52 @@ export function TestCasePanel({
 
   const visibleColumns = fullscreen ? columns : columns.filter(c => c.key !== 'code')
   const defaultKeys = DEFAULT_COLUMNS.map(c => c.key)
+
+  // Clear selection when node changes
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [selectedNode?.id])
+
+  // Selection helpers
+  const toggleSelect = useCallback((tcId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(tcId)) next.delete(tcId)
+      else next.add(tcId)
+      return next
+    })
+  }, [])
+
+  // Filter by status
+  const filteredTestCases = statusFilter === 'all'
+    ? testCases
+    : testCases.filter(tc => tc.status === statusFilter)
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedIds.size === filteredTestCases.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredTestCases.map(tc => tc.id)))
+    }
+  }, [selectedIds.size, filteredTestCases])
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), [])
+
+  const handleBulkDelete = useCallback(async () => {
+    if (!selectedNode || selectedIds.size === 0) return
+    if (confirmDialog) {
+      const ok = await confirmDialog('Delete Test Cases', `Delete ${selectedIds.size} selected test case(s)?`)
+      if (!ok) return
+    }
+    onBulkDelete(selectedNode.id, Array.from(selectedIds))
+    setSelectedIds(new Set())
+  }, [selectedNode, selectedIds, onBulkDelete, confirmDialog])
+
+  const handleBulkStatus = useCallback((status: Status) => {
+    if (!selectedNode || selectedIds.size === 0) return
+    onBulkUpdate(selectedNode.id, Array.from(selectedIds), { status })
+    setSelectedIds(new Set())
+  }, [selectedNode, selectedIds, onBulkUpdate])
 
   const handleSortChange = (key: string | null) => {
     if (key === null) {
@@ -86,12 +142,12 @@ export function TestCasePanel({
     }
   }
 
-  const sortedTestCases = sortKey ? [...testCases].sort((a, b) => {
+  const sortedTestCases = sortKey ? [...filteredTestCases].sort((a, b) => {
     const aVal = (a[sortKey as keyof TestCase] as string) || ''
     const bVal = (b[sortKey as keyof TestCase] as string) || ''
     const cmp = aVal.localeCompare(bVal)
     return sortDirection === 'asc' ? cmp : -cmp
-  }) : testCases
+  }) : filteredTestCases
 
   // Focus new column input
   useEffect(() => {
@@ -117,6 +173,13 @@ export function TestCasePanel({
     }
   }, [selectedNode, onAddTestCase])
 
+  const handleImport = useCallback((cases: Array<{ title: string; steps: string; expected: string }>) => {
+    if (!selectedNode) return
+    for (const tc of cases) {
+      onAddTestCase(selectedNode.id, tc.title, tc.steps, tc.expected)
+    }
+  }, [selectedNode, onAddTestCase])
+
   if (!selectedNode) {
     return (
       <div className="h-full">
@@ -133,6 +196,45 @@ export function TestCasePanel({
           {selectedNode.label}
         </h2>
         <ProgressBar value={stats.passRate} />
+
+        {/* Status filter pills */}
+        <div className="flex items-center gap-1.5 mt-2">
+          {([['all', 'All'], ['untested', 'Untested'], ['pass', 'Pass'], ['fail', 'Fail'], ['skip', 'Skip']] as const).map(([value, label]) => {
+            const isActive = statusFilter === value
+            const count = value === 'all' ? testCases.length : testCases.filter(tc => tc.status === value).length
+            const colors: Record<string, { bg: string; text: string }> = {
+              all: { bg: 'var(--bg-secondary)', text: 'var(--text-secondary)' },
+              untested: { bg: 'var(--status-untested-bg)', text: 'var(--status-untested-text)' },
+              pass: { bg: 'var(--status-pass-bg)', text: 'var(--status-pass-text)' },
+              fail: { bg: 'var(--status-fail-bg)', text: 'var(--status-fail-text)' },
+              skip: { bg: 'var(--status-skip-bg)', text: 'var(--status-skip-text)' },
+            }
+            const c = colors[value]
+            return (
+              <button
+                key={value}
+                onClick={() => setStatusFilter(value)}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full border transition-colors"
+                style={{
+                  backgroundColor: isActive ? c.bg : 'transparent',
+                  color: isActive ? c.text : 'var(--text-tertiary)',
+                  borderColor: isActive ? 'transparent' : 'var(--border)',
+                }}
+              >
+                {label}
+                <span
+                  className="px-1 py-0 text-[9px] rounded-full min-w-[16px] text-center"
+                  style={{
+                    backgroundColor: isActive ? 'rgba(0,0,0,0.1)' : 'var(--bg-secondary)',
+                    color: isActive ? c.text : 'var(--text-tertiary)',
+                  }}
+                >
+                  {count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Notes section */}
@@ -158,6 +260,57 @@ export function TestCasePanel({
         />
       </div>
 
+      {/* Bulk action bar — appears when rows are selected */}
+      {selectedIds.size > 0 && (
+        <div
+          className="mx-4 mb-2 px-3 py-2 rounded-lg border flex items-center gap-3"
+          style={{
+            borderColor: 'var(--accent)',
+            backgroundColor: 'var(--accent)',
+            animation: 'fadeInUp 150ms ease-out',
+          }}
+        >
+          <span className="text-xs font-medium text-white">
+            {selectedIds.size} selected
+          </span>
+
+          <div className="flex-1" />
+
+          {/* Bulk status buttons */}
+          {(['pass', 'fail', 'skip', 'untested'] as const).map(status => (
+            <button
+              key={status}
+              onClick={() => handleBulkStatus(status)}
+              className="px-2 py-1 text-[10px] font-medium rounded-md transition-colors hover:bg-white/20"
+              style={{ color: '#fff' }}
+            >
+              Mark {status.charAt(0).toUpperCase() + status.slice(1)}
+            </button>
+          ))}
+
+          <div className="w-px h-4 bg-white/30" />
+
+          {/* Bulk delete */}
+          <button
+            onClick={handleBulkDelete}
+            className="px-2 py-1 text-[10px] font-medium rounded-md transition-colors hover:bg-white/20"
+            style={{ color: '#fff' }}
+          >
+            Delete
+          </button>
+
+          {/* Clear selection */}
+          <button
+            onClick={clearSelection}
+            className="px-1.5 py-1 text-[10px] font-medium rounded-md transition-colors hover:bg-white/20"
+            style={{ color: '#fff' }}
+            title="Clear selection"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Test case table */}
       <div className="flex-1 min-h-0 overflow-auto px-2">
         {testCases.length === 0 ? (
@@ -167,6 +320,9 @@ export function TestCasePanel({
             testCases={sortedTestCases}
             columns={visibleColumns}
             expandAll={expandAll}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={toggleSelectAll}
             sortKey={sortKey}
             sortDirection={sortDirection}
             onSortChange={handleSortChange}
@@ -258,7 +414,7 @@ export function TestCasePanel({
                             }
                             onDeleteColumn(selectedNode.id, col.key)
                           }}
-                          className="w-4 h-4 flex items-center justify-center rounded hover:opacity-100 text-[10px]"
+                          className="w-4 h-4 flex items-center justify-center rounded hover:opacity-100 transition-opacity text-[10px]"
                           style={{ color: 'var(--status-fail-text)' }}
                           title={`Delete ${col.label}`}
                         >
@@ -378,7 +534,7 @@ export function TestCasePanel({
             <div className="relative group">
               <button
                 onClick={() => {
-                  const md = exportNodeAsMarkdown(selectedNode, testCases, columns)
+                  const md = exportNodeAsMarkdown(selectedNode, filteredTestCases, columns)
                   navigator.clipboard.writeText(md).then(() => {
                     setCopied(true)
                     setTimeout(() => setCopied(false), 2000)
@@ -461,6 +617,43 @@ export function TestCasePanel({
 
           <Separator orientation="vertical" className="h-full" />
 
+          {/* Import */}
+          <DockIcon>
+            <div className="relative group">
+              <button
+                onClick={() => setImportOpen(true)}
+                className="w-full h-full flex items-center justify-center rounded-full hover:bg-[var(--bg-secondary)] transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
+                Import Cases
+              </div>
+            </div>
+          </DockIcon>
+
+          {/* E2E Test Runner */}
+          <DockIcon>
+            <div className="relative group">
+              <button
+                onClick={() => setE2eRunnerOpen(true)}
+                className="w-full h-full flex items-center justify-center rounded-full hover:bg-[var(--bg-secondary)] transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </button>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
+                E2E Test
+              </div>
+            </div>
+          </DockIcon>
+
           {/* Generate */}
           <DockIcon>
             <div className="relative group">
@@ -501,6 +694,20 @@ export function TestCasePanel({
         testCases={testCases}
         stats={stats}
       />
+      <ImportTestCasesModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={handleImport}
+        nodeLabel={selectedNode.label}
+      />
+
+      {e2eRunnerOpen && selectedNode && (
+        <E2ETestRunner
+          testCases={testCases}
+          projectId={projectId}
+          onClose={() => setE2eRunnerOpen(false)}
+        />
+      )}
 
       <style jsx>{`
         @keyframes fadeInUp {

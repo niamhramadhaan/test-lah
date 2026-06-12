@@ -7,6 +7,7 @@ import { useDashboard } from '@/context/DashboardContext'
 import { MindmapPanel } from '@/components/mindmap/MindmapPanel'
 import { TestCasePanel } from '@/components/testcase/TestCasePanel'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { TestCaseSearch } from '@/components/testcase/TestCaseSearch'
 
 function formatLastSaved(isoString: string): string {
   const date = new Date(isoString)
@@ -37,23 +38,29 @@ export default function ProjectDetailPage() {
   } = useDashboard()
 
   const project = projects[projectId] ?? null
+  const switchCalledRef = useRef<string | null>(null)
+
+  // Use project directly while activeProjectId syncs via effect
+  const activeProj = activeProjectId === projectId ? activeProject : project
 
   useEffect(() => {
-    if (project && activeProjectId !== projectId) {
+    if (projects[projectId] && switchCalledRef.current !== projectId) {
+      switchCalledRef.current = projectId
       switchProject(projectId)
     }
-  }, [projectId, activeProjectId, project, switchProject])
+  }, [projectId, projects, switchProject])
 
   useEffect(() => {
     setSelectedNodeId(null)
   }, [projectId, setSelectedNodeId])
 
   const selectedNode = useMemo(
-    () => activeProject?.flows.find(n => n.id === selectedNodeId) ?? null,
-    [activeProject, selectedNodeId],
+    () => activeProj?.flows.find(n => n.id === selectedNodeId) ?? null,
+    [activeProj, selectedNodeId],
   )
 
   const [mobileTab, setMobileTab] = useState<'mindmap' | 'testcases'>('mindmap')
+  const [searchOpen, setSearchOpen] = useState(false)
   const [splitRatio, setSplitRatio] = useState(0.5)
   const [isDragging, setIsDragging] = useState(false)
   const [dividerHovered, setDividerHovered] = useState(false)
@@ -89,6 +96,18 @@ export default function ProjectDetailPage() {
     }
   }, [isDragging])
 
+  // Keyboard shortcut for search (Ctrl+K / Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   if (!project) {
     return (
       <EmptyState
@@ -98,7 +117,7 @@ export default function ProjectDetailPage() {
     )
   }
 
-  if (!activeProject || activeProject.id !== projectId) {
+  if (!activeProj) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Loading project...</div>
@@ -143,6 +162,19 @@ export default function ProjectDetailPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] transition-colors hover:bg-[var(--bg-secondary)]"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
+            title="Search test cases (Ctrl+K)"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span className="hidden sm:inline">Search</span>
+            <kbd className="text-[9px] px-1 py-0.5 rounded border ml-1 hidden sm:inline" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>⌘K</kbd>
+          </button>
           <button
             onClick={() => setTcFullscreen(prev => !prev)}
             className="p-1 rounded transition-colors hover:bg-[var(--bg-secondary)]"
@@ -203,7 +235,7 @@ export default function ProjectDetailPage() {
           <MindmapPanel
             nodes={mindmap.nodes}
             edges={mindmap.edges}
-            testCases={activeProject.testCases ?? {}}
+            testCases={activeProj.testCases ?? {}}
             selectedNodeId={selectedNodeId}
             onSelect={mindmap.selectNode}
             onAddNode={(parentId, label, position, direction) => {
@@ -304,12 +336,14 @@ export default function ProjectDetailPage() {
             selectedNode={selectedNode}
             testCases={testCases.testCases}
             stats={testCases.stats}
-            columns={selectedNodeId ? (activeProject.columnConfigs?.[selectedNodeId] ?? activeProject.columnConfig ?? []) : (activeProject.columnConfig ?? [])}
+            columns={selectedNodeId ? (activeProj.columnConfigs?.[selectedNodeId] ?? activeProj.columnConfig ?? []) : (activeProj.columnConfig ?? [])}
             projectId={projectId}
             fullscreen={tcFullscreen}
             onAddTestCase={testCases.addTestCase}
             onUpdateTestCase={testCases.updateTestCase}
             onDeleteTestCase={testCases.deleteTestCase}
+            onBulkDelete={testCases.bulkDeleteTestCases}
+            onBulkUpdate={testCases.bulkUpdateTestCases}
             onReorderTestCases={testCases.reorderTestCases}
             onToggleColumn={testCases.toggleColumnVisibility}
             onRenameColumn={testCases.updateColumnConfig}
@@ -329,6 +363,19 @@ export default function ProjectDetailPage() {
           }
         }
       `}</style>
+
+      {/* Test case search overlay */}
+      {searchOpen && activeProj && (
+        <TestCaseSearch
+          nodes={activeProj.flows}
+          testCases={activeProj.testCases ?? {}}
+          onSelectNode={(nodeId) => {
+            setSelectedNodeId(nodeId)
+            mindmap.selectNode(nodeId)
+          }}
+          onClose={() => setSearchOpen(false)}
+        />
+      )}
     </div>
   )
 }

@@ -1,17 +1,38 @@
 {
-  "name": "test-lah",
-  "version": "1.0.0",
+  "name": "@niamhramadhaan/test-lah",
+  "version": "1.0.8",
+  "description": "QA Test Case Management — AI-powered test case generation and management",
   "private": false,
+  "bin": {
+    "test-lah": "./bin/test-lah.js"
+  },
+  "files": [
+    ".next/standalone/**",
+    ".next/static/**",
+    "public/**",
+    "bin/**",
+    "scripts/**",
+    "next.config.mjs",
+    "package.json"
+  ],
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "node scripts/postinstall.js",
+    "prepare:publish": "npm run build && node scripts/prepare-publish.js",
+    "publish:github": "npm run prepare:publish && set -a && . ./.env.local && set +a && npm version patch --no-git-tag-version && npm publish --registry=https://npm.pkg.github.com",
+    "publish:npm": "npm run prepare:publish && npm pkg set name=test-lah && npm version patch --no-git-tag-version && npm publish --registry=https://registry.npmjs.org --otp=$OTP && npm pkg set name=@niamhramadhaan/test-lah"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.81",
+    "@ai-sdk/google": "^3.0.80",
+    "@ai-sdk/groq": "^3.0.39",
+    "@ai-sdk/openai": "^3.0.68",
     "@base-ui/react": "^1.5.0",
-    "@google/generative-ai": "^0.24.1",
     "@lottiefiles/dotlottie-web": "^0.74.0",
+    "@playwright/test": "^1.60.0",
     "ai": "^6.0.198",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
@@ -19,14 +40,15 @@
     "exceljs": "^4.4.0",
     "lucide-react": "^1.17.0",
     "motion": "^12.40.0",
-    "next": "14.2.35",
+    "next": "^15.5.18",
     "next-themes": "^0.4.6",
-    "openai": "^6.41.0",
+    "playwright": "^1.60.0",
     "react": "^18",
     "react-dom": "^18",
     "rough-notation": "^0.5.1",
     "tailwind-merge": "^3.6.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",

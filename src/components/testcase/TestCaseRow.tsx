@@ -8,6 +8,8 @@ interface TestCaseRowProps {
   tc: TestCase
   visibleCols: ColumnConfig[]
   expandAll: boolean
+  selected: boolean
+  onToggleSelect: () => void
   onUpdate: (patch: Partial<TestCase>) => void
   onDelete: () => void
   onDragStart: (e: React.DragEvent) => void
@@ -17,7 +19,7 @@ interface TestCaseRowProps {
 
 const STATUS_ORDER: Status[] = ['untested', 'pass', 'fail', 'skip']
 
-export function TestCaseRow({ tc, visibleCols, expandAll, onUpdate, onDelete, onDragStart, onDragOver, onDrop }: TestCaseRowProps) {
+export function TestCaseRow({ tc, visibleCols, expandAll, selected, onToggleSelect, onUpdate, onDelete, onDragStart, onDragOver, onDrop }: TestCaseRowProps) {
   const [editingKey, setEditingKey] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [hovered, setHovered] = useState(false)
@@ -40,9 +42,8 @@ export function TestCaseRow({ tc, visibleCols, expandAll, onUpdate, onDelete, on
     }
   }
 
-  const cycleStatus = () => {
-    const idx = STATUS_ORDER.indexOf(tc.status)
-    onUpdate({ status: STATUS_ORDER[(idx + 1) % STATUS_ORDER.length] })
+  const updateStatus = (status: Status) => {
+    onUpdate({ status })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -75,6 +76,16 @@ export function TestCaseRow({ tc, visibleCols, expandAll, onUpdate, onDelete, on
         onDragOver={onDragOver}
         onDrop={onDrop}
       >
+        {/* Checkbox */}
+        <td className="px-2 py-1.5 border-b" style={{ borderColor: 'var(--border)', width: 28 }}>
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            className="cursor-pointer accent-[var(--accent)]"
+            style={{ width: 14, height: 14 }}
+          />
+        </td>
         {visibleCols.map(col => (
           <td
             key={col.key}
@@ -82,7 +93,7 @@ export function TestCaseRow({ tc, visibleCols, expandAll, onUpdate, onDelete, on
             style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', maxWidth: col.key === 'steps' || col.key === 'expected' ? 300 : undefined }}
           >
             {col.key === 'status' ? (
-              <StatusPill status={tc.status} onCycle={cycleStatus} />
+              <StatusPill status={tc.status} onChange={updateStatus} />
             ) : col.key === 'code' ? (
               <span className="font-mono text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{tc.code || '—'}</span>
             ) : col.key === 'case_type' ? (

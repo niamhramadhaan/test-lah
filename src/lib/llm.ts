@@ -1,22 +1,24 @@
-export interface GeneratedTestCase {
-  title: string
-  steps: string
-  expected: string
-}
+import type { GeneratedTestCase } from '@/lib/llm/index'
+export type { GeneratedTestCase }
+export { testConnection } from '@/lib/llm/index'
 
+/**
+ * Client-side function — sends request to the /api/generate route.
+ */
 export async function generateTestCases(
   title: string,
   prompt: string,
   apiKey: string,
-  provider: string = 'gemini',
+  provider: string = 'google',
   model: string = '',
   language: string = 'en',
-  baseUrl: string = '',
+  baseURL?: string,
+  images?: string[],
 ): Promise<GeneratedTestCase[]> {
   const res = await fetch('/api/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, prompt, apiKey, provider, model, language, baseUrl }),
+    body: JSON.stringify({ title, prompt, apiKey, provider, model, language, baseURL, images }),
   })
 
   if (!res.ok) {

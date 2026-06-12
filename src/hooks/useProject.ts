@@ -87,6 +87,39 @@ export function useProject() {
     })
   }, [setState])
 
+  const importProject = useCallback((json: string): { ok: boolean; error?: string } => {
+    try {
+      const data = JSON.parse(json)
+      if (!data || typeof data !== 'object') return { ok: false, error: 'Invalid JSON' }
+      if (!data.name || !data.flows) return { ok: false, error: 'Missing required fields (name, flows)' }
+
+      const newId = crypto.randomUUID()
+      const project: Project = {
+        id: newId,
+        name: data.name,
+        createdAt: data.createdAt || new Date().toISOString(),
+        flows: Array.isArray(data.flows) ? data.flows : [],
+        testCases: data.testCases && typeof data.testCases === 'object' ? data.testCases : {},
+        columnConfig: Array.isArray(data.columnConfig) ? data.columnConfig : [...DEFAULT_COLUMNS],
+        columnConfigs: data.columnConfigs && typeof data.columnConfigs === 'object' ? data.columnConfigs : {},
+        edges: Array.isArray(data.edges) ? data.edges : [],
+        userProfile: data.userProfile && typeof data.userProfile === 'object' ? data.userProfile : { name: '', bannerColor: '#64B5F6' },
+        nodeCounter: typeof data.nodeCounter === 'number' ? data.nodeCounter : 0,
+        tcCounter: data.tcCounter && typeof data.tcCounter === 'object' ? data.tcCounter : {},
+      }
+
+      setState(prev => ({
+        ...prev,
+        projects: { ...prev.projects, [newId]: project },
+        activeProjectId: newId,
+        selectedNodeId: null,
+      }))
+      return { ok: true }
+    } catch {
+      return { ok: false, error: 'Failed to parse project file' }
+    }
+  }, [setState])
+
   const setSelectedNodeId = useCallback((nodeId: string | null) => {
     setState(prev => ({ ...prev, selectedNodeId: nodeId }))
   }, [setState])
@@ -113,6 +146,7 @@ export function useProject() {
     createProject,
     deleteProject,
     duplicateProject,
+    importProject,
     switchProject,
     renameProject,
     setSelectedNodeId,

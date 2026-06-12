@@ -1,0 +1,224 @@
+/**
+ * Unified LLM service — uses Vercel AI SDK for all providers.
+ *
+ * This module creates AI SDK provider instances on the fly from user config,
+ * so the rest of the codebase only calls generateText() without caring which
+ * provider is underneath.
+ */
+
+import { generateText, Output } from 'ai'
+import { createOpenAI } from '@ai-sdk/openai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createAnthropic } from '@ai-sdk/anthropic'
+import { createGroq } from '@ai-sdk/groq'
+import { z } from 'zod'
+import { type ProviderDef } from './providers'
+
+// ---------------------------------------------------------------------------
+// Schema for test case generation
+// ---------------------------------------------------------------------------
+
+const TestCaseSchema = z.object({
+  title: z.string().describe('Short descriptive title of the test case'),
+  steps: z.string().describe('Numbered test steps separated by newlines'),
+  expected: z.string().describe('Expected result of the test'),
+})
+
+export type GeneratedTestCase = z.infer<typeof TestCaseSchema>
+
+// ---------------------------------------------------------------------------
+// Provider factory — returns an AI SDK model instance
+// ---------------------------------------------------------------------------
+
+export interface ProviderConfig {
+  def: ProviderDef
+  apiKey: string
+  model: string
+  baseURL?: string
+}
+
+export function createModel(config: ProviderConfig) {
+  const { def, apiKey, model, baseURL } = config
+
+  if (def.type === 'native') {
+    switch (def.sdkProvider) {
+      case 'openai': {
+        const provider = createOpenAI({ apiKey })
+        return provider(model || def.defaultModel)
+      }
+      case 'google': {
+        const provider = createGoogleGenerativeAI({ apiKey })
+        return provider(model || def.defaultModel)
+      }
+      case 'anthropic': {
+        const provider = createAnthropic({ apiKey })
+        return provider(model || def.defaultModel)
+      }
+      case 'groq': {
+        const provider = createGroq({ apiKey })
+        return provider(model || def.defaultModel)
+      }
+      default:
+        throw new Error(`Unknown native SDK provider: ${def.sdkProvider}`)
+    }
+  }
+
+  // OpenAI-compatible path (deepseek, xiaomi, custom, etc.)
+  const effectiveBaseURL = baseURL || def.baseURL
+  if (!effectiveBaseURL) {
+    throw new Error(`Base URL is required for OpenAI-compatible provider "${def.id}"`)
+  }
+
+  const provider = createOpenAI({
+    apiKey,
+    baseURL: effectiveBaseURL,
+    name: def.id,
+  })
+  return provider(model || def.defaultModel)
+}
+
+// ---------------------------------------------------------------------------
+// System prompt
+// ---------------------------------------------------------------------------
+
+function getSystemPrompt(language: string = 'en'): string {
+  const langInstruction =
+    language === 'id'
+      ? 'Write ALL test case content (title, steps, expected result) in Bahasa Indonesia.'
+      : 'Write ALL test case content (title, steps, expected result) in English.'
+
+  return `You are a QA engineer. Generate test cases for the given feature.
+${langInstruction}
+
+RULES FOR STEPS:
+- Each test case's steps must be specific to THAT scenario. Do NOT repeat generic navigation steps.
+- Assume the user is already on the relevant page unless the test specifically requires navigation.
+- Each step should describe a UNIQUE action. If two test cases share setup, mention it only in the first step of that test.
+- Be concise: 2-5 steps per test case.
+- Focus on the action being tested, not boilerplate.
+
+Generate 3-8 test cases covering happy path, edge cases, and error scenarios.`
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+export type VideoInputMode = 'frames'
+
+export async function generateTestCases(
+  config: ProviderConfig,
+  title: string,
+  prompt: string,
+  language: string = 'en',
+  images?: string[],
+): Promise<GeneratedTestCase[]> {
+  const model = createModel(config)
+
+  const systemPrompt = getSystemPrompt(language)
+  const hasMedia = images && images.length > 0
+  const userText = `Feature: ${title}\n\nDescription / DoD / Acceptance Criteria:\n${prompt || '(no additional description provided)'}${hasMedia ? '\n\nThe user has attached screenshot(s) of the UI/feature. Use them as additional context to write more accurate and specific test cases.' : ''}`
+
+  // Build multimodal content
+  const content: Array<
+    | { type: 'text'; text: string }
+    | { type: 'image'; image: string }
+  > = [
+    { type: 'text', text: userText },
+  ]
+
+  // Add images
+  if (images?.length) {
+    for (const img of images) {
+      content.push({ type: 'image', image: img })
+    }
+  }
+
+  const maxOutputTokens = 4096
+
+  // Try structured output first, fall back to text parsing for models that don't support it
+  try {
+    const { output } = await generateText({
+      model,
+      output: Output.array({ element: TestCaseSchema }),
+      system: systemPrompt,
+      messages: [{ role: 'user', content }],
+      temperature: 0.4,
+      maxOutputTokens,
+    })
+    return output
+  } catch (structuredError) {
+    // Fallback: request JSON in text and parse manually
+    // This handles models like MiniMax that don't support response_format/json_schema
+    console.warn('Structured output failed, falling back to text parsing:', structuredError)
+
+    const jsonPrompt = `${systemPrompt}\n\nIMPORTANT: Respond with ONLY a valid JSON array. No markdown, no code fences, no explanation, no thinking tags. Just the raw JSON array.\n\nEach object must have exactly these keys: "title" (string), "steps" (string with numbered steps separated by newlines), "expected" (string).`
+
+    const { text } = await generateText({
+      model,
+      system: jsonPrompt,
+      messages: [{ role: 'user', content }],
+      temperature: 0.4,
+      maxOutputTokens,
+    })
+
+    // Extract JSON from response
+    let jsonStr = text.trim()
+    // Strip thinking tags (MiniMax returns <think>...</think> in content)
+    jsonStr = jsonStr.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+    // Strip markdown code fences
+    const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
+    if (fenceMatch) {
+      jsonStr = fenceMatch[1].trim()
+    }
+    // Extract JSON array from response
+    const arrayMatch = jsonStr.match(/\[\s*\{[\s\S]*\}\s*\]/)
+    if (arrayMatch) {
+      jsonStr = arrayMatch[0]
+    }
+
+    // Try to fix truncated JSON by closing open brackets
+    const openBrackets = (jsonStr.match(/\[/g) || []).length
+    const closeBrackets = (jsonStr.match(/\]/g) || []).length
+    const openBraces = (jsonStr.match(/\{/g) || []).length
+    const closeBraces = (jsonStr.match(/\}/g) || []).length
+
+    if (openBraces > closeBraces) {
+      // Close any open string if needed
+      if ((jsonStr.match(/"/g) || []).length % 2 !== 0) {
+        jsonStr += '"'
+      }
+      jsonStr += '}'.repeat(openBraces - closeBraces)
+    }
+    if (openBrackets > closeBrackets) {
+      jsonStr += ']'.repeat(openBrackets - closeBrackets)
+    }
+
+    try {
+      const parsed = JSON.parse(jsonStr)
+      const result = z.array(TestCaseSchema).parse(parsed)
+      return result
+    } catch (parseError) {
+      throw new Error(`Model returned unparseable response. Raw text: ${text.slice(0, 500)}`)
+    }
+  }
+}
+
+export async function testConnection(
+  config: ProviderConfig,
+): Promise<{ ok: boolean; error?: string; models?: string[] }> {
+  try {
+    const model = createModel(config)
+
+    await generateText({
+      model,
+      prompt: 'Say "ok" in one word.',
+      maxOutputTokens: 10,
+    })
+
+    return { ok: true }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Connection failed'
+    return { ok: false, error: message }
+  }
+}
