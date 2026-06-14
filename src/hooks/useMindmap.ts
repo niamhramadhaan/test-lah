@@ -15,18 +15,28 @@ export function useMindmap(
   const addNode = useCallback((parentId: string | null, label: string, position?: { x: number; y: number }, direction?: NodeDirection): string | null => {
     if (!project) return null
     const id = crypto.randomUUID()
-    let nodeCode = ''
-    updateProject(project.id, p => {
-      const counter = (p.nodeCounter ?? 0) + 1
-      // Generate code from label: take first 3 chars uppercase, or N001 fallback
-      const clean = (label || '').trim().replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/)
-      if (clean.length >= 2) {
-        nodeCode = clean.slice(0, 2).map(w => w.charAt(0).toUpperCase()).join('') + String(counter).padStart(2, '0')
-      } else if (clean[0] && clean[0].length >= 2) {
-        nodeCode = clean[0].slice(0, 3).toUpperCase() + String(counter).padStart(2, '0')
-      } else {
-        nodeCode = `N${String(counter).padStart(3, '0')}`
-      }
+      let nodeCode = ''
+      updateProject(project.id, p => {
+        const counter = (p.nodeCounter ?? 0) + 1
+        // Generate code: first letter of first word + first letter of last word
+        const clean = (label || '').trim().replace(/[^a-zA-Z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 0)
+        let base = ''
+        if (clean.length >= 2) {
+          base = clean[0].charAt(0).toUpperCase() + clean[clean.length - 1].charAt(0).toUpperCase()
+        } else if (clean.length === 1 && clean[0].length >= 2) {
+          base = clean[0].charAt(0).toUpperCase() + clean[0].charAt(clean[0].length - 1).toUpperCase()
+        } else {
+          base = 'N'
+        }
+        // Check for duplicates
+        const existingCodes = p.flows.map(n => n.code)
+        let code = base
+        let suffix = 1
+        while (existingCodes.includes(code)) {
+          suffix++
+          code = base + String(suffix)
+        }
+        nodeCode = code
       const newNode = createDefaultNode(id, nodeCode, label, parentId)
       if (position) {
         newNode.position = position

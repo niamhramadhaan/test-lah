@@ -222,3 +222,33 @@ export async function testConnection(
     return { ok: false, error: message }
   }
 }
+
+export async function refineNotes(
+  config: ProviderConfig,
+  projectName: string,
+  notes: string,
+): Promise<string> {
+  const model = createModel(config)
+
+  const systemPrompt = `You are a QA documentation assistant. Your job is to refine project notes for a QA testing project.
+
+Rules:
+- Make the notes more structured, clear, and professional
+- Use the project name as context for domain-appropriate formatting
+- Organize into logical sections with bullet points if appropriate
+- Keep the original meaning and all technical details
+- Do NOT add new information or assumptions
+- Return ONLY the refined notes text, no explanation or wrapper`
+
+  const userText = `Project: ${projectName}\n\nCurrent notes:\n${notes || '(no notes yet)'}`
+
+  const { text } = await generateText({
+    model,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userText }],
+    temperature: 0.3,
+    maxOutputTokens: 2048,
+  })
+
+  return text.trim()
+}

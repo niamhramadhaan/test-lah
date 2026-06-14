@@ -13,11 +13,13 @@ const INITIAL_STATE: AppState = {
 export function useProject() {
   const [state, setState, lastSaved] = useLocalStorage<AppState>('qa-dashboard', INITIAL_STATE)
 
-  const createProject = useCallback((name: string) => {
+  const createProject = useCallback((name: string, type?: string) => {
     const id = crypto.randomUUID()
     const project: Project = {
       id,
       name,
+      type: type || '',
+      notes: '',
       createdAt: new Date().toISOString(),
       flows: [],
       testCases: {},

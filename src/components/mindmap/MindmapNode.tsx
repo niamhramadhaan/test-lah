@@ -24,6 +24,7 @@ interface MindmapNodeProps {
   onEdgeStart: (id: string, edgeType: 'pass' | 'fail', x: number, y: number, direction: 'horizontal' | 'vertical') => void
   onToggleDeleteCheck: (id: string) => void
   depth: number
+  showCounter: boolean
   svgRef: React.RefObject<SVGSVGElement>
 }
 
@@ -53,6 +54,7 @@ export const MindmapNode = memo(function MindmapNode({
   onEdgeStart,
   onToggleDeleteCheck,
   depth,
+  showCounter,
   svgRef,
 }: MindmapNodeProps) {
   const [editing, setEditing] = useState(false)
@@ -243,17 +245,6 @@ export const MindmapNode = memo(function MindmapNode({
         </g>
       )}
 
-      {/* Edge drop target glow */}
-      {isEdgeDropTarget && (
-        <rect
-          x={-w / 2 - 6} y={-h / 2 - 6}
-          width={w + 12} height={h + 12}
-          rx={rx + 4}
-          fill="var(--status-pass-bg)" stroke="var(--status-pass-text)"
-          strokeWidth={2} opacity={0.5}
-        />
-      )}
-
       {/* Paper card */}
       {(() => {
         const tintFill = hasFail ? 'var(--status-fail-bg)' : hasUnpassed ? 'var(--status-skip-bg)' : allPass ? 'var(--status-pass-bg)' : null
@@ -286,35 +277,24 @@ export const MindmapNode = memo(function MindmapNode({
         )
       })()}
 
-      {/* Test case status badge */}
-      {testCases.length > 0 && !deleteMode && (
-        <g
-          transform={`translate(${w / 2 - 6}, ${h / 2 - 6})`}
-          style={{ opacity: hovered || isSelected ? 1 : 0.7, transition: 'opacity 150ms ease-out' }}
+      {/* Inline test case counter — top-right corner */}
+      {testCases.length > 0 && !deleteMode && showCounter && (
+        <text
+          x={w / 2 - 6}
+          y={-h / 2 + 10}
+          textAnchor="end"
+          style={{
+            fill: hasFail ? 'var(--status-fail-text)' : hasUnpassed ? 'var(--status-skip-text)' : 'var(--status-pass-text)',
+            fontSize: 9,
+            fontWeight: 700,
+            fontFamily: 'monospace',
+            opacity: hovered || isSelected ? 1 : 0.7,
+            transition: 'opacity 150ms ease-out',
+            pointerEvents: 'none',
+          }}
         >
-          {/* Badge background */}
-          <rect
-            x={-12} y={-8}
-            width={24} height={16}
-            rx={8}
-            fill={hasFail ? 'var(--status-fail-bg)' : hasUnpassed ? 'var(--status-skip-bg)' : 'var(--status-pass-bg)'}
-            stroke={hasFail ? 'var(--status-fail-text)' : hasUnpassed ? 'var(--status-skip-text)' : 'var(--status-pass-text)'}
-            strokeWidth={0.75}
-          />
-          {/* Count text */}
-          <text
-            textAnchor="middle"
-            dominantBaseline="central"
-            style={{
-              fill: hasFail ? 'var(--status-fail-text)' : hasUnpassed ? 'var(--status-skip-text)' : 'var(--status-pass-text)',
-              fontSize: 9,
-              fontWeight: 600,
-              fontFamily: 'monospace',
-            }}
-          >
-            {hasFail ? testCases.filter(tc => tc.status === 'fail').length : hasUnpassed ? testCases.filter(tc => tc.status !== 'pass').length : testCases.length}/{testCases.length}
-          </text>
-        </g>
+          {hasFail ? testCases.filter(tc => tc.status === 'fail').length : hasUnpassed ? testCases.filter(tc => tc.status !== 'pass').length : testCases.length}/{testCases.length}
+        </text>
       )}
 
       {/* Delete checkbox */}
@@ -339,13 +319,13 @@ export const MindmapNode = memo(function MindmapNode({
         </g>
       )}
 
-      {/* Node code badge — visible on hover/selected */}
+      {/* Node code badge — top-left inside box */}
       {node.code && !deleteMode && (
         <g
-          transform={`translate(${-w / 2 + 6}, ${-h / 2 - 11})`}
+          transform={`translate(${-w / 2 + 4}, ${-h / 2 + 4})`}
           style={{ opacity: hovered || isSelected ? 1 : 0, transition: 'opacity 150ms ease-out' }}
         >
-          <rect x={0} y={0} width={Math.max(node.code.length * 6.5 + 10, 28)} height={14} rx={7} fill="var(--accent)" opacity={0.08} />
+          <rect x={0} y={0} width={Math.max(node.code.length * 6.5 + 10, 28)} height={14} rx={2} fill="var(--accent)" opacity={0.08} />
           <text x={5} y={10} style={{ fill: 'var(--text-tertiary)', fontSize: 8, fontWeight: 500, fontFamily: 'monospace', letterSpacing: '0.05em' }}>
             {node.code}
           </text>
@@ -397,7 +377,9 @@ export const MindmapNode = memo(function MindmapNode({
             <g
               onClick={handleAddChildClick('horizontal')}
               onMouseDown={e => e.stopPropagation()}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: 'pointer', transition: 'opacity 150ms ease-out' }}
+              onMouseEnter={e => { (e.currentTarget as SVGGElement).style.opacity = '1' }}
+              onMouseLeave={e => { (e.currentTarget as SVGGElement).style.opacity = '0.85' }}
             >
               <rect
                 x={0} y={0}
@@ -425,7 +407,9 @@ export const MindmapNode = memo(function MindmapNode({
                 e.stopPropagation()
                 onEdgeStart(node.id, 'fail', position.x + w / 2 + 3 + btnSize + 2 + arrowSize / 2, position.y - btnSize / 2 + btnSize / 2, 'horizontal')
               }}
-              style={{ cursor: 'crosshair' }}
+              style={{ cursor: 'crosshair', transition: 'opacity 150ms ease-out' }}
+              onMouseEnter={e => { (e.currentTarget as SVGGElement).style.opacity = '1' }}
+              onMouseLeave={e => { (e.currentTarget as SVGGElement).style.opacity = '0.7' }}
             >
               <circle
                 cx={arrowSize / 2}
@@ -445,7 +429,9 @@ export const MindmapNode = memo(function MindmapNode({
             <g
               onClick={handleAddChildClick('vertical')}
               onMouseDown={e => e.stopPropagation()}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: 'pointer', transition: 'opacity 150ms ease-out' }}
+              onMouseEnter={e => { (e.currentTarget as SVGGElement).style.opacity = '1' }}
+              onMouseLeave={e => { (e.currentTarget as SVGGElement).style.opacity = '0.85' }}
             >
               <rect
                 x={0} y={0}
@@ -473,7 +459,9 @@ export const MindmapNode = memo(function MindmapNode({
                 e.stopPropagation()
                 onEdgeStart(node.id, 'fail', position.x - btnSize / 2 + btnSize / 2, position.y + h / 2 + 3 + btnSize + 2 + arrowSize / 2, 'vertical')
               }}
-              style={{ cursor: 'crosshair' }}
+              style={{ cursor: 'crosshair', transition: 'opacity 150ms ease-out' }}
+              onMouseEnter={e => { (e.currentTarget as SVGGElement).style.opacity = '1' }}
+              onMouseLeave={e => { (e.currentTarget as SVGGElement).style.opacity = '0.7' }}
             >
               <circle
                 cx={arrowSize / 2}

@@ -19,9 +19,9 @@ interface MindmapCanvasProps {
   onUnlinkNode: (id: string) => void
   onRenameNode: (id: string, label: string) => void
   onUpdateNode: (id: string, patch: Partial<FlowNode>) => void
-  onAddEdge: (fromId: string, toId: string, type: 'pass' | 'fail' | 'default') => void
+  onAddEdge: (fromId: string, toId: string, type: 'pass' | 'fail' | 'plain') => void
   onDeleteEdge: (edgeId: string) => void
-  onUpdateEdge: (edgeId: string, patch: { type?: 'pass' | 'fail' | 'default' }) => void
+  onUpdateEdge: (edgeId: string, patch: { type?: 'pass' | 'fail' | 'plain' }) => void
   canUndo: boolean
   canRedo: boolean
   onUndo: () => void
@@ -64,7 +64,7 @@ export function MindmapCanvas({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null)
   const [unlinkMode, setUnlinkMode] = useState(false)
-  const [unlinkChecked, setUnlinkChecked] = useState<Set<string>>(new Set())
+  const [showCounter, setShowCounter] = useState(false)
   const svgRef = useRef<SVGSVGElement>(null)
   const rafRef = useRef<number | null>(null)
   const pendingNodeUpdate = useRef<{ id: string; x: number; y: number } | null>(null)
@@ -267,35 +267,9 @@ export function MindmapCanvas({
 
   const toggleUnlinkMode = useCallback(() => {
     setUnlinkMode(prev => !prev)
-    setUnlinkChecked(new Set())
     setDeleteMode(false)
     setDeleteChecked(new Set())
   }, [])
-
-  const handleToggleUnlinkCheck = useCallback((edgeId: string) => {
-    setUnlinkChecked(prev => {
-      const next = new Set(prev)
-      if (next.has(edgeId)) {
-        next.delete(edgeId)
-      } else {
-        next.add(edgeId)
-      }
-      return next
-    })
-  }, [])
-
-  const handleConfirmUnlink = useCallback(() => {
-    Array.from(unlinkChecked).forEach(edgeId => {
-      if (edgeId.startsWith('tree-')) {
-        const nodeId = edgeId.replace('tree-', '')
-        onUnlinkNode(nodeId)
-      } else {
-        onDeleteEdge(edgeId)
-      }
-    })
-    setUnlinkChecked(new Set())
-    setUnlinkMode(false)
-  }, [unlinkChecked, onUnlinkNode, onDeleteEdge])
 
   const handleToggleDeleteCheck = useCallback((id: string) => {
     setDeleteChecked(prev => {
@@ -368,6 +342,21 @@ export function MindmapCanvas({
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M15 7h3a5 5 0 0 1 0 10h-3m-6 0H6a5 5 0 0 1 0-10h3" />
               <line x1="8" y1="12" x2="16" y2="12" strokeDasharray="3 3" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setShowCounter(prev => !prev)}
+            className="w-7 h-7 mt-1 flex items-center justify-center text-[10px] rounded border transition-colors"
+            style={{
+              borderColor: showCounter ? 'var(--accent)' : 'var(--border)',
+              color: showCounter ? '#fff' : 'var(--text-secondary)',
+              backgroundColor: showCounter ? 'var(--accent)' : 'var(--bg-card)',
+            }}
+            title={showCounter ? 'Hide counter' : 'Show counter'}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+              <line x1="4" y1="22" x2="4" y2="15" />
             </svg>
           </button>
         </div>
@@ -449,25 +438,14 @@ export function MindmapCanvas({
           }}
         >
           <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-            Select lines to unlink
+            Click the icon on a line to unlink it
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--status-skip-bg)', color: 'var(--status-skip-text)' }}>
-            {unlinkChecked.size} selected
-          </span>
-          <button
-            onClick={handleConfirmUnlink}
-            disabled={unlinkChecked.size === 0}
-            className="px-3 py-1 text-[11px] font-medium rounded transition-colors disabled:opacity-40"
-            style={{ backgroundColor: 'var(--status-skip-text)', color: 'white' }}
-          >
-            Unlink
-          </button>
           <button
             onClick={toggleUnlinkMode}
             className="px-3 py-1 text-[11px] rounded border transition-colors hover:bg-[var(--bg-secondary)]"
             style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
-            Cancel
+            Done
           </button>
         </div>
       )}
@@ -536,9 +514,6 @@ export function MindmapCanvas({
           <marker id="arrow-fail" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
             <path d="M0,0 L8,4 L0,8" fill="var(--status-fail-text)" />
           </marker>
-          <marker id="arrow-default" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8" fill="var(--text-tertiary)" />
-          </marker>
         </defs>
 
         <g transform={`scale(${scale}) translate(${pan.x}, ${pan.y})`}>
@@ -560,7 +535,6 @@ export function MindmapCanvas({
             const isVertical = parentNode?.direction === 'vertical'
 
             const treeEdgeId = `tree-${node.id}`
-            const isChecked = unlinkChecked.has(treeEdgeId)
 
             let pathD: string
             if (isVertical) {
@@ -586,37 +560,29 @@ export function MindmapCanvas({
                   fill="none"
                   stroke="transparent"
                   strokeWidth={12}
-                  style={{ cursor: unlinkMode ? 'pointer' : 'pointer' }}
-                  onClick={() => { unlinkMode ? handleToggleUnlinkCheck(treeEdgeId) : onAddEdge(node.parentId!, node.id, 'pass') }}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => { unlinkMode ? onUnlinkNode(node.id) : onAddEdge(node.parentId!, node.id, 'plain') }}
                   onDoubleClick={(e) => { e.stopPropagation(); if (!unlinkMode) onUnlinkNode(node.id) }}
                 />
                 <path
                   d={pathD}
                   fill="none"
-                  stroke={unlinkMode && isChecked ? 'var(--status-skip-text)' : 'var(--border-hover)'}
-                  strokeWidth={unlinkMode && isChecked ? 2.5 : 1.5}
-                  strokeDasharray={unlinkMode && isChecked ? '6 4' : 'none'}
+                  stroke={unlinkMode ? 'var(--status-skip-text)' : 'var(--border-hover)'}
+                  strokeWidth={unlinkMode ? 2 : 1.5}
+                  strokeDasharray={unlinkMode ? '6 4' : 'none'}
                   style={{ pointerEvents: 'none', transition: 'stroke 150ms, stroke-width 150ms' }}
                 />
-                {/* Unlink checkbox on tree edge */}
+                {/* Unlink icon on tree edge */}
                 {unlinkMode && (
-                  <g transform={`translate(${midX}, ${midY})`} style={{ pointerEvents: 'none' }}>
-                    <rect
-                      x={-7} y={-7} width={14} height={14} rx={3}
-                      fill={isChecked ? 'var(--status-skip-text)' : 'var(--bg-card)'}
-                      stroke={isChecked ? 'var(--status-skip-text)' : 'var(--border)'}
-                      strokeWidth={1.5}
-                    />
-                    {isChecked && (
-                      <path
-                        d="M -4 0 L -1 3 L 4 -2"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    )}
+                  <g
+                    transform={`translate(${midX}, ${midY})`}
+                    style={{ cursor: 'pointer' }}
+                    onClick={(e) => { e.stopPropagation(); onUnlinkNode(node.id) }}
+                  >
+                    <rect x={-10} y={-10} width={20} height={20} rx={4} fill="var(--bg-card)" stroke="var(--status-skip-text)" strokeWidth={1.5} />
+                    <g transform="translate(-6, -6) scale(0.06)">
+                      <path d="M190.5 68.8L225.3 104c2.3 2.3 2.3 6.1 0 8.5l-82.8 82.8c-2.3 2.3-6.1 2.3-8.5 0l-54.5-54.5c-2.3-2.3-2.3-6.1 0-8.5l24.8-24.8 45.3 45.3c2.3 2.3 6.1 2.3 8.5 0l36.8-36.8-45.3-45.3-36.8 36.8c-2.3 2.3-6.1 2.3-8.5 0L34.4 170c-2.3-2.3-2.3-6.1 0-8.5l82.8-82.8c2.3-2.3 6.1-2.3 8.5 0l54.5 54.5c2.3 2.3 6.1 2.3 8.5 0l1.8-1.8" fill="none" stroke="var(--status-skip-text)" strokeWidth="8" strokeLinecap="round"/>
+                    </g>
                   </g>
                 )}
               </g>
@@ -629,13 +595,12 @@ export function MindmapCanvas({
             if (!fromPos || !toPos) return null
             const isPass = edge.type === 'pass'
             const isFail = edge.type === 'fail'
-            const isDefault = edge.type === 'default' || (!isPass && !isFail)
+            const isPlain = !isPass && !isFail
             const color = isPass ? 'var(--status-pass-text)' : isFail ? 'var(--status-fail-text)' : 'var(--text-tertiary)'
-            const dashArray = isPass ? 'none' : isFail ? '6 4' : '3 3'
+            const dashArray = isPass ? 'none' : isFail ? '6 4' : 'none'
             const midX = (fromPos.x + toPos.x) / 2
             const midY = (fromPos.y + toPos.y) / 2 - 12
-            const marker = isPass ? 'url(#arrow-pass)' : isFail ? 'url(#arrow-fail)' : 'url(#arrow-default)'
-            const isChecked = unlinkChecked.has(edge.id)
+            const marker = isPass ? 'url(#arrow-pass)' : isFail ? 'url(#arrow-fail)' : undefined
 
             const fromNode = nodes.find(n => n.id === edge.fromId)
             const isVertical = fromNode?.direction === 'vertical'
@@ -649,11 +614,11 @@ export function MindmapCanvas({
 
             const handleClick = () => {
               if (unlinkMode) {
-                handleToggleUnlinkCheck(edge.id)
+                onDeleteEdge(edge.id)
               } else if (isPass) {
                 onUpdateEdge(edge.id, { type: 'fail' })
               } else if (isFail) {
-                onUpdateEdge(edge.id, { type: 'default' })
+                onUpdateEdge(edge.id, { type: 'plain' })
               } else {
                 onUpdateEdge(edge.id, { type: 'pass' })
               }
@@ -675,41 +640,33 @@ export function MindmapCanvas({
                 <path
                   d={pathD}
                   fill="none"
-                  stroke={unlinkMode && isChecked ? 'var(--status-skip-text)' : color}
-                  strokeWidth={unlinkMode && isChecked ? 2.5 : hoveredEdge === edge.id ? 2.5 : 1.8}
-                  strokeDasharray={unlinkMode && isChecked ? '6 4' : dashArray}
+                  stroke={unlinkMode ? 'var(--status-skip-text)' : color}
+                  strokeWidth={unlinkMode ? 2 : hoveredEdge === edge.id ? 2.5 : 1.8}
+                  strokeDasharray={unlinkMode ? '6 4' : dashArray}
                   markerEnd={unlinkMode ? undefined : marker}
                   style={{ transition: 'stroke-width 150ms ease-out, stroke 150ms ease-out', pointerEvents: 'none' }}
                 />
-                {/* Unlink checkbox on conditional edge */}
+                {/* Unlink icon on conditional edge */}
                 {unlinkMode && (
-                  <g transform={`translate(${midX}, ${midY})`} style={{ pointerEvents: 'none' }}>
-                    <rect
-                      x={-7} y={-7} width={14} height={14} rx={3}
-                      fill={isChecked ? 'var(--status-skip-text)' : 'var(--bg-card)'}
-                      stroke={isChecked ? 'var(--status-skip-text)' : 'var(--border)'}
-                      strokeWidth={1.5}
-                    />
-                    {isChecked && (
-                      <path
-                        d="M -4 0 L -1 3 L 4 -2"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    )}
+                  <g
+                    transform={`translate(${midX}, ${midY})`}
+                    style={{ cursor: 'pointer' }}
+                    onClick={(e) => { e.stopPropagation(); onDeleteEdge(edge.id) }}
+                  >
+                    <rect x={-10} y={-10} width={20} height={20} rx={4} fill="var(--bg-card)" stroke="var(--status-skip-text)" strokeWidth={1.5} />
+                    <g transform="translate(-6, -6) scale(0.06)">
+                      <path d="M190.5 68.8L225.3 104c2.3 2.3 2.3 6.1 0 8.5l-82.8 82.8c-2.3 2.3-6.1 2.3-8.5 0l-54.5-54.5c-2.3-2.3-2.3-6.1 0-8.5l24.8-24.8 45.3 45.3c2.3 2.3 6.1 2.3 8.5 0l36.8-36.8-45.3-45.3-36.8 36.8c-2.3 2.3-6.1 2.3-8.5 0L34.4 170c-2.3-2.3-2.3-6.1 0-8.5l82.8-82.8c2.3-2.3 6.1-2.3 8.5 0l54.5 54.5c2.3 2.3 6.1 2.3 8.5 0l1.8-1.8" fill="none" stroke="var(--status-skip-text)" strokeWidth="8" strokeLinecap="round"/>
+                    </g>
                   </g>
                 )}
-                {!unlinkMode && hoveredEdge === edge.id && (
+                {!unlinkMode && hoveredEdge === edge.id && !isPlain && (
                   <g
                     transform={`translate(${midX}, ${midY - 12})`}
                     style={{ pointerEvents: 'none' }}
                   >
-                    <rect x={-22} y={-7} width={44} height={14} rx={7} fill={isPass ? 'var(--status-pass-bg)' : isFail ? 'var(--status-fail-bg)' : 'var(--bg-secondary)'} stroke={isPass ? 'var(--status-pass-text)' : isFail ? 'var(--status-fail-text)' : 'var(--border)'} strokeWidth={0.5} />
+                    <rect x={-22} y={-7} width={44} height={14} rx={7} fill={isPass ? 'var(--status-pass-bg)' : 'var(--status-fail-bg)'} stroke={isPass ? 'var(--status-pass-text)' : 'var(--status-fail-text)'} strokeWidth={0.5} />
                     <text textAnchor="middle" dominantBaseline="central" style={{ fill: color, fontSize: 9, fontWeight: 500 }}>
-                      {isPass ? 'Pass' : isFail ? 'Fail' : 'Default'}
+                      {isPass ? 'Pass' : 'Fail'}
                     </text>
                   </g>
                 )}
@@ -758,6 +715,7 @@ export function MindmapCanvas({
                 onEdgeStart={handleEdgeStart}
                 onToggleDeleteCheck={handleToggleDeleteCheck}
                 depth={depth}
+                showCounter={showCounter}
                 svgRef={svgRef}
               />
             )

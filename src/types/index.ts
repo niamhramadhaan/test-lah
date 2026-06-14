@@ -4,7 +4,7 @@ export type CaseType = 'General' | 'Positive' | 'Negative'
 
 export type NodeShape = 'rect' | 'rounded' | 'diamond' | 'circle' | 'pill'
 
-export type EdgeType = 'pass' | 'fail' | 'default'
+export type EdgeType = 'pass' | 'fail' | 'plain'
 
 export type NodeDirection = 'horizontal' | 'vertical'
 
@@ -56,6 +56,8 @@ export interface UserProfile {
 export interface Project {
   id: string
   name: string
+  type?: string
+  notes?: string
   createdAt: string
   flows: FlowNode[]
   testCases: Record<string, TestCase[]>

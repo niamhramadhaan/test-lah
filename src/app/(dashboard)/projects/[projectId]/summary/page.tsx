@@ -1,17 +1,46 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useDashboard } from '@/context/DashboardContext'
+import { useLLMConfig } from '@/hooks/useLLMConfig'
+import { refineNotes } from '@/lib/llm'
 import { downloadMarkdown, downloadJSON, downloadCSV, downloadXLSX } from '@/lib/export'
 
 export default function SummaryPage() {
   const params = useParams()
   const projectId = params.projectId as string
-  const { projects } = useDashboard()
+  const { projects, updateProject } = useDashboard()
+  const { activeProvider, activeProviderId, isConnected } = useLLMConfig()
   const project = projects[projectId]
   const [exportOpen, setExportOpen] = useState(false)
+  const [refining, setRefining] = useState(false)
+
+  const handleNotesChange = useCallback((value: string) => {
+    if (!project) return
+    updateProject(project.id, p => ({ ...p, notes: value }))
+  }, [project, updateProject])
+
+  const handleRefine = useCallback(async () => {
+    if (!project || !activeProvider || !isConnected) return
+    setRefining(true)
+    try {
+      const refined = await refineNotes(
+        project.name,
+        project.notes || '',
+        activeProvider.apiKey,
+        activeProviderId || 'google',
+        activeProvider.defaultModel,
+        activeProvider.baseURL,
+      )
+      updateProject(project.id, p => ({ ...p, notes: refined }))
+    } catch (err) {
+      console.error('Refine failed:', err)
+    } finally {
+      setRefining(false)
+    }
+  }, [project, updateProject, activeProvider, activeProviderId, isConnected])
 
   if (!project) {
     return (
@@ -71,6 +100,10 @@ export default function SummaryPage() {
         <Card label="Test Cases" value={totalCases} />
         <Card label="Pass Rate" value={`${passRate}%`} color="var(--status-pass-text)" />
         <Card label="Conditional Edges" value={totalEdges} />
+        <TypeCard
+          type={project.type || ''}
+          onUpdate={(newType) => updateProject(project.id, p => ({ ...p, type: newType }))}
+        />
       </div>
 
       <div className="px-5 pb-4">
@@ -80,6 +113,43 @@ export default function SummaryPage() {
           <span>Fail: <strong style={{ color: 'var(--status-fail-text)' }}>{fail}</strong></span>
           <span>Skip: <strong style={{ color: 'var(--status-skip-text)' }}>{skip}</strong></span>
           <span>Untested: <strong style={{ color: 'var(--status-untested-text)' }}>{untested}</strong></span>
+        </div>
+      </div>
+
+      {/* Notes section */}
+      <div className="px-5 pb-4">
+        <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: 'var(--text-tertiary)' }}>Notes</h3>
+        <div className="relative">
+          <textarea
+            value={project.notes || ''}
+            onChange={e => handleNotesChange(e.target.value)}
+            placeholder="Add project notes, observations, or documentation..."
+            rows={4}
+            className="w-full px-3 py-2 text-sm bg-transparent outline-none border resize-none transition-colors focus:border-[var(--border-hover)]"
+            style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)' }}
+          />
+          {isConnected ? (
+            <button
+              onClick={handleRefine}
+              disabled={refining || !project.notes}
+              className="absolute bottom-2 right-2 px-2 py-0.5 text-[10px] font-medium rounded border transition-all hover:bg-[var(--bg-secondary)] disabled:opacity-30 z-10"
+              style={{ borderColor: 'var(--border)', color: 'var(--accent)', backgroundColor: 'var(--bg-card)', opacity: refining ? 1 : 0.7 }}
+              title="AI will refine your notes to be more structured"
+              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
+            >
+              {refining ? 'Refining...' : '✦ Refine'}
+            </button>
+          ) : (
+            <button
+              disabled
+              className="absolute bottom-2 right-2 px-2 py-0.5 text-[10px] font-medium rounded border opacity-30 cursor-not-allowed"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)', backgroundColor: 'var(--bg-card)' }}
+              title="Configure an LLM provider in Settings to use AI refine"
+            >
+              ✦ Refine
+            </button>
+          )}
         </div>
       </div>
 
@@ -128,7 +198,7 @@ export default function SummaryPage() {
                 <div key={edge.id} className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   <span style={{ color: 'var(--text-primary)' }}>{from?.label ?? '?'}</span>
                   <span style={{ color: edge.type === 'pass' ? 'var(--status-pass-text)' : 'var(--status-fail-text)' }}>
-                    {edge.type === 'pass' ? '→ ✓ Pass →' : '→ ✗ Fail →'}
+                    {edge.type === 'pass' ? '→ ✓ Pass →' : edge.type === 'fail' ? '→ ✗ Fail →' : '→'}
                   </span>
                   <span style={{ color: 'var(--text-primary)' }}>{to?.label ?? '?'}</span>
                 </div>
@@ -148,6 +218,41 @@ function Card({ label, value, color }: { label: string; value: string | number; 
     <div className="p-3 rounded-md border" style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-md)' }}>
       <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{label}</div>
       <div className="text-lg font-medium" style={{ color: color ?? 'var(--text-primary)' }}>{value}</div>
+    </div>
+  )
+}
+
+function TypeCard({ type, onUpdate }: { type: string; onUpdate: (type: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  return (
+    <div className="p-3 rounded-md border" style={{ borderColor: 'var(--border)', borderRadius: 'var(--radius-md)' }}>
+      <div className="text-xs mb-1 flex items-center justify-between" style={{ color: 'var(--text-tertiary)' }}>
+        <span>Project Type</span>
+        <button
+          onClick={() => setEditing(prev => !prev)}
+          className="text-[10px] hover:underline transition-colors"
+          style={{ color: 'var(--accent)' }}
+        >
+          {editing ? 'Done' : 'Edit'}
+        </button>
+      </div>
+      {editing ? (
+        <select
+          value={type}
+          onChange={e => { onUpdate(e.target.value); setEditing(false) }}
+          className="w-full px-2 py-1 text-sm rounded border outline-none cursor-pointer"
+          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)', color: type ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
+        >
+          <option value="">None</option>
+          <option value="Dashboard">Dashboard</option>
+          <option value="Website">Website</option>
+          <option value="Gak Jelas">Gak Jelas</option>
+        </select>
+      ) : (
+        <div className="text-lg font-medium" style={{ color: type ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+          {type || 'Not set'}
+        </div>
+      )}
     </div>
   )
 }
@@ -206,7 +311,7 @@ function ExportModal({ open, onClose, project }: { open: boolean; onClose: () =>
           >
             <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Excel (.xlsx)</span>
             <br />
-            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Styled spreadsheet for reporting</span>
+            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Styled spreadsheet with Summary tab</span>
           </button>
         </div>
         <button

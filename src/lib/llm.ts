@@ -29,3 +29,26 @@ export async function generateTestCases(
   const data = await res.json()
   return data.testCases as GeneratedTestCase[]
 }
+
+export async function refineNotes(
+  projectName: string,
+  notes: string,
+  apiKey: string,
+  provider: string = 'google',
+  model: string = '',
+  baseURL?: string,
+): Promise<string> {
+  const res = await fetch('/api/refine-notes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projectName, notes, apiKey, provider, model, baseURL }),
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Request failed' }))
+    throw new Error(err.error || `HTTP ${res.status}`)
+  }
+
+  const data = await res.json()
+  return data.refined as string
+}

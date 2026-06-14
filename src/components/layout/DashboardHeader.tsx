@@ -555,7 +555,7 @@ export function DashboardHeader() {
         <div
           className="fixed inset-0 z-[400] flex items-center justify-center"
           style={{
-            backgroundColor: "rgba(0,0,0,0.3)",
+            backgroundColor: "rgba(0,0,0,0.4)",
             animation: "fadeIn 150ms ease-out",
           }}
           onClick={() => setLogoutOpen(false)}
@@ -570,61 +570,78 @@ export function DashboardHeader() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 pt-6 pb-4 text-center">
-              <div
-                className="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: "var(--status-skip-bg)" }}
+            <div className="px-6 pt-5 pb-2 text-center border-b" style={{ borderColor: 'var(--border)' }}>
+              <h3
+                className="text-sm font-semibold"
+                style={{ color: 'var(--accent)' }}
               >
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--status-skip-text)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
+                Where are you going? ծ_Ô
+              </h3>
+            </div>
+            <div className="px-6 pt-4 pb-4 text-center">
+              {/* Suspicious dog image */}
+              <div className="w-32 h-32 mx-auto mb-4 rounded-lg overflow-hidden">
+                <img
+                  src="https://i.ytimg.com/vi/EcMlX_36gjs/mqdefault.jpg"
+                  alt="Suspicious dog"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <h3
                 className="text-base font-semibold mb-2"
                 style={{ color: "var(--text-primary)" }}
               >
-                Mau Keluar? Sedekahnya mana??
+                Are you gonna to take a sick leave?
               </h3>
               <p
                 className="text-xs leading-relaxed"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                Sebelum keluar, mungkin bisa traktir developer secangkir kopi?
-                ☕
+                remember to go back, tho
               </p>
             </div>
-            <div className="px-6 pb-5 flex gap-2">
+            <div className="px-6 pb-3 flex gap-2">
               <button
                 onClick={() => setLogoutOpen(false)}
-                className="flex-1 px-3 py-2.5 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
+                className="flex-1 px-3 py-2.5 text-xs font-medium rounded-lg transition-opacity hover:opacity-80"
                 style={{
-                  borderColor: "var(--border)",
-                  color: "var(--text-secondary)",
+                  backgroundColor: "var(--accent)",
+                  color: "var(--bg-primary)",
                 }}
               >
-                Batal
+                Cancel, I love my job
               </button>
               <button
                 onClick={confirmLogout}
-                className="flex-1 px-3 py-2.5 text-xs font-medium rounded-lg transition-opacity hover:opacity-80"
+                className="flex-1 px-3 py-2.5 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
                 style={{
-                  backgroundColor: "var(--status-fail-text)",
-                  color: "#fff",
+                  borderColor: "var(--border)",
+                  color: "var(--status-fail-text)",
                 }}
               >
-                Keluar
+                Quit my job
               </button>
+            </div>
+            <div className="px-6 pb-5 text-center">
+              <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
+                Contact{" "}
+                <span className="relative inline-block group/nathan">
+                  <a
+                    href="https://t.me/nathanaeliman"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline cursor-pointer font-medium"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    the best QA
+                  </a>
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-[10px] font-semibold rounded-md whitespace-nowrap opacity-0 group-hover/nathan:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: '#6F4E37', color: '#fff', boxShadow: '0 2px 8px rgba(111,78,55,0.3)' }}>
+                    Nathan
+                    <span className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0" style={{ borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: '4px solid #6F4E37' }} />
+                  </span>
+                </span>{" "}
+                to do my job instead
+              </p>
             </div>
           </div>
         </div>

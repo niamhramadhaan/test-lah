@@ -8,7 +8,40 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { InteractiveGridPattern } from '@/components/ui/interactive-grid-pattern'
 import { GridPattern } from '@/components/ui/grid-pattern'
 import { NumberTicker } from '@/components/ui/number-ticker'
+import { MagicCard } from '@/components/ui/magic-card'
 import { seedMockProject } from '@/lib/mockData'
+import { Project, Status } from '@/types'
+
+const QA_FUN_FACTS = [
+  "A good QA is a QA who came to work.",
+  "It works on my machine — the developer's final words before every hotfix.",
+  "QA: because developers can't be trusted to test their own code.",
+  "The bug was a feature all along. We just needed better documentation.",
+  "If it's not tested, it's broken. If it is tested, it's probably also broken.",
+  "Test early, test often, test everything — then watch the deadline slip anyway.",
+  "I found 47 bugs today. 45 of them were in the requirements.",
+  "The best part of being a QA is telling developers their code doesn't work.",
+  "Automated tests: because manually clicking buttons is for interns.",
+  "A QA walks into a bar. Orders 1 beer. Orders 0 beers. Orders 99999999 beers. Orders -1 beers. Orders a lizard.",
+  "Severity: Critical. Priority: Low. Translation: It's broken but nobody cares.",
+  "The test passed in staging. Production had other plans.",
+  "My job is to find creative ways to ruin a developer's afternoon.",
+  "We don't have bugs. We have undocumented features with unexpected behavior.",
+  "The requirements changed. Again. For the third time. This sprint.",
+]
+
+const QA_QUOTE_AUTHORS = [
+  "Sun Tzu, The Art of QA",
+  "Albert Einstein, if he were a tester",
+  "Marie Curie, probably",
+  "Nikola Tesla, but he'd automate it",
+  "Socrates, after finding his first bug",
+  "Leonardo da Vinci, testing the flying machine",
+  "Isaac Newton, when the apple was a bug",
+  "Cleopatra, managing her QA team",
+  "Galileo, testing if the earth really spins",
+  "Confucius, after reading the requirements",
+]
 
 const FUN_ICONS: Array<{ icon: React.ReactNode; bg: string }> = [
   { icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z" /><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z" /><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" /><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" /></svg>, bg: '#F5F0EB' },
@@ -37,7 +70,7 @@ function getFunIcon(id: string): { icon: React.ReactNode; bg: string } {
 }
 
 export default function ProjectsPage() {
-  const { projects, createProject, deleteProject, duplicateProject, importProject, renameProject, profile, profileInitials, promptDialog, confirmDialog } = useDashboard()
+  const { projects, createProject, deleteProject, duplicateProject, importProject, renameProject, profile, profileInitials, confirmDialog } = useDashboard()
   const projectList = Object.values(projects)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
@@ -45,6 +78,9 @@ export default function ProjectsPage() {
   const [donateOpen, setDonateOpen] = useState(false)
   const [hoveredLater, setHoveredLater] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
+  const [summaryProject, setSummaryProject] = useState<Project | null>(null)
+  const [newProjectOpen, setNewProjectOpen] = useState(false)
+  const [premiumModalOpen, setPremiumModalOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const importRef = useRef<HTMLInputElement>(null)
 
@@ -76,15 +112,93 @@ export default function ProjectsPage() {
     return { totalCases, totalNodes, overallPassRate }
   }, [projectList])
 
+  const [funFact, setFunFact] = useState<{ fact: string; author: string } | null>(null)
+
+  useEffect(() => {
+    const factIdx = Math.floor(Math.random() * QA_FUN_FACTS.length)
+    const authorIdx = Math.floor(Math.random() * QA_QUOTE_AUTHORS.length)
+    setFunFact({ fact: QA_FUN_FACTS[factIdx], author: QA_QUOTE_AUTHORS[authorIdx] })
+  }, [])
+
+  // Inactivity tracking
+  const [inactivity, setInactivity] = useState<{ hours: number; minutes: number; never: boolean } | null>(null)
+
+  // Per-project activity map
+  const [projectActivity, setProjectActivity] = useState<Record<string, string>>({})
+
+  const [iconInfoOpen, setIconInfoOpen] = useState<string | null>(null)
+  const [cardClicked, setCardClicked] = useState<string | null>(null)
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    try {
+      const last = localStorage.getItem('qa-last-test-activity')
+      if (!last) {
+        setInactivity({ hours: 0, minutes: 0, never: true })
+      } else {
+        const diff = Date.now() - new Date(last).getTime()
+        setInactivity({ hours: Math.floor(diff / 3600000), minutes: Math.floor((diff % 3600000) / 60000), never: false })
+      }
+    } catch { setInactivity({ hours: 0, minutes: 0, never: true }) }
+
+    try {
+      const raw = localStorage.getItem('qa-project-activity')
+      setProjectActivity(raw ? JSON.parse(raw) : {})
+    } catch { setProjectActivity({}) }
+  }, [])
+
+  // Update inactivity every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      try {
+        const last = localStorage.getItem('qa-last-test-activity')
+        if (!last) { setInactivity({ hours: 0, minutes: 0, never: true }); return }
+        const diff = Date.now() - new Date(last).getTime()
+        setInactivity({ hours: Math.floor(diff / 3600000), minutes: Math.floor((diff % 3600000) / 60000), never: false })
+      } catch {}
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  function getActivityStyle(projectId: string): { color: string; opacity: number; animation?: string } {
+    const lastStr = projectActivity[projectId]
+    if (!lastStr) return { color: 'var(--text-tertiary)', opacity: 0.4 }
+    const diff = Date.now() - new Date(lastStr).getTime()
+    const hours = diff / 3600000
+    if (hours < 1) return { color: '#4CAF50', opacity: 1 } // greenish — just worked
+    if (hours < 48) return { color: 'var(--text-secondary)', opacity: Math.max(0.3, 1 - (hours / 48) * 0.7) } // fading
+    if (hours < 168) return { color: '#E57373', opacity: 1 } // reddish — 48h+
+    return { color: '#E57373', opacity: 1, animation: 'pulse 2s ease-in-out infinite' } // 1 week+ — pulse
+  }
+
+  function getLastWorkedText(projectId: string): string {
+    const lastStr = projectActivity[projectId]
+    if (!lastStr) return 'No activity recorded yet'
+    const date = new Date(lastStr)
+    return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  }
+
+  function handleCardClick(projectId: string) {
+    setCardClicked(projectId)
+    setTimeout(() => setCardClicked(null), 300)
+  }
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const last = localStorage.getItem('qa-last-test-activity')
+      if (!last) { setInactivity({ hours: 0, minutes: 0, never: true }); return }
+      const diff = Date.now() - new Date(last).getTime()
+      setInactivity({ hours: Math.floor(diff / 3600000), minutes: Math.floor((diff % 3600000) / 60000), never: false })
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
   if (projectList.length === 0) {
     return (
       <div className="h-full overflow-auto p-6">
         <EmptyState
           message="No projects yet. Create your first project to get started."
-          action={{ label: '+ New Project', onClick: async () => {
-            const name = await promptDialog('New Project', 'Enter project name:')
-            if (name?.trim()) createProject(name.trim())
-          }}}
+          action={{ label: '+ New Project', onClick: () => setNewProjectOpen(true) }}
         />
       </div>
     )
@@ -103,7 +217,10 @@ export default function ProjectsPage() {
 
   const handleDelete = async (id: string, name: string) => {
     setMenuOpen(null)
-    const ok = await confirmDialog('Delete Project', `Delete "${name}"? This cannot be undone.`)
+    const ok = await confirmDialog(
+      '⚠️ Hold On!',
+      `You won't receive bonus salary if you delete "${name}". This action cannot be undone. Are you sure?`
+    )
     if (ok) deleteProject(id)
   }
 
@@ -155,11 +272,23 @@ export default function ProjectsPage() {
             Donate Please 🥺👉👈
           </button>
           <button
-            onClick={() => importRef.current?.click()}
-            className="px-4 py-2 text-sm font-medium rounded-md border transition-opacity hover:opacity-80"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
+            onClick={() => setNewProjectOpen(true)}
+            className="px-4 py-2 text-sm font-medium rounded-md transition-opacity hover:opacity-80"
+            style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)', borderRadius: 'var(--radius-pill)' }}
           >
-            Import Project
+            + New Project
+          </button>
+          <button
+            onClick={() => importRef.current?.click()}
+            className="p-2 rounded-md border transition-opacity hover:opacity-80"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
+            title="Import Project"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
           </button>
           <input
             ref={importRef}
@@ -168,16 +297,6 @@ export default function ProjectsPage() {
             className="hidden"
             onChange={handleImport}
           />
-          <button
-            onClick={async () => {
-              const name = await promptDialog('New Project', 'Enter project name:')
-              if (name?.trim()) createProject(name.trim())
-            }}
-            className="px-4 py-2 text-sm font-medium rounded-md transition-opacity hover:opacity-80"
-            style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)', borderRadius: 'var(--radius-pill)' }}
-          >
-            + New Project
-          </button>
         </div>
       </div>
 
@@ -204,8 +323,13 @@ export default function ProjectsPage() {
           return (
             <div
               key={p.id}
-              className="group relative flex flex-col rounded-xl border overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-[var(--border-hover)]"
-              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}
+              className="group relative flex flex-col rounded-xl border overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-[var(--border-hover)] cursor-pointer"
+              style={{
+                borderColor: 'var(--border)',
+                backgroundColor: 'var(--bg-card)',
+                animation: cardClicked === p.id ? 'cardClick 300ms ease-out' : 'none',
+              }}
+              onClick={() => handleCardClick(p.id)}
             >
               {/* Grid pattern header */}
               <div className="relative h-24 overflow-hidden" style={{ background: 'linear-gradient(135deg, #F7F5F1 0%, #EDEAE3 100%)' }}>
@@ -231,8 +355,21 @@ export default function ProjectsPage() {
                   className="absolute bottom-0 left-0 right-0 h-1"
                   style={{ background: passRate >= 80 ? 'var(--status-pass-text)' : passRate >= 50 ? 'var(--status-skip-text)' : totalCases > 0 ? 'var(--status-fail-text)' : 'var(--border)' }}
                 />
-                {/* Project icon */}
-                <div className="absolute top-4 left-4 w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: getFunIcon(p.id).bg }}>
+                {/* Project icon — activity-based color */}
+                <div
+                  data-icon-trigger
+                  className="absolute top-4 left-4 w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 cursor-pointer hover:scale-105 z-10"
+                  style={{
+                    backgroundColor: getFunIcon(p.id).bg,
+                    color: getActivityStyle(p.id).color,
+                    opacity: getActivityStyle(p.id).opacity,
+                    animation: getActivityStyle(p.id).animation || 'none',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)' }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)' }}
+                  onClick={(e) => { e.stopPropagation(); setIconInfoOpen(p.id) }}
+                >
                   {getFunIcon(p.id).icon}
                 </div>
               </div>
@@ -295,9 +432,20 @@ export default function ProjectsPage() {
                   </div>
                 )}
 
-                {/* Date */}
-                <div className="text-[10px] mt-auto pt-2 border-t" style={{ color: 'var(--text-tertiary)', borderColor: 'var(--border)' }}>
-                  Created {new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                {/* Date + Open */}
+                <div className="text-[11px] mt-auto pt-2 border-t flex items-center justify-between" style={{ color: 'var(--text-tertiary)', borderColor: 'var(--border)' }}>
+                  <span>Created {new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  <Link
+                    href={`/projects/${p.id}`}
+                    className="font-semibold hover:underline transition-all flex items-center gap-0.5"
+                    style={{ color: 'var(--accent)' }}
+                    onClick={e => e.stopPropagation()}
+                    onMouseEnter={e => { e.currentTarget.querySelector('.arrow')?.classList.add('translate-x-0.5') }}
+                    onMouseLeave={e => { e.currentTarget.querySelector('.arrow')?.classList.remove('translate-x-0.5') }}
+                  >
+                    Open
+                    <span className="arrow inline-block transition-transform duration-150">→</span>
+                  </Link>
                 </div>
               </div>
 
@@ -323,15 +471,14 @@ export default function ProjectsPage() {
                   className="absolute top-11 right-3 z-30 py-1 min-w-[140px] border rounded-lg"
                   style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-lg)' }}
                 >
-                  <Link
-                    href={`/projects/${p.id}`}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-secondary)]"
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setSummaryProject(p); setMenuOpen(null) }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-secondary)]"
                     style={{ color: 'var(--text-primary)' }}
-                    onClick={() => setMenuOpen(null)}
                   >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    Open
-                  </Link>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2h8v8H2z" stroke="currentColor" strokeWidth="1.2" /><line x1="2" y1="5" x2="10" y2="5" stroke="currentColor" strokeWidth="1.2" /><line x1="5" y1="5" x2="5" y2="10" stroke="currentColor" strokeWidth="1.2" /></svg>
+                    Summary
+                  </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); startRename(p.id, p.name) }}
                     className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-secondary)]"
@@ -413,6 +560,16 @@ export default function ProjectsPage() {
             </div>
           </div>
         </div>
+        {funFact && (
+          <div className="mt-4 py-4 border-t" style={{ borderColor: 'var(--border)' }}>
+            <p className="text-xs leading-relaxed text-center italic" style={{ color: 'var(--text-secondary)' }}>
+              &ldquo;{funFact.fact}&rdquo;
+            </p>
+            <p className="text-[10px] text-center mt-1" style={{ color: 'var(--text-tertiary)' }}>
+              — {funFact.author}
+            </p>
+          </div>
+        )}
       </div>
 
       </div>
@@ -536,7 +693,447 @@ export default function ProjectsPage() {
           0%, 100% { box-shadow: 0 0 12px rgba(111,78,55,0.3), 0 0 24px rgba(111,78,55,0.15); }
           50% { box-shadow: 0 0 20px rgba(111,78,55,0.5), 0 0 40px rgba(111,78,55,0.25); }
         }
+        @keyframes cardClick {
+          0% { transform: scale(1); }
+          50% { transform: scale(0.97); }
+          100% { transform: scale(1); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
       `}</style>
+
+      {/* Summary popup */}
+      {summaryProject && (
+        <ProjectSummaryPopup project={summaryProject} onClose={() => setSummaryProject(null)} />
+      )}
+
+      {/* Activity status modal */}
+      {iconInfoOpen && (() => {
+        const p = projectList.find(proj => proj.id === iconInfoOpen)
+        if (!p) return null
+        return (
+          <div
+            className="fixed inset-0 z-[450] flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(0,0,0,0.3)', animation: 'fadeIn 150ms ease-out' }}
+            onClick={() => setIconInfoOpen(null)}
+          >
+            <div
+              className="w-full max-w-sm mx-4 rounded-xl border p-5"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-lg)', animation: 'fadeInUp 200ms ease-out' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <h4 className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Activity Status</h4>
+              <p className="text-[11px] mb-4" style={{ color: 'var(--text-tertiary)' }}>
+                The project icon changes color based on how recently you&apos;ve worked on it. Here&apos;s what each state means:
+              </p>
+              <div className="flex flex-col gap-3 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#E8F5E9', color: '#4CAF50' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium" style={{ color: '#4CAF50' }}>Active (&lt; 1 hour)</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>You just worked on this project. The icon glows green — keep up the momentum!</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)', opacity: 0.7 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>Cooling down (1–48 hours)</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>It&apos;s been a while since you last worked on this. The icon fades gradually — time to check in?</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#FFEBEE', color: '#E57373' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium" style={{ color: '#E57373' }}>Neglected (48+ hours)</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>This project hasn&apos;t seen activity in days. The icon turns red — your test cases are missing you!</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#FFEBEE', color: '#E57373', animation: 'pulse 2s ease-in-out infinite' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                      <path d="M13.73 21a2 2 0 01-3.46 0" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium" style={{ color: '#E57373' }}>SOS mode (1+ week)</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>It&apos;s been over a week! The icon pulses red urgently — someone might need to check on this project.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[11px] font-medium" style={{ color: 'var(--text-primary)' }}>Activity tracking</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>Last active: {getLastWorkedText(p.id)}</p>
+                  </div>
+                  <button
+                    onClick={() => { setIconInfoOpen(null); setPremiumModalOpen(true) }}
+                    className="relative w-10 h-5 rounded-full transition-colors"
+                    style={{ backgroundColor: '#4CAF50' }}
+                    title="Toggle activity tracking"
+                  >
+                    <div
+                      className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform"
+                      style={{ left: '2px', transform: 'translateX(0)' }}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* New project modal */}
+      {newProjectOpen && (
+        <NewProjectModal
+          profileName={profile.name}
+          onClose={() => setNewProjectOpen(false)}
+          onSubmit={(name, type) => {
+            createProject(name, type)
+            setNewProjectOpen(false)
+          }}
+        />
+      )}
+
+      {/* Inactivity badge — fixed bottom right */}
+      {inactivity && (
+        <div className="fixed bottom-4 right-4 z-30" style={{ animation: 'fadeInUp 300ms ease-out' }}>
+          <MagicCard
+            className="rounded-lg"
+            gradientColor="#6F4E37"
+            gradientOpacity={0.15}
+            gradientFrom="#6F4E37"
+            gradientTo="#D7CCC8"
+          >
+            <div className="flex items-center gap-2 px-4 py-2.5">
+              <div className="flex-1">
+                <p className="text-[11px] font-medium leading-snug" style={{ color: '#6F4E37' }}>
+                  {inactivity.never
+                    ? `You haven't done any testing yet, ${profile.name || 'buddy'}.. go to work!`
+                    : `It's been ${inactivity.hours}h ${inactivity.minutes}m since you do testing, ${profile.name || 'buddy'}.. go to work!`
+                  }
+                </p>
+              </div>
+              <button
+                onClick={() => setPremiumModalOpen(true)}
+                className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold transition-colors hover:bg-black/5"
+                style={{ color: 'rgba(111,78,55,0.5)' }}
+                title="Dismiss"
+              >
+                ×
+              </button>
+            </div>
+          </MagicCard>
+        </div>
+      )}
+
+      {/* Premium paywall joke modal */}
+      {premiumModalOpen && (
+        <div
+          className="fixed inset-0 z-[500] flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.4)', animation: 'fadeIn 150ms ease-out' }}
+          onClick={() => setPremiumModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm mx-4 rounded-xl border overflow-hidden"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-lg)', animation: 'fadeInUp 200ms ease-out' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-6 pt-6 pb-4 text-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--status-skip-bg)' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--status-skip-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+              </div>
+              <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                Premium Feature
+              </h3>
+              <p className="text-xs leading-relaxed mb-4" style={{ color: 'var(--text-secondary)' }}>
+                Closing the gaslight feature is only available for <strong>Premium Users</strong>.
+                To upgrade, please transfer to the following VA:
+              </p>
+              <div className="px-4 py-3 rounded-lg border mb-4" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>
+                <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--text-tertiary)' }}>Virtual Account</p>
+                <p className="text-sm font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>0895 332 333 587</p>
+                <p className="text-[10px] mt-1" style={{ color: 'var(--text-tertiary)' }}>a/n Qois Ramadhani</p>
+              </div>
+              <p className="text-[10px] italic" style={{ color: 'var(--text-tertiary)' }}>
+                *This is a joke. Please don't actually transfer. Or do. I won't stop you.
+              </p>
+            </div>
+            <div className="px-6 pb-5">
+              <button
+                onClick={() => setPremiumModalOpen(false)}
+                className="w-full px-3 py-2.5 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+              >
+                Fine, I'll keep being gaslit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function NewProjectModal({ profileName, onClose, onSubmit }: { profileName: string; onClose: () => void; onSubmit: (name: string, type: string) => void }) {
+  const [name, setName] = useState('')
+  const [type, setType] = useState('')
+  const nameRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    nameRef.current?.focus()
+  }, [])
+
+  const handleSubmit = () => {
+    if (name.trim()) onSubmit(name.trim(), type)
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[400] flex items-center justify-center"
+      style={{ backgroundColor: 'rgba(0,0,0,0.3)', animation: 'fadeIn 150ms ease-out' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm mx-4 rounded-xl border p-5"
+        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-lg)', animation: 'fadeInUp 200ms ease-out' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>New Project</h3>
+
+        <label className="text-[10px] font-medium uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-tertiary)' }}>Project Name</label>
+        <input
+          ref={nameRef}
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }}
+          placeholder="Enter project name..."
+          className="w-full px-3 py-2 text-sm rounded-lg border outline-none transition-colors focus:border-[var(--accent)] mb-4"
+          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+        />
+
+        <label className="text-[10px] font-medium uppercase tracking-wider mb-1.5 block" style={{ color: 'var(--text-tertiary)' }}>Project Type <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(optional)</span></label>
+        <select
+          value={type}
+          onChange={e => setType(e.target.value)}
+          className="w-full px-3 py-2 text-sm rounded-lg border outline-none transition-colors focus:border-[var(--accent)] mb-4 cursor-pointer"
+          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)', color: type ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
+        >
+          <option value="">Select type...</option>
+          <option value="Dashboard">Dashboard</option>
+          <option value="Website">Website</option>
+          <option value="Gak Jelas">Gak Jelas</option>
+        </select>
+
+        <div className="flex items-center justify-between mb-4">
+          <div className="relative group/tested">
+            <span className="text-[10px] italic" style={{ color: 'var(--text-tertiary)' }}>
+              Tested by {profileName || 'Anonymous'}
+            </span>
+            <div className="absolute bottom-full left-0 mb-1 px-2 py-1 text-[9px] rounded whitespace-nowrap opacity-0 group-hover/tested:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
+              just kidding, you will ask AI to do it anyway
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!name.trim()}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg transition-opacity hover:opacity-80 disabled:opacity-30"
+              style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)' }}
+            >
+              Create
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ProjectSummaryPopup({ project, onClose }: { project: Project; onClose: () => void }) {
+  const { updateProject } = useDashboard()
+  const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all')
+  const [typeEditing, setTypeEditing] = useState(false)
+
+  const allCases = Object.values(project.testCases).flat()
+  const totalCases = allCases.length
+  const pass = allCases.filter(c => c.status === 'pass').length
+  const fail = allCases.filter(c => c.status === 'fail').length
+  const skip = allCases.filter(c => c.status === 'skip').length
+  const untested = allCases.filter(c => c.status === 'untested').length
+  const denom = totalCases - skip
+  const passRate = denom > 0 ? Math.round((pass / denom) * 100) : 0
+
+  const filteredCases = statusFilter === 'all'
+    ? allCases
+    : allCases.filter(c => c.status === statusFilter)
+
+  const nodeMap = new Map(project.flows.map(n => [n.id, n]))
+
+  const lastActivityStr = (() => {
+    try {
+      const raw = localStorage.getItem('qa-project-activity')
+      const map = raw ? JSON.parse(raw) : {}
+      const last = map[project.id]
+      if (!last) return null
+      return new Date(last).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    } catch { return null }
+  })()
+
+  return (
+    <div
+      className="fixed inset-0 z-[400] flex items-center justify-center"
+      style={{ backgroundColor: 'rgba(0,0,0,0.3)', animation: 'fadeIn 150ms ease-out' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg mx-4 rounded-xl border overflow-hidden max-h-[80vh] flex flex-col"
+        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-lg)', animation: 'fadeInUp 200ms ease-out' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-semibold flex-1" style={{ color: 'var(--text-primary)' }}>{project.name}</h3>
+            <button onClick={onClose} className="text-[10px] opacity-50 hover:opacity-100" style={{ color: 'var(--text-tertiary)' }}>×</button>
+          </div>
+          {lastActivityStr ? (
+            <p className="text-[10px] mt-1" style={{ color: 'var(--text-tertiary)' }}>
+              Last worked on {lastActivityStr}
+            </p>
+          ) : (
+            <p className="text-[10px] mt-1" style={{ color: 'var(--text-tertiary)' }}>
+              No activity recorded yet
+            </p>
+          )}
+        </div>
+
+        {/* Stats */}
+        <div className="px-5 py-3 flex gap-4 text-xs border-b items-center" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+          <span>Cases: <strong style={{ color: 'var(--text-primary)' }}>{totalCases}</strong></span>
+          <span>Pass: <strong style={{ color: 'var(--status-pass-text)' }}>{pass}</strong></span>
+          <span>Rate: <strong style={{ color: passRate >= 80 ? 'var(--status-pass-text)' : 'var(--status-fail-text)' }}>{passRate}%</strong></span>
+          {typeEditing ? (
+            <select
+              value={project.type || ''}
+              onChange={e => { updateProject(project.id, p => ({ ...p, type: e.target.value })); setTypeEditing(false) }}
+              onBlur={() => setTypeEditing(false)}
+              className="px-1 py-0.5 text-[11px] rounded border outline-none cursor-pointer"
+              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+              autoFocus
+            >
+              <option value="">None</option>
+              <option value="Dashboard">Dashboard</option>
+              <option value="Website">Website</option>
+              <option value="Gak Jelas">Gak Jelas</option>
+            </select>
+          ) : (
+            <span className="flex items-center gap-1">
+              Type: <strong style={{ color: 'var(--text-primary)' }}>{project.type || 'Not set'}</strong>
+              <button onClick={() => setTypeEditing(true)} className="text-[9px] hover:underline" style={{ color: 'var(--accent)' }}>edit</button>
+            </span>
+          )}
+        </div>
+
+        {/* Status filter pills */}
+        <div className="px-5 py-2 flex gap-1.5 border-b" style={{ borderColor: 'var(--border)' }}>
+          {([['all', 'All'], ['pass', 'Pass'], ['fail', 'Fail'], ['skip', 'Skip'], ['untested', 'Untested']] as const).map(([value, label]) => {
+            const isActive = statusFilter === value
+            const colors: Record<string, { bg: string; text: string }> = {
+              all: { bg: 'var(--bg-secondary)', text: 'var(--text-secondary)' },
+              pass: { bg: 'var(--status-pass-bg)', text: 'var(--status-pass-text)' },
+              fail: { bg: 'var(--status-fail-bg)', text: 'var(--status-fail-text)' },
+              skip: { bg: 'var(--status-skip-bg)', text: 'var(--status-skip-text)' },
+              untested: { bg: 'var(--status-untested-bg)', text: 'var(--status-untested-text)' },
+            }
+            const c = colors[value]
+            return (
+              <button
+                key={value}
+                onClick={() => setStatusFilter(value)}
+                className="px-2 py-0.5 text-[10px] font-medium rounded-full border transition-colors"
+                style={{
+                  backgroundColor: isActive ? c.bg : 'transparent',
+                  color: isActive ? c.text : 'var(--text-tertiary)',
+                  borderColor: isActive ? 'transparent' : 'var(--border)',
+                }}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Table */}
+        <div className="flex-1 overflow-y-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className="text-left px-5 py-2 text-[10px] font-medium" style={{ color: 'var(--text-tertiary)' }}>Node</th>
+                <th className="text-left px-5 py-2 text-[10px] font-medium" style={{ color: 'var(--text-tertiary)' }}>Test Case</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCases.length === 0 ? (
+                <tr><td colSpan={2} className="px-5 py-4 text-center" style={{ color: 'var(--text-tertiary)' }}>No test cases</td></tr>
+              ) : (
+                filteredCases.map(tc => {
+                  const node = nodeMap.get(tc.id.split('-')[0]) || project.flows.find(n => (project.testCases[n.id] ?? []).some(t => t.id === tc.id))
+                  return (
+                    <tr key={tc.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
+                      <td className="px-5 py-1.5 font-mono" style={{ color: 'var(--text-tertiary)' }}>{node?.label ?? '—'}</td>
+                      <td className="px-5 py-1.5" style={{ color: 'var(--text-primary)' }}>{tc.title}</td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer with notes */}
+        <div className="border-t flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
+          {project.notes ? (
+            <div className="px-5 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <div className="font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>Notes</div>
+              <div className="whitespace-pre-wrap leading-relaxed max-h-24 overflow-y-auto">{project.notes}</div>
+            </div>
+          ) : (
+            <div className="px-5 py-2 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+              No notes added yet
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

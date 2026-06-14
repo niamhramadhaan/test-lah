@@ -9,9 +9,8 @@ import { TestCasePanel } from '@/components/testcase/TestCasePanel'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { TestCaseSearch } from '@/components/testcase/TestCaseSearch'
 
-function formatLastSaved(isoString: string): string {
+function formatLastSaved(isoString: string, now: Date): string {
   const date = new Date(isoString)
-  const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   const diffSec = Math.floor(diffMs / 1000)
   const diffMin = Math.floor(diffSec / 60)
@@ -54,6 +53,11 @@ export default function ProjectDetailPage() {
     setSelectedNodeId(null)
   }, [projectId, setSelectedNodeId])
 
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(new Date()), 10000)
+    return () => clearInterval(interval)
+  }, [])
+
   const selectedNode = useMemo(
     () => activeProj?.flows.find(n => n.id === selectedNodeId) ?? null,
     [activeProj, selectedNodeId],
@@ -61,6 +65,7 @@ export default function ProjectDetailPage() {
 
   const [mobileTab, setMobileTab] = useState<'mindmap' | 'testcases'>('mindmap')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [currentTime, setCurrentTime] = useState(() => new Date())
   const [splitRatio, setSplitRatio] = useState(0.5)
   const [isDragging, setIsDragging] = useState(false)
   const [dividerHovered, setDividerHovered] = useState(false)
@@ -156,7 +161,7 @@ export default function ProjectDetailPage() {
       <div className="flex items-center justify-between px-4 py-1.5 border-b flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
         <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
           {lastSaved ? (
-            <span>Last saved {formatLastSaved(lastSaved)}</span>
+            <span>Last saved {formatLastSaved(lastSaved, currentTime)}</span>
           ) : (
             <span>Not saved yet</span>
           )}
@@ -164,32 +169,16 @@ export default function ProjectDetailPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSearchOpen(true)}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] transition-colors hover:bg-[var(--bg-secondary)]"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
+            className="flex items-center gap-1.5 px-4 py-1 rounded-md border text-[11px] transition-colors hover:bg-[var(--bg-secondary)]"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)', minWidth: 160 }}
             title="Search test cases (Ctrl+K)"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <span className="hidden sm:inline">Search</span>
-            <kbd className="text-[9px] px-1 py-0.5 rounded border ml-1 hidden sm:inline" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>⌘K</kbd>
-          </button>
-          <button
-            onClick={() => setTcFullscreen(prev => !prev)}
-            className="p-1 rounded transition-colors hover:bg-[var(--bg-secondary)]"
-            style={{ color: 'var(--text-tertiary)' }}
-            title={tcFullscreen ? 'Exit fullscreen' : 'Expand test cases'}
-          >
-            {tcFullscreen ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 3v3a2 2 0 01-2 2H3m18 0h-3a2 2 0 01-2-2V3m0 18v-3a2 2 0 012-2h3M3 16h3a2 2 0 012 2v3" />
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" />
-              </svg>
-            )}
+            <span className="hidden sm:inline">Search test cases...</span>
+            <kbd className="text-[9px] px-1 py-0.5 rounded border ml-auto hidden sm:inline" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>⌘K</kbd>
           </button>
           <button
             onClick={() => router.push(`/projects/${projectId}/summary`)}
@@ -213,6 +202,23 @@ export default function ProjectDetailPage() {
             }}
           >
             {saveFeedback ? 'Saved!' : 'Save'}
+          </button>
+          <div className="flex-1" />
+          <button
+            onClick={() => setTcFullscreen(prev => !prev)}
+            className="p-1.5 rounded transition-colors hover:bg-[var(--bg-secondary)]"
+            style={{ color: 'var(--text-tertiary)' }}
+            title={tcFullscreen ? 'Exit fullscreen' : 'Expand test cases'}
+          >
+            {tcFullscreen ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3v3a2 2 0 01-2 2H3m18 0h-3a2 2 0 01-2-2V3m0 18v-3a2 2 0 012-2h3M3 16h3a2 2 0 012 2v3" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" />
+              </svg>
+            )}
           </button>
         </div>
       </div>
@@ -339,18 +345,24 @@ export default function ProjectDetailPage() {
             columns={selectedNodeId ? (activeProj.columnConfigs?.[selectedNodeId] ?? activeProj.columnConfig ?? []) : (activeProj.columnConfig ?? [])}
             projectId={projectId}
             fullscreen={tcFullscreen}
-            onAddTestCase={testCases.addTestCase}
-            onUpdateTestCase={testCases.updateTestCase}
-            onDeleteTestCase={testCases.deleteTestCase}
-            onBulkDelete={testCases.bulkDeleteTestCases}
-            onBulkUpdate={testCases.bulkUpdateTestCases}
-            onReorderTestCases={testCases.reorderTestCases}
-            onToggleColumn={testCases.toggleColumnVisibility}
-            onRenameColumn={testCases.updateColumnConfig}
-            onUpdateNode={mindmap.updateNode}
-            onAddColumn={testCases.addColumn}
-            onDeleteColumn={testCases.deleteColumn}
-            onReorderColumn={testCases.reorderColumn}
+            allNodes={activeProj.flows}
+            allTestCases={activeProj.testCases}
+            onSelectNode={(nodeId) => {
+              setSelectedNodeId(nodeId)
+              mindmap.selectNode(nodeId)
+            }}
+            onAddTestCase={(...args) => { pushState('Add test case'); testCases.addTestCase(...args) }}
+            onUpdateTestCase={(...args) => { pushState('Update test case'); testCases.updateTestCase(...args) }}
+            onDeleteTestCase={(...args) => { pushState('Delete test case'); testCases.deleteTestCase(...args) }}
+            onBulkDelete={(...args) => { pushState('Delete test cases'); testCases.bulkDeleteTestCases(...args) }}
+            onBulkUpdate={(...args) => { pushState('Update test cases'); testCases.bulkUpdateTestCases(...args) }}
+            onReorderTestCases={(...args) => { pushState('Reorder test cases'); testCases.reorderTestCases(...args) }}
+            onToggleColumn={(...args) => { pushState('Toggle column'); testCases.toggleColumnVisibility(...args) }}
+            onRenameColumn={(...args) => { pushState('Rename column'); testCases.updateColumnConfig(...args) }}
+            onUpdateNode={(...args) => { pushState('Update node'); mindmap.updateNode(...args) }}
+            onAddColumn={(...args) => { pushState('Add column'); testCases.addColumn(...args) }}
+            onDeleteColumn={(...args) => { pushState('Delete column'); testCases.deleteColumn(...args) }}
+            onReorderColumn={(...args) => { pushState('Reorder column'); testCases.reorderColumn(...args) }}
             confirmDialog={confirmDialog}
           />
         </div>

@@ -15,9 +15,9 @@ interface MindmapPanelProps {
   onUnlinkNode: (id: string) => void
   onRenameNode: (id: string, label: string) => void
   onUpdateNode: (id: string, patch: Partial<FlowNode>) => void
-  onAddEdge: (fromId: string, toId: string, type: 'pass' | 'fail' | 'default') => void
+  onAddEdge: (fromId: string, toId: string, type: 'pass' | 'fail' | 'plain') => void
   onDeleteEdge: (edgeId: string) => void
-  onUpdateEdge: (edgeId: string, patch: { type?: 'pass' | 'fail' | 'default' }) => void
+  onUpdateEdge: (edgeId: string, patch: { type?: 'pass' | 'fail' | 'plain' }) => void
   onResetLayout: () => void
   canUndo: boolean
   canRedo: boolean

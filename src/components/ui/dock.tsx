@@ -1,35 +1,22 @@
 "use client"
 
-import React, { PropsWithChildren, useRef } from "react"
+import React, { PropsWithChildren, useRef, useState } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import {
-  motion,
-  MotionValue,
-  useMotionValue,
-  useSpring,
-  useTransform,
-} from "motion/react"
-import type { MotionProps } from "motion/react"
+import { motion, AnimatePresence } from "motion/react"
 
 import { cn } from "@/lib/utils"
 
 export interface DockProps extends VariantProps<typeof dockVariants> {
   className?: string
   iconSize?: number
-  iconMagnification?: number
-  disableMagnification?: boolean
-  iconDistance?: number
   direction?: "top" | "middle" | "bottom"
   children: React.ReactNode
 }
 
-const DEFAULT_SIZE = 40
-const DEFAULT_MAGNIFICATION = 60
-const DEFAULT_DISTANCE = 140
-const DEFAULT_DISABLEMAGNIFICATION = false
+const DEFAULT_SIZE = 36
 
 const dockVariants = cva(
-  "supports-backdrop-blur:bg-white/10 supports-backdrop-blur:dark:bg-black/10 mx-auto mt-8 flex h-[58px] w-max items-center justify-center gap-2 rounded-2xl border p-2 backdrop-blur-md"
+  "mx-auto flex h-[54px] w-max items-center justify-center gap-1.5 rounded-xl border p-2"
 )
 
 const Dock = React.forwardRef<HTMLDivElement, DockProps>(
@@ -38,40 +25,14 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps>(
       className,
       children,
       iconSize = DEFAULT_SIZE,
-      iconMagnification = DEFAULT_MAGNIFICATION,
-      disableMagnification = DEFAULT_DISABLEMAGNIFICATION,
-      iconDistance = DEFAULT_DISTANCE,
       direction = "middle",
       ...props
     },
     ref
   ) => {
-    const mouseX = useMotionValue(Infinity)
-
-    const renderChildren = () => {
-      return React.Children.map(children, (child) => {
-        if (
-          React.isValidElement<DockIconProps>(child) &&
-          child.type === DockIcon
-        ) {
-          return React.cloneElement(child, {
-            ...child.props,
-            mouseX: mouseX,
-            size: iconSize,
-            magnification: iconMagnification,
-            disableMagnification: disableMagnification,
-            distance: iconDistance,
-          })
-        }
-        return child
-      })
-    }
-
     return (
-      <motion.div
+      <div
         ref={ref}
-        onMouseMove={(e) => mouseX.set(e.pageX)}
-        onMouseLeave={() => mouseX.set(Infinity)}
         {...props}
         className={cn(dockVariants({ className }), {
           "items-start": direction === "top",
@@ -79,8 +40,8 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps>(
           "items-end": direction === "bottom",
         })}
       >
-        {renderChildren()}
-      </motion.div>
+        {children}
+      </div>
     )
   }
 )
@@ -88,14 +49,11 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps>(
 Dock.displayName = "Dock"
 
 export interface DockIconProps extends Omit<
-  MotionProps & React.HTMLAttributes<HTMLDivElement>,
+  React.HTMLAttributes<HTMLDivElement>,
   "children"
 > {
   size?: number
-  magnification?: number
-  disableMagnification?: boolean
-  distance?: number
-  mouseX?: MotionValue<number>
+  label?: string
   className?: string
   children?: React.ReactNode
   props?: PropsWithChildren
@@ -103,50 +61,65 @@ export interface DockIconProps extends Omit<
 
 const DockIcon = ({
   size = DEFAULT_SIZE,
-  magnification = DEFAULT_MAGNIFICATION,
-  disableMagnification,
-  distance = DEFAULT_DISTANCE,
-  mouseX,
+  label,
   className,
   children,
   ...props
 }: DockIconProps) => {
-  const ref = useRef<HTMLDivElement>(null)
-  const padding = Math.max(6, size * 0.2)
-  const defaultMouseX = useMotionValue(Infinity)
-
-  const distanceCalc = useTransform(mouseX ?? defaultMouseX, (val: number) => {
-    const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 }
-    return val - bounds.x - bounds.width / 2
-  })
-
-  const targetSize = disableMagnification ? size : magnification
-
-  const sizeTransform = useTransform(
-    distanceCalc,
-    [-distance, 0, distance],
-    [size, targetSize, size]
-  )
-
-  const scaleSize = useSpring(sizeTransform, {
-    mass: 0.15,
-    stiffness: 120,
-    damping: 25,
-  })
+  const [hovered, setHovered] = useState(false)
 
   return (
-    <motion.div
-      ref={ref}
-      style={{ width: scaleSize, height: scaleSize, padding }}
+    <div
       className={cn(
-        "flex aspect-square cursor-pointer items-center justify-center rounded-full",
-        disableMagnification && "hover:bg-muted-foreground transition-colors",
+        "relative flex items-center cursor-pointer rounded-lg transition-all duration-200",
         className
       )}
+      style={{ height: size }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       {...props}
     >
-      <div>{children}</div>
-    </motion.div>
+      {/* Icon */}
+      <div
+        className="flex items-center justify-center flex-shrink-0 transition-all duration-200"
+        style={{ width: size, height: size }}
+      >
+        {children}
+        {/* Shimmer sweep on hover */}
+        {hovered && (
+          <div
+            className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none"
+            style={{ opacity: 0.15 }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.4) 55%, transparent 60%)',
+                backgroundSize: '200% 100%',
+                animation: 'dockShimmer 1.5s ease-in-out',
+              }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Label — slides out to the right on hover */}
+      <AnimatePresence>
+        {hovered && label && (
+          <motion.span
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 'auto', opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+            className="text-[10px] font-medium whitespace-nowrap overflow-hidden flex-shrink-0 pr-2"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {label}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
 

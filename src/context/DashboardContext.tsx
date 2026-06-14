@@ -16,7 +16,7 @@ interface DashboardContextValue {
   activeProject: Project | null
   activeProjectId: string | null
   selectedNodeId: string | null
-  createProject: (name: string) => string
+  createProject: (name: string, type?: string) => string
   deleteProject: (id: string) => void
   duplicateProject: (id: string) => void
   importProject: (json: string) => { ok: boolean; error?: string }
@@ -46,9 +46,9 @@ interface DashboardContextValue {
     renameNode: (id: string, label: string) => void
     updateNode: (id: string, patch: Partial<FlowNode>) => void
     selectNode: (id: string | null) => void
-    addEdge: (fromId: string, toId: string, type: 'pass' | 'fail' | 'default') => void
+    addEdge: (fromId: string, toId: string, type: 'pass' | 'fail' | 'plain') => void
     deleteEdge: (edgeId: string) => void
-    updateEdge: (edgeId: string, patch: { type?: 'pass' | 'fail' | 'default' }) => void
+    updateEdge: (edgeId: string, patch: { type?: 'pass' | 'fail' | 'plain' }) => void
     resetLayout: () => void
   }
   testCases: {

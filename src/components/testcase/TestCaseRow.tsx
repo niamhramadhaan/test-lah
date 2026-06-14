@@ -8,6 +8,7 @@ interface TestCaseRowProps {
   tc: TestCase
   visibleCols: ColumnConfig[]
   expandAll: boolean
+  selectMode: boolean
   selected: boolean
   onToggleSelect: () => void
   onUpdate: (patch: Partial<TestCase>) => void
@@ -19,11 +20,12 @@ interface TestCaseRowProps {
 
 const STATUS_ORDER: Status[] = ['untested', 'pass', 'fail', 'skip']
 
-export function TestCaseRow({ tc, visibleCols, expandAll, selected, onToggleSelect, onUpdate, onDelete, onDragStart, onDragOver, onDrop }: TestCaseRowProps) {
+export function TestCaseRow({ tc, visibleCols, expandAll, selectMode, selected, onToggleSelect, onUpdate, onDelete, onDragStart, onDragOver, onDrop }: TestCaseRowProps) {
   const [editingKey, setEditingKey] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [hovered, setHovered] = useState(false)
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
+  const [codeCopied, setCodeCopied] = useState(false)
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -68,7 +70,7 @@ export function TestCaseRow({ tc, visibleCols, expandAll, selected, onToggleSele
     <>
       <tr
         className="group transition-colors"
-        style={{ backgroundColor: hovered ? 'var(--bg-secondary)' : 'transparent' }}
+        style={{ backgroundColor: selected ? 'rgba(111,78,55,0.06)' : hovered ? 'var(--bg-secondary)' : 'transparent' }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         draggable
@@ -77,32 +79,49 @@ export function TestCaseRow({ tc, visibleCols, expandAll, selected, onToggleSele
         onDrop={onDrop}
       >
         {/* Checkbox */}
-        <td className="px-2 py-1.5 border-b" style={{ borderColor: 'var(--border)', width: 28 }}>
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={onToggleSelect}
-            className="cursor-pointer accent-[var(--accent)]"
-            style={{ width: 14, height: 14 }}
-          />
-        </td>
+        {selectMode && (
+          <td className="px-2 py-1.5 border-b" style={{ borderColor: 'var(--border)', width: 28 }}>
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={onToggleSelect}
+              className="cursor-pointer accent-[var(--accent)]"
+              style={{ width: 14, height: 14 }}
+            />
+          </td>
+        )}
         {visibleCols.map(col => (
           <td
             key={col.key}
             className="px-2 py-1.5 text-xs border-b"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', maxWidth: col.key === 'steps' || col.key === 'expected' ? 300 : undefined }}
+            style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', maxWidth: col.key === 'steps' || col.key === 'expected' ? 300 : undefined, minWidth: col.key === 'code' ? 60 : undefined }}
           >
             {col.key === 'status' ? (
               <StatusPill status={tc.status} onChange={updateStatus} />
             ) : col.key === 'code' ? (
-              <span className="font-mono text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{tc.code || '—'}</span>
+              <span
+                className="font-mono text-[10px] cursor-pointer hover:underline transition-colors"
+                style={{ color: codeCopied ? 'var(--accent)' : 'var(--text-tertiary)' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (tc.code) {
+                    navigator.clipboard.writeText(tc.code).then(() => {
+                      setCodeCopied(true)
+                      setTimeout(() => setCodeCopied(false), 1500)
+                    })
+                  }
+                }}
+                title="Click to copy"
+              >
+                {codeCopied ? 'Copied!' : (tc.code || '—')}
+              </span>
             ) : col.key === 'case_type' ? (
               <CaseTypePill
                 value={tc.case_type || 'General'}
                 onChange={val => onUpdate({ case_type: val })}
               />
             ) : editingKey === col.key ? (
-              col.key === 'steps' ? (
+              col.key === 'steps' || col.key === 'expected' || col.key === 'notes' || col.key === 'links' ? (
                 <textarea
                   ref={inputRef as React.RefObject<HTMLTextAreaElement>}
                   value={editValue}
@@ -126,37 +145,46 @@ export function TestCaseRow({ tc, visibleCols, expandAll, selected, onToggleSele
               )
             ) : (
               col.key === 'links' ? (
-                <div className="flex items-center gap-1">
+                <div className="flex flex-col gap-0.5">
                   {tc.links ? (
-                    <>
-                      <a
-                        href={tc.links}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] underline hover:opacity-80 transition-opacity"
-                        style={{ color: 'var(--accent)' }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Open Link
-                      </a>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onUpdate({ links: '' }) }}
-                        className="text-[10px] opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity px-0.5"
-                        style={{ color: 'var(--status-fail-text)' }}
-                        title="Clear link"
-                      >
-                        ×
-                      </button>
-                    </>
-                  ) : (
-                    <span
-                      className="cursor-text block text-[11px]"
-                      onClick={() => startEdit(col.key)}
-                      style={{ color: 'var(--text-tertiary)' }}
-                    >
-                      Add link...
-                    </span>
-                  )}
+                    tc.links.split(',').map((link, i) => {
+                      const trimmed = link.trim()
+                      if (!trimmed) return null
+                      return (
+                        <div key={i} className="flex items-center gap-1">
+                          <a
+                            href={trimmed}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] underline hover:opacity-80 transition-opacity"
+                            style={{ color: 'var(--accent)' }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {trimmed.length > 30 ? trimmed.slice(0, 30) + '...' : trimmed}
+                          </a>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const links = tc.links.split(',').map(l => l.trim()).filter(l => l !== trimmed)
+                              onUpdate({ links: links.join(', ') })
+                            }}
+                            className="text-[10px] opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity px-0.5"
+                            style={{ color: 'var(--status-fail-text)' }}
+                            title="Remove link"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )
+                    })
+                  ) : null}
+                  <span
+                    className="cursor-text text-[11px] opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => startEdit(col.key)}
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    {tc.links ? '+ Add link' : 'Add link...'}
+                  </span>
                 </div>
               ) : (
                 <span

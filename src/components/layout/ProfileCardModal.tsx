@@ -23,6 +23,7 @@ interface ProfileCardModalProps {
 
 export function ProfileCardModal({ open, onClose, profile, initials, stats }: ProfileCardModalProps) {
   const [flipped, setFlipped] = useState(false)
+  const [premiumOpen, setPremiumOpen] = useState(false)
 
   if (!open) return null
 
@@ -108,6 +109,13 @@ export function ProfileCardModal({ open, onClose, profile, initials, stats }: Pr
                 style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' }}
               >
                 View stats
+              </button>
+              <button
+                onClick={() => setPremiumOpen(true)}
+                className="mt-2 px-4 py-1.5 text-[11px] font-medium rounded-full transition-colors"
+                style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}
+              >
+                Get reward for my hardwork
               </button>
             </div>
           </div>
@@ -197,6 +205,53 @@ export function ProfileCardModal({ open, onClose, profile, initials, stats }: Pr
           Close
         </button>
       </div>
+
+      {/* Premium paywall modal */}
+      {premiumOpen && (
+        <div
+          className="fixed inset-0 z-[500] flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.4)', animation: 'fadeIn 150ms ease-out' }}
+          onClick={() => setPremiumOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm mx-4 rounded-xl border overflow-hidden"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-lg)', animation: 'fadeInUp 200ms ease-out' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-6 pt-6 pb-4 text-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--status-skip-bg)' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--status-skip-text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </div>
+              <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                Premium Feature
+              </h3>
+              <p className="text-xs leading-relaxed mb-4" style={{ color: 'var(--text-secondary)' }}>
+                Getting rewards for your hardwork is only available for <strong>Premium Users</strong>.
+                To upgrade, please transfer to the following VA:
+              </p>
+              <div className="px-4 py-3 rounded-lg border mb-4" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-secondary)' }}>
+                <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: 'var(--text-tertiary)' }}>Virtual Account</p>
+                <p className="text-sm font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>0895 332 333 587</p>
+                <p className="text-[10px] mt-1" style={{ color: 'var(--text-tertiary)' }}>a/n Qois Ramadhani</p>
+              </div>
+              <p className="text-[10px] italic" style={{ color: 'var(--text-tertiary)' }}>
+                *This is a joke. Please don&apos;t actually transfer. Or do. I won&apos;t stop you.
+              </p>
+            </div>
+            <div className="px-6 pb-5">
+              <button
+                onClick={() => setPremiumOpen(false)}
+                className="w-full px-3 py-2.5 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+              >
+                Fine, I&apos;ll keep working for free
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

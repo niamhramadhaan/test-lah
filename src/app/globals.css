@@ -177,6 +177,11 @@ input, textarea, select, button {
   100% { background-position: -100% 50%; }
 }
 
+@keyframes dockShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @theme inline {
   @keyframes marquee {
   from {

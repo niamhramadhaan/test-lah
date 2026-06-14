@@ -70,9 +70,13 @@ export function E2ETestRunner({
   )
 
   // Auto-detect screen size
+  const [isDesktop, setIsDesktop] = useState(false)
+
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
+    const checkDesktop = () => {
+      const desktop = window.innerWidth >= 768
+      setIsDesktop(desktop)
+      if (!desktop) {
         setShowSidebar(false)
         setShowBrowserPreview(false)
       } else {
@@ -80,9 +84,9 @@ export function E2ETestRunner({
         setShowBrowserPreview(true)
       }
     }
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    checkDesktop()
+    window.addEventListener('resize', checkDesktop)
+    return () => window.removeEventListener('resize', checkDesktop)
   }, [])
 
   // Resize handlers for browser preview
@@ -568,7 +572,7 @@ export function E2ETestRunner({
                     minHeight: showBrowserPreview ? '200px' : '36px',
                     width: 'auto',
                     flex: showBrowserPreview ? `0 0 ${browserPreviewWidth}%` : '0 0 36px',
-                    ...(typeof window !== 'undefined' && window.innerWidth >= 768 ? {
+                    ...(isDesktop ? {
                       maxHeight: 'none',
                       minHeight: 'auto',
                       flex: showBrowserPreview ? `0 0 ${browserPreviewWidth}%` : '0 0 36px'

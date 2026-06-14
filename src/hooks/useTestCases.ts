@@ -3,6 +3,16 @@
 import { useCallback } from 'react'
 import { TestCase, Project, Status, DEFAULT_COLUMNS } from '@/types'
 
+function trackProjectActivity(projectId: string) {
+  try {
+    localStorage.setItem('qa-last-test-activity', new Date().toISOString())
+    const raw = localStorage.getItem('qa-project-activity')
+    const map = raw ? JSON.parse(raw) : {}
+    map[projectId] = new Date().toISOString()
+    localStorage.setItem('qa-project-activity', JSON.stringify(map))
+  } catch {}
+}
+
 export interface TestStats {
   total: number
   pass: number
@@ -60,6 +70,7 @@ export function useTestCases(
         tcCounter: counters,
       }
     })
+    trackProjectActivity(project.id)
   }, [project, updateProject])
 
   const updateTestCase = useCallback((nodeId: string, tcId: string, patch: Partial<TestCase>) => {
@@ -71,6 +82,7 @@ export function useTestCases(
         [nodeId]: (p.testCases[nodeId] ?? []).map(tc => tc.id === tcId ? { ...tc, ...patch } : tc),
       },
     }))
+    trackProjectActivity(project.id)
   }, [project, updateProject])
 
   const deleteTestCase = useCallback((nodeId: string, tcId: string) => {
