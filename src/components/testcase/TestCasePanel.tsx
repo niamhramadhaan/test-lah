@@ -194,6 +194,7 @@ export function TestCasePanel({
       if (e.key === 'f' || e.key === 'F') { e.preventDefault(); handleBulkStatus('fail') }
       if (e.key === 'k' || e.key === 'K') { e.preventDefault(); handleBulkStatus('skip') }
       if (e.key === 'u' || e.key === 'U') { e.preventDefault(); handleBulkStatus('untested') }
+      if (e.key === 'b' || e.key === 'B') { e.preventDefault(); handleBulkStatus('blocked') }
       if (e.key === 'd' || e.key === 'D') { e.preventDefault(); handleBulkDelete() }
       if (e.key === 'Escape') { e.preventDefault(); clearSelection() }
     }
@@ -346,7 +347,7 @@ export function TestCasePanel({
           {filtersOpen && (
             <div className="flex items-center gap-1.5 flex-wrap">
               <div className="w-px h-4 mx-0.5" style={{ backgroundColor: 'var(--border)' }} />
-              {([['all', 'All'], ['untested', 'Untested'], ['pass', 'Pass'], ['fail', 'Fail'], ['skip', 'Skip']] as const).map(([value, label]) => {
+              {([['all', 'All'], ['untested', 'Untested'], ['pass', 'Pass'], ['fail', 'Fail'], ['skip', 'Skip'], ['blocked', 'Blocked']] as const).map(([value, label]) => {
                 const isActive = value === 'all' ? statusFilters.size === 0 : statusFilters.has(value)
                 const count = value === 'all' ? testCases.length : testCases.filter(tc => tc.status === value).length
                 const colors: Record<string, { bg: string; text: string }> = {
@@ -355,6 +356,7 @@ export function TestCasePanel({
                   pass: { bg: 'var(--status-pass-bg)', text: 'var(--status-pass-text)' },
                   fail: { bg: 'var(--status-fail-bg)', text: 'var(--status-fail-text)' },
                   skip: { bg: 'var(--status-skip-bg)', text: 'var(--status-skip-text)' },
+                  blocked: { bg: 'var(--status-blocked-bg)', text: 'var(--status-blocked-text)' },
                 }
                 const c = colors[value]
                 return (
@@ -481,7 +483,7 @@ export function TestCasePanel({
           <div className="flex-1" />
 
           {/* Bulk status buttons with keyboard shortcuts */}
-          {([['pass', 'P'], ['fail', 'F'], ['skip', 'K'], ['untested', 'U']] as const).map(([status, key]) => (
+          {([['pass', 'P'], ['fail', 'F'], ['skip', 'K'], ['untested', 'U'], ['blocked', 'B']] as const).map(([status, key]) => (
             <button
               key={status}
               onClick={() => handleBulkStatus(status)}

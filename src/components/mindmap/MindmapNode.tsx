@@ -73,7 +73,8 @@ export const MindmapNode = memo(function MindmapNode({
   const hasFail = testCases.some(tc => tc.status === 'fail')
   const hasSkip = testCases.some(tc => tc.status === 'skip')
   const hasUntested = testCases.some(tc => tc.status === 'untested')
-  const hasUnpassed = hasFail || hasSkip || hasUntested
+  const hasBlocked = testCases.some(tc => tc.status === 'blocked')
+  const hasUnpassed = hasFail || hasSkip || hasUntested || hasBlocked
   const allPass = testCases.length > 0 && testCases.every(tc => tc.status === 'pass')
 
   useEffect(() => {

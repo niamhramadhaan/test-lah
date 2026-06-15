@@ -16,6 +16,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   fail: { bg: 'var(--status-fail-bg)', text: 'var(--status-fail-text)' },
   skip: { bg: 'var(--status-skip-bg)', text: 'var(--status-skip-text)' },
   untested: { bg: 'var(--status-untested-bg)', text: 'var(--status-untested-text)' },
+  blocked: { bg: 'var(--status-blocked-bg)', text: 'var(--status-blocked-text)' },
 }
 
 export function NodeSummaryModal({ open, onClose, node, testCases, stats }: NodeSummaryModalProps) {
@@ -63,6 +64,7 @@ export function NodeSummaryModal({ open, onClose, node, testCases, stats }: Node
           <StatCard label="Total" value={stats.total} />
           <StatCard label="Pass" value={stats.pass} color="var(--status-pass-text)" />
           <StatCard label="Fail" value={stats.fail} color="var(--status-fail-text)" />
+          <StatCard label="Blocked" value={stats.blocked} color="var(--status-blocked-text)" />
           <StatCard label="Untested" value={stats.untested} color="var(--status-untested-text)" />
         </div>
 

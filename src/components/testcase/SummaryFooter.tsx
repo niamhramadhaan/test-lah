@@ -41,6 +41,7 @@ export function SummaryFooter({ stats, fullscreen, nodes, allTestCases, selected
       <span>Fail: <strong style={{ color: 'var(--status-fail-text)' }}>{stats.fail}</strong></span>
       <span>Skip: <strong style={{ color: 'var(--status-skip-text)' }}>{stats.skip}</strong></span>
       <span>Untested: <strong style={{ color: 'var(--status-untested-text)' }}>{stats.untested}</strong></span>
+      <span>Blocked: <strong style={{ color: 'var(--status-blocked-text)' }}>{stats.blocked}</strong></span>
 
       {/* Fullscreen node jump dropdown */}
       {fullscreen && nodes && nodes.length > 0 && (

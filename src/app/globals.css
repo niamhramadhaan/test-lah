@@ -65,6 +65,8 @@
   --status-skip-text: #7A5000;
   --status-untested-bg: #EFEFED;
   --status-untested-text: #5A5A56;
+  --status-blocked-bg: #E8E0F0;
+  --status-blocked-text: #5B1A8B;
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
   --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
   --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);

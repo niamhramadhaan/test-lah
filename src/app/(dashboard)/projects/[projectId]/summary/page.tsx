@@ -59,6 +59,7 @@ export default function SummaryPage() {
   const fail = allCases.filter(c => c.status === 'fail').length
   const skip = allCases.filter(c => c.status === 'skip').length
   const untested = allCases.filter(c => c.status === 'untested').length
+  const blocked = allCases.filter(c => c.status === 'blocked').length
   const denom = totalCases - skip
   const passRate = denom > 0 ? Math.round((pass / denom) * 100) : 0
 
@@ -113,6 +114,7 @@ export default function SummaryPage() {
           <span>Fail: <strong style={{ color: 'var(--status-fail-text)' }}>{fail}</strong></span>
           <span>Skip: <strong style={{ color: 'var(--status-skip-text)' }}>{skip}</strong></span>
           <span>Untested: <strong style={{ color: 'var(--status-untested-text)' }}>{untested}</strong></span>
+          <span>Blocked: <strong style={{ color: 'var(--status-blocked-text)' }}>{blocked}</strong></span>
         </div>
       </div>
 

@@ -317,6 +317,9 @@ export function DashboardHeader() {
     const totalUntested = allCases.filter(
       (c) => c.status === "untested",
     ).length;
+    const totalBlocked = allCases.filter(
+      (c) => c.status === "blocked",
+    ).length;
     const totalNodes = projectList.reduce((sum, p) => sum + p.flows.length, 0);
     const totalEdges = projectList.reduce(
       (sum, p) => sum + (p.edges ?? []).length,
@@ -334,6 +337,7 @@ export function DashboardHeader() {
       fail: totalFail,
       skip: totalSkip,
       untested: totalUntested,
+      blocked: totalBlocked,
     };
   }, [projectList]);
 
@@ -570,10 +574,10 @@ export function DashboardHeader() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 pt-5 pb-2 text-center border-b" style={{ borderColor: 'var(--border)' }}>
+            <div className="px-6 pt-5 pb-2 text-center border-b overflow-hidden" style={{ borderColor: 'var(--border)', background: 'linear-gradient(135deg, #FCEAEA 0%, #F5D0D0 50%, #FCEAEA 100%)' }}>
               <h3
                 className="text-sm font-semibold"
-                style={{ color: 'var(--accent)' }}
+                style={{ color: 'var(--status-fail-text)' }}
               >
                 Where are you going? ծ_Ô
               </h3>
@@ -591,13 +595,13 @@ export function DashboardHeader() {
                 className="text-base font-semibold mb-2"
                 style={{ color: "var(--text-primary)" }}
               >
-                Are you gonna to take a sick leave?
+                Are you taking a "sick leave" again?
               </h3>
               <p
                 className="text-xs leading-relaxed"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                remember to go back, tho
+                We both know you're not coming back.
               </p>
             </div>
             <div className="px-6 pb-3 flex gap-2">
@@ -635,9 +639,13 @@ export function DashboardHeader() {
                   >
                     the best QA
                   </a>
-                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-[10px] font-semibold rounded-md whitespace-nowrap opacity-0 group-hover/nathan:opacity-100 transition-opacity pointer-events-none" style={{ backgroundColor: '#6F4E37', color: '#fff', boxShadow: '0 2px 8px rgba(111,78,55,0.3)' }}>
-                    Nathan
-                    <span className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0" style={{ borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderTop: '4px solid #6F4E37' }} />
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 rounded-lg overflow-hidden opacity-0 group-hover/nathan:opacity-100 transition-opacity pointer-events-none" style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.2)', width: 120, height: 120 }}>
+                    <img
+                      src="https://media.licdn.com/dms/image/v2/D5603AQHBu4wrzFWoTw/profile-displayphoto-crop_800_800/B56Zq.Sy6LKsAI-/0/1764129191465?e=1782345600&v=beta&t=79y6xLivwcpvwy53sy1TuVopK4FMp6O8uAu7QxlIxDo"
+                      alt="Nathan"
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0" style={{ borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid var(--bg-card)' }} />
                   </span>
                 </span>{" "}
                 to do my job instead

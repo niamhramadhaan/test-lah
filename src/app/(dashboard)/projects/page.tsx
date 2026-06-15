@@ -316,6 +316,7 @@ export default function ProjectsPage() {
           const fail = allCases.filter(c => c.status === 'fail').length
           const skip = allCases.filter(c => c.status === 'skip').length
           const untested = allCases.filter(c => c.status === 'untested').length
+          const blocked = allCases.filter(c => c.status === 'blocked').length
           const denom = totalCases - skip
           const passRate = denom > 0 ? Math.round((pass / denom) * 100) : 0
           const isEditing = editingId === p.id
@@ -427,6 +428,7 @@ export default function ProjectsPage() {
                       {pass > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--status-pass-bg)', color: 'var(--status-pass-text)' }}>{pass} pass</span>}
                       {fail > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--status-fail-bg)', color: 'var(--status-fail-text)' }}>{fail} fail</span>}
                       {skip > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--status-skip-bg)', color: 'var(--status-skip-text)' }}>{skip} skip</span>}
+                      {blocked > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--status-blocked-bg)', color: 'var(--status-blocked-text)' }}>{blocked} blocked</span>}
                       {untested > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--status-untested-bg)', color: 'var(--status-untested-text)' }}>{untested} todo</span>}
                     </div>
                   </div>
@@ -1066,7 +1068,7 @@ function ProjectSummaryPopup({ project, onClose }: { project: Project; onClose: 
 
         {/* Status filter pills */}
         <div className="px-5 py-2 flex gap-1.5 border-b" style={{ borderColor: 'var(--border)' }}>
-          {([['all', 'All'], ['pass', 'Pass'], ['fail', 'Fail'], ['skip', 'Skip'], ['untested', 'Untested']] as const).map(([value, label]) => {
+          {([['all', 'All'], ['pass', 'Pass'], ['fail', 'Fail'], ['skip', 'Skip'], ['untested', 'Untested'], ['blocked', 'Blocked']] as const).map(([value, label]) => {
             const isActive = statusFilter === value
             const colors: Record<string, { bg: string; text: string }> = {
               all: { bg: 'var(--bg-secondary)', text: 'var(--text-secondary)' },
@@ -1074,6 +1076,7 @@ function ProjectSummaryPopup({ project, onClose }: { project: Project; onClose: 
               fail: { bg: 'var(--status-fail-bg)', text: 'var(--status-fail-text)' },
               skip: { bg: 'var(--status-skip-bg)', text: 'var(--status-skip-text)' },
               untested: { bg: 'var(--status-untested-bg)', text: 'var(--status-untested-text)' },
+              blocked: { bg: 'var(--status-blocked-bg)', text: 'var(--status-blocked-text)' },
             }
             const c = colors[value]
             return (

@@ -18,6 +18,7 @@ interface ProfileCardModalProps {
     fail: number
     skip: number
     untested: number
+    blocked: number
   }
 }
 
@@ -169,6 +170,7 @@ export function ProfileCardModal({ open, onClose, profile, initials, stats }: Pr
                   <StatusCell label="Pass" value={stats.pass} color="var(--status-pass-text)" />
                   <StatusCell label="Fail" value={stats.fail} color="var(--status-fail-text)" />
                   <StatusCell label="Skip" value={stats.skip} color="var(--status-skip-text)" />
+                  <StatusCell label="Blocked" value={stats.blocked} color="var(--status-blocked-text)" />
                   <StatusCell label="New" value={stats.untested} />
                 </div>
 
