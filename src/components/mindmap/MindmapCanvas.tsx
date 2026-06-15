@@ -339,8 +339,8 @@ export function MindmapCanvas({
             title={unlinkMode ? 'Exit unlink mode' : 'Unlink lines'}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
+              <path d="M15 7h3a5 5 0 0 1 0 10h-3m-6 0H6a5 5 0 0 1 0-10h3" />
+              <line x1="8" y1="12" x2="16" y2="12" strokeDasharray="3 3" />
             </svg>
           </button>
           <button
@@ -579,8 +579,9 @@ export function MindmapCanvas({
                     onClick={(e) => { e.stopPropagation(); onUnlinkNode(node.id) }}
                   >
                     <rect x={-10} y={-10} width={20} height={20} rx={4} fill="var(--bg-card)" stroke="var(--status-skip-text)" strokeWidth={1.5} />
-                    <g transform="translate(-6, -6) scale(0.06)">
-                      <path d="M190.5 68.8L225.3 104c2.3 2.3 2.3 6.1 0 8.5l-82.8 82.8c-2.3 2.3-6.1 2.3-8.5 0l-54.5-54.5c-2.3-2.3-2.3-6.1 0-8.5l24.8-24.8 45.3 45.3c2.3 2.3 6.1 2.3 8.5 0l36.8-36.8-45.3-45.3-36.8 36.8c-2.3 2.3-6.1 2.3-8.5 0L34.4 170c-2.3-2.3-2.3-6.1 0-8.5l82.8-82.8c2.3-2.3 6.1-2.3 8.5 0l54.5 54.5c2.3 2.3 6.1 2.3 8.5 0l1.8-1.8" fill="none" stroke="var(--status-skip-text)" strokeWidth="8" strokeLinecap="round"/>
+                    <g transform="translate(-5, -5)">
+                      <line x1="0" y1="0" x2="10" y2="10" stroke="var(--status-skip-text)" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="10" y1="0" x2="0" y2="10" stroke="var(--status-skip-text)" strokeWidth="2" strokeLinecap="round" />
                     </g>
                   </g>
                 )}
@@ -653,8 +654,9 @@ export function MindmapCanvas({
                     onClick={(e) => { e.stopPropagation(); onDeleteEdge(edge.id) }}
                   >
                     <rect x={-10} y={-10} width={20} height={20} rx={4} fill="var(--bg-card)" stroke="var(--status-skip-text)" strokeWidth={1.5} />
-                    <g transform="translate(-6, -6) scale(0.06)">
-                      <path d="M190.5 68.8L225.3 104c2.3 2.3 2.3 6.1 0 8.5l-82.8 82.8c-2.3 2.3-6.1 2.3-8.5 0l-54.5-54.5c-2.3-2.3-2.3-6.1 0-8.5l24.8-24.8 45.3 45.3c2.3 2.3 6.1 2.3 8.5 0l36.8-36.8-45.3-45.3-36.8 36.8c-2.3 2.3-6.1 2.3-8.5 0L34.4 170c-2.3-2.3-2.3-6.1 0-8.5l82.8-82.8c2.3-2.3 6.1-2.3 8.5 0l54.5 54.5c2.3 2.3 6.1 2.3 8.5 0l1.8-1.8" fill="none" stroke="var(--status-skip-text)" strokeWidth="8" strokeLinecap="round"/>
+                    <g transform="translate(-5, -5)">
+                      <line x1="0" y1="0" x2="10" y2="10" stroke="var(--status-skip-text)" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="10" y1="0" x2="0" y2="10" stroke="var(--status-skip-text)" strokeWidth="2" strokeLinecap="round" />
                     </g>
                   </g>
                 )}
