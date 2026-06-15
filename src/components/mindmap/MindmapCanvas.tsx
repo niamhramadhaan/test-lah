@@ -262,7 +262,6 @@ export function MindmapCanvas({
     setDeleteMode(prev => !prev)
     setDeleteChecked(new Set())
     setUnlinkMode(false)
-    setUnlinkChecked(new Set())
   }, [])
 
   const toggleUnlinkMode = useCallback(() => {
@@ -340,8 +339,8 @@ export function MindmapCanvas({
             title={unlinkMode ? 'Exit unlink mode' : 'Unlink lines'}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 7h3a5 5 0 0 1 0 10h-3m-6 0H6a5 5 0 0 1 0-10h3" />
-              <line x1="8" y1="12" x2="16" y2="12" strokeDasharray="3 3" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
           <button

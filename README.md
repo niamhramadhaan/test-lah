@@ -11,6 +11,8 @@ A fully client-side QA management tool with interactive mindmaps, test case trac
 - **Mindmap Editor** — Drag-and-drop flow maps with horizontal/vertical directions and conditional edges
 - **Test Case Table** — Track pass/fail/skip/untested with expandable cells, custom columns, and bulk expand
 - **AI Generation** — Generate test cases from descriptions using Gemini, OpenAI, or DeepSeek
+- **E2E Agentic Testing** — AI-powered end-to-end test execution with Playwright, live browser preview, self-healing, and run history
+- **Multi-Provider AI** — Choose from Gemini, OpenAI, DeepSeek, Groq, OpenRouter, or bring your own custom provider
 - **Multi-Project** — Manage multiple projects with per-node column configs
 - **Export** — Download as Markdown or JSON
 - **Duplicate Projects** — Clone any project with one click
@@ -105,19 +107,40 @@ Watch the cat pictures while AI does the heavy lifting. In seconds, you have a f
 <img width="400" height="240" alt="cursorful-video-1780634832516" src="https://github.com/user-attachments/assets/8e56ad2a-445e-4dc0-870e-d3d7b55a94bd" />
 
 
-### Step 5: Review & Update Status
+### Step 5: Run E2E Tests
+
+Click on a node. Hit the **E2E** button in the dock. Pick your browser — Chromium, Firefox, WebKit, or Edge. Hit **Run**.
+
+The AI takes over: clicking buttons, filling forms, navigating pages — all while you watch a live browser preview. If a step breaks, it tries to fix itself. Because debugging on a Friday afternoon is nobody's idea of fun.
+
+<img width="400" height="240" alt="E2E Test Runner" src="https://github.com/user-attachments/assets/placeholder-e2e" />
+
+### Step 6: Switch AI Provider
+
+Go to **Integrations**. Pick from 6 providers:
+
+- **Gemini** — Google's finest
+- **OpenAI** — The classic
+- **DeepSeek** — Budget-friendly reasoning
+- **Groq** — Blazing fast LPU inference
+- **OpenRouter** — Gateway to 200+ models, some free
+- **Custom** — Ollama, LM Studio, vLLM, anything OpenAI-compatible
+
+Your API keys are encrypted with AES-256-GCM before hitting localStorage. Security first.
+
+### Step 7: Review & Update Status
 
 Go through each test case. Run them. Mark them as **Pass**, **Fail**, or **Skip**. Add notes for the ones that failed (blame the FE team, obviously).
 
 <img width="2217" height="1004" alt="image" src="https://github.com/user-attachments/assets/36fe61af-7ce7-4e21-a4e0-cb89e0f0d42f" />
 
-### Step 6: Export & Share
+### Step 8: Export & Share
 
 Click the export button. Download as **Markdown** for the wiki or **JSON** for the automation pipeline.
 
 <img width="585" height="446" alt="image" src="https://github.com/user-attachments/assets/abb7c331-a006-4617-af7a-6c8d9449b3c9" />
 
-### Step 7: Logout (If You Must)
+### Step 9: Logout (If You Must)
 
 Click the logout button. A friendly modal asks for Donation. because the developer would appreciate a coffee. You can either bail or buy them one.
 
@@ -125,7 +148,7 @@ Click the logout button. A friendly modal asks for Donation. because the develop
 
 ## Tech Stack
 
-Next.js 14 · TypeScript · Tailwind CSS · Motion · Lottie · `@google/generative-ai` · `openai`
+Next.js 14 · TypeScript · Tailwind CSS · Motion · Lottie · Playwright · `@google/generative-ai` · `openai` · `@ai-sdk/groq` · OpenRouter · AES-256-GCM encryption
 
 Data stored in browser localStorage. No backend required.
 
