@@ -12,9 +12,10 @@ const STATUS_STYLES: Record<Status, { bg: string; text: string; label: string }>
   pass: { bg: 'var(--status-pass-bg)', text: 'var(--status-pass-text)', label: 'Pass' },
   fail: { bg: 'var(--status-fail-bg)', text: 'var(--status-fail-text)', label: 'Fail' },
   skip: { bg: 'var(--status-skip-bg)', text: 'var(--status-skip-text)', label: 'Skip' },
+  blocked: { bg: 'var(--status-blocked-bg)', text: 'var(--status-blocked-text)', label: 'Blocked' },
 }
 
-const STATUSES: Status[] = ['untested', 'pass', 'fail', 'skip']
+const STATUSES: Status[] = ['untested', 'pass', 'fail', 'skip', 'blocked']
 
 export function StatusPill({ status, onChange }: StatusPillProps) {
   const style = STATUS_STYLES[status]

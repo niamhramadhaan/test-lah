@@ -19,6 +19,7 @@ export interface TestStats {
   fail: number
   skip: number
   untested: number
+  blocked: number
   passRate: number
 }
 
@@ -28,9 +29,10 @@ function computeStats(cases: TestCase[]): TestStats {
   const fail = cases.filter(c => c.status === 'fail').length
   const skip = cases.filter(c => c.status === 'skip').length
   const untested = cases.filter(c => c.status === 'untested').length
+  const blocked = cases.filter(c => c.status === 'blocked').length
   const denom = total - skip
   const passRate = denom > 0 ? Math.round((pass / denom) * 100) : 0
-  return { total, pass, fail, skip, untested, passRate }
+  return { total, pass, fail, skip, untested, blocked, passRate }
 }
 
 export function useTestCases(

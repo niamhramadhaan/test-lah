@@ -6,6 +6,7 @@ const STATUS_LABELS: Record<Status, string> = {
   pass: '✅ Pass',
   fail: '❌ Fail',
   skip: '⏭ Skip',
+  blocked: '🚫 Blocked',
 }
 
 const escapeCell = (s: string) => s.replace(/\n/g, '<br>').replace(/\|/g, '\\|')

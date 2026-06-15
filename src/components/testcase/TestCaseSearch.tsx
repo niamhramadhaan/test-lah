@@ -108,6 +108,7 @@ export function TestCaseSearch({ nodes, testCases, onSelectNode, onClose }: Test
     pass: { bg: 'var(--status-pass-bg)', text: 'var(--status-pass-text)' },
     fail: { bg: 'var(--status-fail-bg)', text: 'var(--status-fail-text)' },
     skip: { bg: 'var(--status-skip-bg)', text: 'var(--status-skip-text)' },
+    blocked: { bg: 'var(--status-blocked-bg)', text: 'var(--status-blocked-text)' },
   }
 
   return (

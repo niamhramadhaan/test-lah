@@ -1,4 +1,4 @@
-export type Status = 'untested' | 'pass' | 'fail' | 'skip'
+export type Status = 'untested' | 'pass' | 'fail' | 'skip' | 'blocked'
 
 export type CaseType = 'General' | 'Positive' | 'Negative'
 
