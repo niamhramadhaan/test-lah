@@ -54,11 +54,12 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Enter any name containing **"ayu"** to login.
+Open [http://localhost:3000](http://localhost:3000). Enter any name to login.
 
 ### AI Setup
 
-<img width="1427" height="1024" alt="image" src="https://github.com/user-attachments/assets/26840fcf-35ee-4bed-b666-d882064cbbb7" />
+<img width="1425" height="1076" alt="Screenshot 2026-06-28 143556" src="https://github.com/user-attachments/assets/b475e08d-0299-461a-afd1-bf96b1cfc38a" />
+
 
 1. Go to **Integrations** → choose a provider
 2. Enter API key → click **Test** → click **Connect**
@@ -75,9 +76,9 @@ Open [http://localhost:3000](http://localhost:3000). Enter any name containing *
 
 ### Step 1: Login
 
-Open the app. Type your name (make sure it contains **"ayu"** ). You're in.
+Open the app. Type your name. You're in.
 
-<img width="400" height="248" alt="cursorful-video-1780634327507" src="https://github.com/user-attachments/assets/fe2077c5-7f13-4218-b938-a76c10d32e87" />
+<img width="540" height="336" alt="cursorful-video-1780634327507 (1)" src="https://github.com/user-attachments/assets/68276b5e-2e66-4806-948b-5abbcf5dfe20" />
 
 ### Step 2: Create a Project
 
@@ -95,8 +96,7 @@ Click into the project. Start adding nodes to map out the user flow:
 
 Drag nodes around. Right-click to add children. This is the fun part — enjoy it while it lasts.
 
-<img width="400" height="238" alt="cursorful-video-1780634587900" src="https://github.com/user-attachments/assets/be2aa7c5-792e-4560-a2a1-04e75b00c327" />
-
+<img width="540" height="512" alt="Recording 2026-06-28 143736" src="https://github.com/user-attachments/assets/1c33c626-4733-433a-86c3-1a06a742619f" />
 
 ### Step 4: Generate Test Cases
 
@@ -104,16 +104,13 @@ Click on a node (say, "Checkout"). Hit the **Generate** button in the dock. Past
 
 Watch the cat pictures while AI does the heavy lifting. In seconds, you have a full set of test cases.
 
-<img width="400" height="240" alt="cursorful-video-1780634832516" src="https://github.com/user-attachments/assets/8e56ad2a-445e-4dc0-870e-d3d7b55a94bd" />
-
+<img width="540" height="324" alt="cursorful-video-1780634832516 (1)" src="https://github.com/user-attachments/assets/5e2b0cfa-e08d-4390-b467-f64e00356f4a" />
 
 ### Step 5: Run E2E Tests
 
 Click on a node. Hit the **E2E** button in the dock. Pick your browser — Chromium, Firefox, WebKit, or Edge. Hit **Run**.
 
 The AI takes over: clicking buttons, filling forms, navigating pages — all while you watch a live browser preview. If a step breaks, it tries to fix itself. Because debugging on a Friday afternoon is nobody's idea of fun.
-
-<img width="400" height="240" alt="E2E Test Runner" src="https://github.com/user-attachments/assets/placeholder-e2e" />
 
 ### Step 6: Switch AI Provider
 
@@ -132,18 +129,18 @@ Your API keys are encrypted with AES-256-GCM before hitting localStorage. Securi
 
 Go through each test case. Run them. Mark them as **Pass**, **Fail**, or **Skip**. Add notes for the ones that failed (blame the FE team, obviously).
 
-<img width="2217" height="1004" alt="image" src="https://github.com/user-attachments/assets/36fe61af-7ce7-4e21-a4e0-cb89e0f0d42f" />
+<img width="540" height="270" alt="Recording 2026-06-28 144018" src="https://github.com/user-attachments/assets/6a115413-c7e3-4df9-8d49-d84cc9163117" />
+
 
 ### Step 8: Export & Share
 
 Click the export button. Download as **Markdown** for the wiki or **JSON** for the automation pipeline.
 
-<img width="585" height="446" alt="image" src="https://github.com/user-attachments/assets/abb7c331-a006-4617-af7a-6c8d9449b3c9" />
+<img width="540" height="212" alt="Recording 2026-06-28 143828" src="https://github.com/user-attachments/assets/418ddba8-651f-45da-9f9a-eee11b2bca0a" />
 
-### Step 9: Logout (If You Must)
+<img width="589" height="715" alt="Screenshot 2026-06-28 143925" src="https://github.com/user-attachments/assets/d0aa0b85-03c1-40d9-94d9-34d8278eb14c" />
 
-Click the logout button. A friendly modal asks for Donation. because the developer would appreciate a coffee. You can either bail or buy them one.
-
+\
 ---
 
 ## Tech Stack
