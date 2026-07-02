@@ -124,6 +124,11 @@ const mockTestCases: Record<string, TestCase[]> = {
   ],
 }
 
+/**
+ * Returns a fresh sample project — used by the "Import Sample Project" action
+ * on the empty projects screen. The caller (importProject) assigns its own
+ * id, so MOCK_PROJECT_ID here is just internal scaffolding, not a dedup key.
+ */
 export function getMockProject(): Project {
   return {
     id: MOCK_PROJECT_ID,
@@ -142,29 +147,5 @@ export function getMockProject(): Project {
       [MOCK_NODE_ID_2]: 2,
       [MOCK_NODE_ID_3]: 1,
     },
-  }
-}
-
-export function seedMockProject(): void {
-  if (typeof window === 'undefined') return
-
-  const key = 'qa-dashboard'
-  try {
-    const raw = localStorage.getItem(key)
-    const state = raw ? JSON.parse(raw) : { projects: {}, activeProjectId: null, selectedNodeId: null }
-    let changed = false
-
-    // Seed Simple Dashboard QA if missing
-    if (!state.projects[MOCK_PROJECT_ID]) {
-      state.projects[MOCK_PROJECT_ID] = getMockProject()
-      state.activeProjectId = MOCK_PROJECT_ID
-      changed = true
-    }
-
-    if (changed) {
-      localStorage.setItem(key, JSON.stringify(state))
-    }
-  } catch {
-    // Ignore errors
   }
 }

@@ -3,9 +3,10 @@
 interface EmptyStateProps {
   message: string
   action?: { label: string; onClick: () => void }
+  secondaryAction?: { label: string; onClick: () => void }
 }
 
-export function EmptyState({ message, action }: EmptyStateProps) {
+export function EmptyState({ message, action, secondaryAction }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 px-6 text-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -18,14 +19,27 @@ export function EmptyState({ message, action }: EmptyStateProps) {
       <p className="text-sm max-w-[280px]" style={{ color: 'var(--text-tertiary)' }}>
         {message}
       </p>
-      {action && (
-        <button
-          onClick={action.onClick}
-          className="px-4 py-2 text-sm font-medium rounded-md transition-opacity hover:opacity-80"
-          style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)', borderRadius: 'var(--radius-pill)' }}
-        >
-          {action.label}
-        </button>
+      {(action || secondaryAction) && (
+        <div className="flex items-center gap-2">
+          {action && (
+            <button
+              onClick={action.onClick}
+              className="px-4 py-2 text-sm font-medium rounded-md transition-opacity hover:opacity-80"
+              style={{ backgroundColor: 'var(--accent)', color: 'var(--bg-primary)', borderRadius: 'var(--radius-pill)' }}
+            >
+              {action.label}
+            </button>
+          )}
+          {secondaryAction && (
+            <button
+              onClick={secondaryAction.onClick}
+              className="px-4 py-2 text-sm font-medium rounded-md border transition-colors hover:bg-[var(--bg-secondary)]"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', borderRadius: 'var(--radius-pill)' }}
+            >
+              {secondaryAction.label}
+            </button>
+          )}
+        </div>
       )}
     </div>
   )

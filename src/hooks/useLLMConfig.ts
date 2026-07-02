@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { PROVIDER_LIST, type ProviderDef } from '@/lib/llm/providers'
+import { PROVIDER_LIST, getProviderDef, type ProviderDef } from '@/lib/llm/providers'
 
 const STORAGE_KEY = 'qa-llm-config'
 
@@ -122,7 +122,8 @@ export function useLLMConfig() {
   }, [])
 
   const activeProvider = config.activeProvider ? config.providers[config.activeProvider] : null
-  const isConnected = loaded && !!activeProvider && activeProvider.apiKey.length > 0 && activeProvider.connected
+  const isLocalCli = config.activeProvider ? getProviderDef(config.activeProvider).type === 'local-cli' : false
+  const isConnected = loaded && !!activeProvider && activeProvider.connected && (isLocalCli || activeProvider.apiKey.length > 0)
 
   return {
     config,

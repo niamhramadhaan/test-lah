@@ -81,7 +81,7 @@ export function createModel(config: ProviderConfig) {
 // System prompt
 // ---------------------------------------------------------------------------
 
-function getSystemPrompt(language: string = 'en'): string {
+export function getSystemPrompt(language: string = 'en'): string {
   const langInstruction =
     language === 'id'
       ? 'Write ALL test case content (title, steps, expected result) in Bahasa Indonesia.'
@@ -106,18 +106,87 @@ Generate 3-8 test cases covering happy path, edge cases, and error scenarios.`
 
 export type VideoInputMode = 'frames'
 
+/**
+ * Extracts a `GeneratedTestCase[]` from a raw model text response that's
+ * supposed to contain a JSON array but may be wrapped in markdown fences,
+ * <think> tags, or truncated mid-output.
+ */
+export function parseTestCasesFromText(text: string): GeneratedTestCase[] {
+  let jsonStr = text.trim()
+  // Strip thinking tags (some models return <think>...</think> in content)
+  jsonStr = jsonStr.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+  // Strip markdown code fences
+  const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (fenceMatch) {
+    jsonStr = fenceMatch[1].trim()
+  }
+  // Extract JSON array from response
+  const arrayMatch = jsonStr.match(/\[\s*\{[\s\S]*\}\s*\]/)
+  if (arrayMatch) {
+    jsonStr = arrayMatch[0]
+  }
+
+  // Try to fix truncated JSON by closing open brackets
+  const openBrackets = (jsonStr.match(/\[/g) || []).length
+  const closeBrackets = (jsonStr.match(/\]/g) || []).length
+  const openBraces = (jsonStr.match(/\{/g) || []).length
+  const closeBraces = (jsonStr.match(/\}/g) || []).length
+
+  if (openBraces > closeBraces) {
+    // Close any open string if needed
+    if ((jsonStr.match(/"/g) || []).length % 2 !== 0) {
+      jsonStr += '"'
+    }
+    jsonStr += '}'.repeat(openBraces - closeBraces)
+  }
+  if (openBrackets > closeBrackets) {
+    jsonStr += ']'.repeat(openBrackets - closeBrackets)
+  }
+
+  const parsed = JSON.parse(jsonStr)
+  return z.array(TestCaseSchema).parse(parsed)
+}
+
+export interface FeatureContext {
+  title: string
+  prompt: string
+  projectName?: string
+  projectType?: string
+  projectNotes?: string
+  nodeNotes?: string
+}
+
+/**
+ * Builds the "what are we testing" section of the generation prompt from a
+ * feature title/DoD plus whatever project- and node-level context is
+ * available. Missing fields are silently skipped.
+ */
+export function buildFeatureContext(ctx: FeatureContext): string {
+  const parts: string[] = []
+  if (ctx.projectName) {
+    parts.push(`Project: ${ctx.projectName}${ctx.projectType ? ` (${ctx.projectType})` : ''}`)
+  }
+  if (ctx.projectNotes?.trim()) {
+    parts.push(`Project Notes:\n${ctx.projectNotes.trim()}`)
+  }
+  parts.push(`Feature: ${ctx.title}`)
+  if (ctx.nodeNotes?.trim()) {
+    parts.push(`Node Notes:\n${ctx.nodeNotes.trim()}`)
+  }
+  parts.push(`Description / DoD / Acceptance Criteria:\n${ctx.prompt || '(no additional description provided)'}`)
+  return parts.join('\n\n')
+}
+
 export async function generateTestCases(
   config: ProviderConfig,
-  title: string,
-  prompt: string,
-  language: string = 'en',
-  images?: string[],
+  input: FeatureContext & { language?: string; images?: string[] },
 ): Promise<GeneratedTestCase[]> {
+  const { language = 'en', images } = input
   const model = createModel(config)
 
   const systemPrompt = getSystemPrompt(language)
   const hasMedia = images && images.length > 0
-  const userText = `Feature: ${title}\n\nDescription / DoD / Acceptance Criteria:\n${prompt || '(no additional description provided)'}${hasMedia ? '\n\nThe user has attached screenshot(s) of the UI/feature. Use them as additional context to write more accurate and specific test cases.' : ''}`
+  const userText = buildFeatureContext(input) + (hasMedia ? '\n\nThe user has attached screenshot(s) of the UI/feature. Use them as additional context to write more accurate and specific test cases.' : '')
 
   // Build multimodal content
   const content: Array<
@@ -162,42 +231,8 @@ export async function generateTestCases(
       maxOutputTokens,
     })
 
-    // Extract JSON from response
-    let jsonStr = text.trim()
-    // Strip thinking tags (MiniMax returns <think>...</think> in content)
-    jsonStr = jsonStr.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-    // Strip markdown code fences
-    const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
-    if (fenceMatch) {
-      jsonStr = fenceMatch[1].trim()
-    }
-    // Extract JSON array from response
-    const arrayMatch = jsonStr.match(/\[\s*\{[\s\S]*\}\s*\]/)
-    if (arrayMatch) {
-      jsonStr = arrayMatch[0]
-    }
-
-    // Try to fix truncated JSON by closing open brackets
-    const openBrackets = (jsonStr.match(/\[/g) || []).length
-    const closeBrackets = (jsonStr.match(/\]/g) || []).length
-    const openBraces = (jsonStr.match(/\{/g) || []).length
-    const closeBraces = (jsonStr.match(/\}/g) || []).length
-
-    if (openBraces > closeBraces) {
-      // Close any open string if needed
-      if ((jsonStr.match(/"/g) || []).length % 2 !== 0) {
-        jsonStr += '"'
-      }
-      jsonStr += '}'.repeat(openBraces - closeBraces)
-    }
-    if (openBrackets > closeBrackets) {
-      jsonStr += ']'.repeat(openBrackets - closeBrackets)
-    }
-
     try {
-      const parsed = JSON.parse(jsonStr)
-      const result = z.array(TestCaseSchema).parse(parsed)
-      return result
+      return parseTestCasesFromText(text)
     } catch (parseError) {
       throw new Error(`Model returned unparseable response. Raw text: ${text.slice(0, 500)}`)
     }

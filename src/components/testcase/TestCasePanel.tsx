@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useRouter } from 'next/navigation'
-import { FlowNode, TestCase, ColumnConfig, DEFAULT_COLUMNS, Status, CASE_TYPES } from '@/types'
+import { FlowNode, TestCase, ColumnConfig, DEFAULT_COLUMNS, Status, CASE_TYPES, Project } from '@/types'
 import { TestStats } from '@/hooks/useTestCases'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ProgressBar } from '@/components/shared/ProgressBar'
@@ -26,6 +26,7 @@ interface TestCasePanelProps {
   stats: TestStats
   columns: ColumnConfig[]
   projectId: string
+  project?: Pick<Project, 'name' | 'type' | 'notes'> | null
   fullscreen?: boolean
   allNodes?: FlowNode[]
   allTestCases?: Record<string, TestCase[]>
@@ -51,6 +52,7 @@ export function TestCasePanel({
   stats,
   columns,
   projectId,
+  project,
   fullscreen,
   allNodes,
   allTestCases,
@@ -717,6 +719,7 @@ export function TestCasePanel({
         open={generateOpen}
         onClose={() => setGenerateOpen(false)}
         node={selectedNode}
+        project={project}
         onGenerate={handleGenerate}
       />
       <NodeSummaryModal

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { FlowNode } from '@/types'
+import { FlowNode, Project } from '@/types'
 import { generateTestCases, GeneratedTestCase } from '@/lib/llm'
 import { useLLMConfig } from '@/hooks/useLLMConfig'
 import { extractVideoFrames } from '@/lib/video-frames'
@@ -10,6 +10,7 @@ interface GenerateTestModalProps {
   open: boolean
   onClose: () => void
   node: FlowNode
+  project?: Pick<Project, 'name' | 'type' | 'notes'> | null
   onGenerate: (cases: GeneratedTestCase[]) => void
 }
 
@@ -33,7 +34,7 @@ const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB per image
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB per video
 const MAX_VIDEO_DURATION = 120 // 2 minutes
 
-export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateTestModalProps) {
+export function GenerateTestModal({ open, onClose, node, project, onGenerate }: GenerateTestModalProps) {
   const { isConnected, activeProvider, activeProviderId } = useLLMConfig()
   const [title, setTitle] = useState('')
   const [prompt, setPrompt] = useState('')
@@ -314,16 +315,20 @@ export function GenerateTestModal({ open, onClose, node, onGenerate }: GenerateT
     setError(null)
 
     try {
-      const cases = await generateTestCases(
+      const cases = await generateTestCases({
         title,
         prompt,
-        activeProvider!.apiKey,
-        activeProviderId ?? undefined,
-        activeProvider!.defaultModel,
+        apiKey: activeProvider!.apiKey,
+        provider: activeProviderId ?? undefined,
+        model: activeProvider!.defaultModel,
         language,
-        activeProvider!.baseURL || undefined,
-        images.length > 0 ? images : undefined,
-      )
+        baseURL: activeProvider!.baseURL || undefined,
+        images: images.length > 0 ? images : undefined,
+        projectName: project?.name,
+        projectType: project?.type,
+        projectNotes: project?.notes,
+        nodeNotes: node.notes,
+      })
       onGenerate(cases)
       onClose()
     } catch (err: unknown) {

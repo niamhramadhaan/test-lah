@@ -3,15 +3,10 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { seedMockProject } from '@/lib/mockData'
 
 export default function Home() {
   const router = useRouter()
   const { isLoggedIn, loaded } = useAuth()
-
-  useEffect(() => {
-    seedMockProject()
-  }, [])
 
   useEffect(() => {
     if (!loaded) return

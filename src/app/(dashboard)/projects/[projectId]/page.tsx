@@ -344,6 +344,7 @@ export default function ProjectDetailPage() {
             stats={testCases.stats}
             columns={selectedNodeId ? (activeProj.columnConfigs?.[selectedNodeId] ?? activeProj.columnConfig ?? []) : (activeProj.columnConfig ?? [])}
             projectId={projectId}
+            project={activeProj}
             fullscreen={tcFullscreen}
             allNodes={activeProj.flows}
             allTestCases={activeProj.testCases}

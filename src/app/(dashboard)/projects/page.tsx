@@ -9,7 +9,7 @@ import { InteractiveGridPattern } from '@/components/ui/interactive-grid-pattern
 import { GridPattern } from '@/components/ui/grid-pattern'
 import { NumberTicker } from '@/components/ui/number-ticker'
 import { MagicCard } from '@/components/ui/magic-card'
-import { seedMockProject } from '@/lib/mockData'
+import { getMockProject } from '@/lib/mockData'
 import { Project, Status } from '@/types'
 
 const QA_FUN_FACTS = [
@@ -96,10 +96,11 @@ export default function ProjectsPage() {
     return () => document.removeEventListener('mousedown', handler)
   }, [menuOpen])
 
-  // Seed mock projects on mount
-  useEffect(() => {
-    seedMockProject()
-  }, [])
+  const handleImportSample = () => {
+    const result = importProject(JSON.stringify(getMockProject()))
+    if (!result.ok) setImportError(result.error || 'Import failed')
+    else setImportError(null)
+  }
 
   const stats = useMemo(() => {
     const allCases = projectList.flatMap(p => Object.values(p.testCases).flat())
@@ -197,9 +198,28 @@ export default function ProjectsPage() {
     return (
       <div className="h-full overflow-auto p-6">
         <EmptyState
-          message="No projects yet. Create your first project to get started."
+          message="No projects yet. Start blank, or import a sample project to see how the app works."
           action={{ label: '+ New Project', onClick: () => setNewProjectOpen(true) }}
+          secondaryAction={{ label: 'Import Sample Project', onClick: handleImportSample }}
         />
+        {importError && (
+          <div
+            className="mt-3 mx-auto max-w-[320px] text-xs px-3 py-2 rounded-lg text-center"
+            style={{ backgroundColor: 'var(--status-fail-bg)', color: 'var(--status-fail-text)' }}
+          >
+            {importError}
+          </div>
+        )}
+        {newProjectOpen && (
+          <NewProjectModal
+            profileName={profile.name}
+            onClose={() => setNewProjectOpen(false)}
+            onSubmit={(name, type) => {
+              createProject(name, type)
+              setNewProjectOpen(false)
+            }}
+          />
+        )}
       </div>
     )
   }

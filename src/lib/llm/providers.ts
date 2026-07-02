@@ -6,7 +6,7 @@
  * 2. OpenAI-compatible providers (deepseek, xiaomi, custom) — use createOpenAI with custom baseURL
  */
 
-export type ProviderType = "native" | "openai-compatible";
+export type ProviderType = "native" | "openai-compatible" | "local-cli";
 
 export interface ProviderDef {
   id: string;
@@ -17,7 +17,7 @@ export interface ProviderDef {
   keyUrl: string;
   keyPlaceholder: string;
   color: string;
-  /** For native providers: the AI SDK provider package name. For compatible: always 'openai' */
+  /** For native providers: the AI SDK provider package name. For compatible: always 'openai'. Unused for 'local-cli'. */
   sdkProvider: "openai" | "google" | "anthropic" | "groq";
   /** Default baseURL for openai-compatible providers */
   baseURL?: string;
@@ -168,6 +168,21 @@ export const PROVIDER_REGISTRY: Record<string, ProviderDef> = {
     defaultModel: "",
     popularModels: [],
     requiresBaseURL: true,
+  },
+  "claude-code": {
+    id: "claude-code",
+    name: "Claude (Local CLI)",
+    type: "local-cli",
+    description:
+      "Uses your locally installed, logged-in Claude Code CLI — no API key needed, billed against your Claude subscription instead of pay-per-token.",
+    logoUrl:
+      "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/anthropic.svg",
+    keyUrl: "",
+    keyPlaceholder: "",
+    color: "#D97706",
+    sdkProvider: "anthropic",
+    defaultModel: "",
+    popularModels: [],
   },
 };
 
