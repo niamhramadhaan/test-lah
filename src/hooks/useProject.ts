@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useLocalStorage } from './useLocalStorage'
 import { Project, AppState, DEFAULT_COLUMNS } from '@/types'
 
@@ -10,8 +10,79 @@ const INITIAL_STATE: AppState = {
   selectedNodeId: null,
 }
 
+const SERVER_SYNC_DEBOUNCE_MS = 300
+const SERVER_POLL_INTERVAL_MS = 4000
+
+function hasProjects(s: AppState): boolean {
+  return Object.keys(s.projects ?? {}).length > 0
+}
+
 export function useProject() {
   const [state, setState, lastSaved] = useLocalStorage<AppState>('qa-dashboard', INITIAL_STATE)
+  const hydratedRef = useRef(false)
+  const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Hydrate from the server-backed file store (shared with the MCP endpoint) on
+  // mount. Never lets an empty server response (e.g. a fresh .ayu-data store
+  // on first run after upgrading) wipe out existing localStorage data — if
+  // the server has nothing yet, we seed it from local instead of pulling.
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/state')
+      .then(res => (res.ok ? res.json() : null))
+      .then((serverState: AppState | null) => {
+        if (cancelled || !serverState) return
+        if (hasProjects(serverState)) {
+          setState(serverState)
+        } else if (hasProjects(state)) {
+          fetch('/api/state', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(state),
+          }).catch(() => {})
+        }
+      })
+      .catch(() => {})
+      .finally(() => { hydratedRef.current = true })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Push local changes to the server-backed store, debounced. Skipped until
+  // the initial hydration above has resolved so we don't clobber server data
+  // with a stale localStorage snapshot.
+  useEffect(() => {
+    if (!hydratedRef.current) return
+    if (pushTimerRef.current) clearTimeout(pushTimerRef.current)
+    pushTimerRef.current = setTimeout(() => {
+      fetch('/api/state', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state),
+      }).catch(() => {})
+    }, SERVER_SYNC_DEBOUNCE_MS)
+    return () => {
+      if (pushTimerRef.current) clearTimeout(pushTimerRef.current)
+    }
+  }, [state])
+
+  // Poll for out-of-band changes (e.g. from an MCP tool call in another
+  // process) while the tab is visible. Last-write-wins, not a merge — and
+  // never accepts an empty server response, so a transient/fresh server
+  // store can't wipe local data out from under an open tab.
+  useEffect(() => {
+    const poll = () => {
+      if (document.visibilityState === 'hidden') return
+      fetch('/api/state')
+        .then(res => (res.ok ? res.json() : null))
+        .then((serverState: AppState | null) => {
+          if (serverState && hasProjects(serverState)) setState(serverState)
+        })
+        .catch(() => {})
+    }
+    const interval = setInterval(poll, SERVER_POLL_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [setState])
 
   const createProject = useCallback((name: string, type?: string) => {
     const id = crypto.randomUUID()

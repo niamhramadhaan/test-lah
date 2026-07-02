@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react'
 import { TestCase, Project, Status, DEFAULT_COLUMNS } from '@/types'
+import * as mutations from '@/lib/mutations/testCases'
 
 function trackProjectActivity(projectId: string) {
   try {
@@ -45,94 +46,34 @@ export function useTestCases(
 
   const addTestCase = useCallback((nodeId: string, title: string, steps?: string, expected?: string) => {
     if (!project) return
-    const node = project.flows.find(n => n.id === nodeId)
-    const nodeCode = node?.code ?? 'N000'
-    const existing = project.testCases[nodeId] ?? []
-    let tcCode = ''
-    updateProject(project.id, p => {
-      const counters = { ...(p.tcCounter ?? {}) }
-      const next = (counters[nodeId] ?? 0) + 1
-      counters[nodeId] = next
-      tcCode = `${nodeCode}-TC${String(next).padStart(3, '0')}`
-      const tc: TestCase = {
-        id: crypto.randomUUID(),
-        code: tcCode,
-        title,
-        steps: steps ?? '',
-        expected: expected ?? '',
-        status: 'untested',
-        case_type: 'General',
-        notes: '',
-        links: '',
-        order: existing.length,
-      }
-      return {
-        ...p,
-        testCases: { ...p.testCases, [nodeId]: [...(p.testCases[nodeId] ?? []), tc] },
-        tcCounter: counters,
-      }
-    })
+    updateProject(project.id, p => mutations.addTestCase(p, nodeId, title, steps, expected).project)
     trackProjectActivity(project.id)
   }, [project, updateProject])
 
   const updateTestCase = useCallback((nodeId: string, tcId: string, patch: Partial<TestCase>) => {
     if (!project) return
-    updateProject(project.id, p => ({
-      ...p,
-      testCases: {
-        ...p.testCases,
-        [nodeId]: (p.testCases[nodeId] ?? []).map(tc => tc.id === tcId ? { ...tc, ...patch } : tc),
-      },
-    }))
+    updateProject(project.id, p => mutations.updateTestCase(p, nodeId, tcId, patch))
     trackProjectActivity(project.id)
   }, [project, updateProject])
 
   const deleteTestCase = useCallback((nodeId: string, tcId: string) => {
     if (!project) return
-    updateProject(project.id, p => ({
-      ...p,
-      testCases: {
-        ...p.testCases,
-        [nodeId]: (p.testCases[nodeId] ?? []).filter(tc => tc.id !== tcId),
-      },
-    }))
+    updateProject(project.id, p => mutations.deleteTestCase(p, nodeId, tcId))
   }, [project, updateProject])
 
   const bulkDeleteTestCases = useCallback((nodeId: string, tcIds: string[]) => {
     if (!project || tcIds.length === 0) return
-    const idSet = new Set(tcIds)
-    updateProject(project.id, p => ({
-      ...p,
-      testCases: {
-        ...p.testCases,
-        [nodeId]: (p.testCases[nodeId] ?? []).filter(tc => !idSet.has(tc.id)),
-      },
-    }))
+    updateProject(project.id, p => mutations.bulkDeleteTestCases(p, nodeId, tcIds))
   }, [project, updateProject])
 
   const bulkUpdateTestCases = useCallback((nodeId: string, tcIds: string[], patch: Partial<TestCase>) => {
     if (!project || tcIds.length === 0) return
-    const idSet = new Set(tcIds)
-    updateProject(project.id, p => ({
-      ...p,
-      testCases: {
-        ...p.testCases,
-        [nodeId]: (p.testCases[nodeId] ?? []).map(tc => idSet.has(tc.id) ? { ...tc, ...patch } : tc),
-      },
-    }))
+    updateProject(project.id, p => mutations.bulkUpdateTestCases(p, nodeId, tcIds, patch))
   }, [project, updateProject])
 
   const reorderTestCases = useCallback((nodeId: string, newOrder: string[]) => {
     if (!project) return
-    updateProject(project.id, p => {
-      const existing = p.testCases[nodeId] ?? []
-      const map = new Map(existing.map(tc => [tc.id, tc]))
-      const reordered = newOrder.map((id, i) => {
-        const tc = map.get(id)
-        return tc ? { ...tc, order: i } : null
-      }).filter(Boolean) as TestCase[]
-      return { ...p, testCases: { ...p.testCases, [nodeId]: reordered } }
-    })
+    updateProject(project.id, p => mutations.reorderTestCases(p, nodeId, newOrder))
   }, [project, updateProject])
 
   const updateColumnConfig = useCallback((nodeId: string, key: string, label: string) => {

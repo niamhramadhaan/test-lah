@@ -31,6 +31,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local file-backed data store (see src/lib/store/fileStore.ts)
+/.ayu-data/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

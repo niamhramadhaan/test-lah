@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { testConnection } from "@/lib/llm/index";
+import { testClaudeCodeConnection } from "@/lib/llm/claudeCode";
 import { getProviderDef } from "@/lib/llm/providers";
 import { decrypt } from "@/lib/crypto";
 
 export async function POST(req: NextRequest) {
   try {
     const { provider, apiKey, baseURL, model } = await req.json();
+
+    if (provider === "claude-code") {
+      const result = await testClaudeCodeConnection();
+      return NextResponse.json(result);
+    }
 
     if (!apiKey) {
       return NextResponse.json(

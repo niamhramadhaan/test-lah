@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateTestCases } from '@/lib/llm/index'
+import { generateTestCasesViaClaudeCode } from '@/lib/llm/claudeCode'
 import { getProviderDef } from '@/lib/llm/providers'
 import { decrypt } from '@/lib/crypto'
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, prompt, apiKey, provider, model, language, baseURL, images } = await req.json()
+    const {
+      title, prompt, apiKey, provider, model, language, baseURL, images,
+      projectName, projectType, projectNotes, nodeNotes,
+    } = await req.json()
+
+    if (!title && !prompt && (!images || images.length === 0)) {
+      return NextResponse.json({ error: 'Title, prompt, or image required' }, { status: 400 })
+    }
+
+    const context = { title, prompt, projectName, projectType, projectNotes, nodeNotes }
+
+    if (provider === 'claude-code') {
+      const testCases = await generateTestCasesViaClaudeCode({ ...context, language })
+      return NextResponse.json({ testCases })
+    }
 
     if (!apiKey) {
       return NextResponse.json({ error: 'API key required' }, { status: 400 })
-    }
-    if (!title && !prompt && (!images || images.length === 0)) {
-      return NextResponse.json({ error: 'Title, prompt, or image required' }, { status: 400 })
     }
 
     const def = getProviderDef(provider || 'google')
@@ -19,10 +31,7 @@ export async function POST(req: NextRequest) {
 
     const testCases = await generateTestCases(
       { def, apiKey: decryptedKey, model: model || '', baseURL },
-      title,
-      prompt,
-      language,
-      images,
+      { ...context, language, images },
     )
 
     return NextResponse.json({ testCases })

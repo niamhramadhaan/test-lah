@@ -145,9 +145,25 @@ Click the export button. Download as **Markdown** for the wiki or **JSON** for t
 
 ## Tech Stack
 
-Next.js 14 · TypeScript · Tailwind CSS · Motion · Lottie · Playwright · `@google/generative-ai` · `openai` · `@ai-sdk/groq` · OpenRouter · AES-256-GCM encryption
+Next.js 14 · TypeScript · Tailwind CSS · Motion · Lottie · Playwright · `@google/generative-ai` · `openai` · `@ai-sdk/groq` · OpenRouter · AES-256-GCM encryption · `@modelcontextprotocol/sdk`
 
-Data stored in browser localStorage. No backend required.
+Project/test-case data is kept in browser localStorage and mirrored to a local JSON file (`.ayu-data/state.json`) so the MCP server below can read and write it too. No external database.
+
+## MCP Server (Claude Code integration)
+
+While running the app locally (`npm run dev` or `test-lah`), it also exposes an MCP endpoint at `/api/mcp` so [Claude Code](https://claude.com/product/claude-code) can read and write your projects, nodes, and test cases directly.
+
+```bash
+claude mcp add --transport http ayu-tools http://localhost:3000/api/mcp
+```
+
+Available tools: `list_projects`, `get_project`, `list_nodes`, `get_node`, `add_test_case`, `update_test_case`, `delete_test_case`, and `generate_test_cases` (optional — calls a pay-per-token LLM provider with a caller-supplied API key).
+
+To generate test cases using your own Claude subscription rather than a pay-per-token API key, just ask Claude Code directly in a session connected to this server — e.g. "read node X via MCP and add relevant test cases" — Claude Code does the reasoning itself and writes results back with `add_test_case`.
+
+There's also an in-app **"Claude (Local CLI)"** option in the provider dropdown (Integrations page / Generate modal) that shells out to your locally installed, logged-in `claude` CLI — no API key needed in the app for that path, as long as `claude` is installed and authenticated on the machine running the server.
+
+> **Note:** `/api/mcp` and `/api/state` have no authentication, matching the rest of the app — intended for local/self-hosted use. Don't expose this server beyond localhost without adding your own auth layer in front of it.
 
 ## Brand
 

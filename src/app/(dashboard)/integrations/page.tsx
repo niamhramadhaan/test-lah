@@ -47,6 +47,174 @@ export default function IntegrationsPage() {
 }
 
 function ProviderAccordion({ def, expanded, onToggle, isActive, onSetActive }: { def: ProviderDef; expanded: boolean; onToggle: () => void; isActive: boolean; onSetActive: () => void }) {
+  if (def.type === 'local-cli') {
+    return (
+      <LocalCliAccordion def={def} expanded={expanded} onToggle={onToggle} isActive={isActive} onSetActive={onSetActive} />
+    )
+  }
+  return <ApiKeyAccordion def={def} expanded={expanded} onToggle={onToggle} isActive={isActive} onSetActive={onSetActive} />
+}
+
+function LocalCliAccordion({ def, expanded, onToggle, isActive, onSetActive }: { def: ProviderDef; expanded: boolean; onToggle: () => void; isActive: boolean; onSetActive: () => void }) {
+  const { config, updateProvider } = useLLMConfig()
+  const provider = config.providers[def.id]
+  const [testing, setTesting] = useState(false)
+  const [testResult, setTestResult] = useState<{ ok: boolean; error?: string } | null>(null)
+  const accentColor = def.color || '#6B7280'
+
+  if (!provider) return null
+
+  const handleTest = async () => {
+    setTesting(true)
+    setTestResult(null)
+    try {
+      const res = await fetch('/api/llm/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: def.id }),
+      })
+      const data = await res.json()
+      setTestResult(data)
+    } catch {
+      setTestResult({ ok: false, error: 'Network error' })
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const handleConnect = () => {
+    updateProvider(def.id, { connected: true })
+  }
+
+  const handleDisconnect = () => {
+    updateProvider(def.id, { connected: false })
+  }
+
+  return (
+    <div
+      className="rounded-xl border transition-all overflow-hidden"
+      style={{
+        borderColor: isActive ? accentColor : expanded ? 'var(--border-hover)' : 'var(--border)',
+        backgroundColor: 'var(--bg-card)',
+        boxShadow: isActive ? `0 0 0 1px ${accentColor}20` : undefined,
+      }}
+    >
+      <button
+        onClick={onToggle}
+        className="w-full px-5 py-4 flex items-center gap-3 text-left transition-colors hover:bg-[var(--bg-secondary)]"
+      >
+        <div
+          className="w-11 h-11 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
+          style={{ backgroundColor: `${accentColor}10` }}
+        >
+          {def.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={def.logoUrl}
+              alt={def.name}
+              width={24}
+              height={24}
+              className="opacity-80"
+              style={{ filter: 'brightness(0.5)' }}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+          ) : (
+            <span className="text-xs font-bold" style={{ color: accentColor }}>CLI</span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{def.name}</span>
+            {isActive && provider.connected && (
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${accentColor}15`, color: accentColor }}>
+                Active
+              </span>
+            )}
+            <span
+              className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+              style={{
+                backgroundColor: provider.connected ? 'var(--status-pass-bg)' : 'var(--bg-secondary)',
+                color: provider.connected ? 'var(--status-pass-text)' : 'var(--text-tertiary)',
+              }}
+            >
+              {provider.connected ? 'Connected' : 'Not configured'}
+            </span>
+          </div>
+          <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--text-tertiary)' }}>{def.description}</p>
+        </div>
+        <svg
+          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          className="flex-shrink-0 transition-transform duration-200"
+          style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      <div style={{ maxHeight: expanded ? '300px' : '0px', overflow: 'hidden', transition: 'max-height 250ms ease-out' }}>
+        <div className="px-5 pb-5 pt-1 space-y-3">
+          <p className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+            No API key needed — this uses the <code>claude</code> CLI already installed and logged in on the machine
+            running this app&apos;s server, billed against your Claude subscription instead of pay-per-token.
+          </p>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleTest}
+              disabled={testing}
+              className="px-4 py-2 text-xs font-medium rounded-lg border transition-all hover:bg-[var(--bg-secondary)] disabled:opacity-40"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+            >
+              {testing ? 'Testing...' : 'Test'}
+            </button>
+            {provider.connected ? (
+              <>
+                <button
+                  onClick={handleDisconnect}
+                  className="px-3 py-2 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--status-fail-bg)]"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
+                >
+                  Disconnect
+                </button>
+                {!isActive && (
+                  <button
+                    onClick={onSetActive}
+                    className="px-3 py-2 text-xs font-medium rounded-lg transition-all hover:opacity-90"
+                    style={{ backgroundColor: accentColor, color: '#fff' }}
+                  >
+                    Set Active
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={handleConnect}
+                className="px-4 py-2 text-xs font-medium rounded-lg transition-all hover:opacity-90"
+                style={{ backgroundColor: accentColor, color: '#fff' }}
+              >
+                Connect
+              </button>
+            )}
+          </div>
+
+          {testResult && (
+            <div
+              className="text-xs px-3 py-2 rounded-lg"
+              style={{
+                backgroundColor: testResult.ok ? 'var(--status-pass-bg)' : 'var(--status-fail-bg)',
+                color: testResult.ok ? 'var(--status-pass-text)' : 'var(--status-fail-text)',
+              }}
+            >
+              {testResult.ok ? 'Claude Code CLI is reachable and authenticated.' : `Failed: ${testResult.error}`}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ApiKeyAccordion({ def, expanded, onToggle, isActive, onSetActive }: { def: ProviderDef; expanded: boolean; onToggle: () => void; isActive: boolean; onSetActive: () => void }) {
   const { config, updateProvider } = useLLMConfig()
   const provider = config.providers[def.id]
 
