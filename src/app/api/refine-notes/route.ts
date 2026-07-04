@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { refineNotes } from '@/lib/llm/index'
+import { refineNotesViaClaudeCode } from '@/lib/llm/claudeCode'
 import { getProviderDef } from '@/lib/llm/providers'
 import { decrypt } from '@/lib/crypto'
 
 export async function POST(req: NextRequest) {
   try {
     const { projectName, notes, apiKey, provider, model, baseURL } = await req.json()
+
+    if (provider === 'claude-code') {
+      const refined = await refineNotesViaClaudeCode(projectName || 'Project', notes || '')
+      return NextResponse.json({ refined })
+    }
 
     if (!apiKey) {
       return NextResponse.json({ error: 'API key required' }, { status: 400 })
