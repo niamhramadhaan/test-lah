@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useDashboard } from '@/context/DashboardContext'
 import { useLLMConfig } from '@/hooks/useLLMConfig'
 import { refineNotes } from '@/lib/llm'
 import { downloadMarkdown, downloadJSON, downloadCSV, downloadXLSX } from '@/lib/export'
+import { GitHubRepoCard } from '@/components/summary/GitHubRepoCard'
 
 export default function SummaryPage() {
   const params = useParams()
@@ -15,7 +17,10 @@ export default function SummaryPage() {
   const { activeProvider, activeProviderId, isConnected } = useLLMConfig()
   const project = projects[projectId]
   const [exportOpen, setExportOpen] = useState(false)
-  const [refining, setRefining] = useState(false)
+  const refineMutation = useMutation({
+    mutationFn: (input: Parameters<typeof refineNotes>) => refineNotes(...input),
+  })
+  const refining = refineMutation.isPending
 
   const handleNotesChange = useCallback((value: string) => {
     if (!project) return
@@ -24,22 +29,20 @@ export default function SummaryPage() {
 
   const handleRefine = useCallback(async () => {
     if (!project || !activeProvider || !isConnected) return
-    setRefining(true)
     try {
-      const refined = await refineNotes(
+      const refined = await refineMutation.mutateAsync([
         project.name,
         project.notes || '',
         activeProvider.apiKey,
         activeProviderId || 'google',
         activeProvider.defaultModel,
         activeProvider.baseURL,
-      )
+      ])
       updateProject(project.id, p => ({ ...p, notes: refined }))
     } catch (err) {
       console.error('Refine failed:', err)
-    } finally {
-      setRefining(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project, updateProject, activeProvider, activeProviderId, isConnected])
 
   if (!project) {
@@ -104,6 +107,10 @@ export default function SummaryPage() {
         <TypeCard
           type={project.type || ''}
           onUpdate={(newType) => updateProject(project.id, p => ({ ...p, type: newType }))}
+        />
+        <GitHubRepoCard
+          repo={project.githubRepo}
+          onUpdate={(repo) => updateProject(project.id, p => ({ ...p, githubRepo: repo }))}
         />
       </div>
 

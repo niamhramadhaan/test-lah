@@ -15,6 +15,7 @@ export interface GenerateTestCasesInput {
   projectType?: string
   projectNotes?: string
   nodeNotes?: string
+  githubIssuesContext?: string
 }
 
 /**
