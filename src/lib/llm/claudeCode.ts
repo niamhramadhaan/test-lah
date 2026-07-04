@@ -26,6 +26,23 @@ export async function generateTestCasesViaClaudeCode(
   return parseTestCasesFromText(text)
 }
 
+export async function refineNotesViaClaudeCode(projectName: string, notes: string): Promise<string> {
+  const systemPrompt = `You are a QA documentation assistant. Your job is to refine project notes for a QA testing project.
+
+Rules:
+- Make the notes more structured, clear, and professional
+- Use the project name as context for domain-appropriate formatting
+- Organize into logical sections with bullet points if appropriate
+- Keep the original meaning and all technical details
+- Do NOT add new information or assumptions
+- Return ONLY the refined notes text, no explanation or wrapper`
+
+  const fullPrompt = `${systemPrompt}\n\nProject: ${projectName}\n\nCurrent notes:\n${notes || '(no notes yet)'}`
+
+  const text = await runClaudeCli(fullPrompt)
+  return text.trim()
+}
+
 export async function testClaudeCodeConnection(): Promise<{ ok: boolean; error?: string }> {
   try {
     const text = await runClaudeCli('Say "ok" in one word. Respond with only that word, nothing else.')
