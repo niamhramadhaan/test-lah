@@ -8,6 +8,21 @@ export type EdgeType = 'pass' | 'fail' | 'plain'
 
 export type NodeDirection = 'horizontal' | 'vertical'
 
+export interface GitHubRepoLink {
+  owner: string
+  repo: string
+  fullName: string
+}
+
+export interface LinkedGitHubIssue {
+  number: number
+  title: string
+  url: string
+  state: 'open' | 'closed'
+  body?: string
+  linkedAt: string
+}
+
 export interface FlowNode {
   id: string
   code: string
@@ -18,6 +33,7 @@ export interface FlowNode {
   notes: string
   position: { x: number; y: number } | null
   direction?: NodeDirection
+  linkedIssues?: LinkedGitHubIssue[]
 }
 
 export interface ConditionalEdge {
@@ -68,6 +84,7 @@ export interface Project {
   nodeCounter: number
   tcCounter: Record<string, number>
   e2eData?: E2EProjectData
+  githubRepo?: GitHubRepoLink
 }
 
 export interface AppState {

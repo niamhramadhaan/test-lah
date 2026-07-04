@@ -1,8 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useRef } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocalStorage } from './useLocalStorage'
 import { Project, AppState, DEFAULT_COLUMNS } from '@/types'
+import { queryKeys } from '@/lib/queryKeys'
 
 const INITIAL_STATE: AppState = {
   projects: {},
@@ -17,72 +19,105 @@ function hasProjects(s: AppState): boolean {
   return Object.keys(s.projects ?? {}).length > 0
 }
 
+async function fetchServerState(): Promise<AppState | null> {
+  const res = await fetch('/api/state')
+  return res.ok ? res.json() : null
+}
+
+async function pushServerState(next: AppState): Promise<void> {
+  await fetch('/api/state', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(next),
+  })
+}
+
 export function useProject() {
   const [state, setState, lastSaved] = useLocalStorage<AppState>('qa-dashboard', INITIAL_STATE)
+  const queryClient = useQueryClient()
   const hydratedRef = useRef(false)
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const stateRef = useRef(state)
+  stateRef.current = state
+  // Set right before an adopt-triggered setState so the push effect below
+  // can tell "this state change came from the server" apart from a real
+  // local edit — otherwise every poll response (always a fresh object, even
+  // when content is unchanged) looks like a local edit and gets echoed
+  // straight back to the server 300ms later, forever.
+  const justAdoptedRef = useRef(false)
 
-  // Hydrate from the server-backed file store (shared with the MCP endpoint) on
-  // mount. Never lets an empty server response (e.g. a fresh .ayu-data store
-  // on first run after upgrading) wipe out existing localStorage data — if
-  // the server has nothing yet, we seed it from local instead of pulling.
+  // Transport for the server-backed file store (shared with the MCP
+  // endpoint). Polls every 4s while the tab is visible (React Query pauses
+  // refetchInterval automatically when the document is hidden).
+  const stateQuery = useQuery({
+    queryKey: queryKeys.state,
+    queryFn: fetchServerState,
+    refetchInterval: SERVER_POLL_INTERVAL_MS,
+    refetchIntervalInBackground: false,
+    staleTime: 0,
+  })
+
+  const pushMutation = useMutation({
+    mutationFn: pushServerState,
+    onSuccess: (_data, variables) => {
+      queryClient.setQueryData(queryKeys.state, variables)
+    },
+  })
+
+  // Hydrate from / seed the server on the first settled response, then keep
+  // adopting out-of-band changes (e.g. an MCP tool call in another process)
+  // on every subsequent poll. Never lets an empty server response (e.g. a
+  // fresh .ayu-data store on first run) wipe out existing localStorage data
+  // — if the server has nothing yet, we seed it from local instead. Skips
+  // adoption while a local push is still in flight so a poll response can't
+  // clobber an edit that hasn't reached the server yet.
   useEffect(() => {
-    let cancelled = false
-    fetch('/api/state')
-      .then(res => (res.ok ? res.json() : null))
-      .then((serverState: AppState | null) => {
-        if (cancelled || !serverState) return
+    if (!stateQuery.isFetched) return
+    const serverState = stateQuery.data ?? null
+
+    if (!hydratedRef.current) {
+      if (serverState) {
         if (hasProjects(serverState)) {
+          justAdoptedRef.current = true
           setState(serverState)
-        } else if (hasProjects(state)) {
-          fetch('/api/state', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(state),
-          }).catch(() => {})
+        } else if (hasProjects(stateRef.current)) {
+          pushMutation.mutate(stateRef.current)
         }
-      })
-      .catch(() => {})
-      .finally(() => { hydratedRef.current = true })
-    return () => { cancelled = true }
+      }
+      hydratedRef.current = true
+      return
+    }
+
+    if (pushMutation.isPending) return
+    if (serverState && hasProjects(serverState)) {
+      // Skip if content is unchanged — a fresh fetch is always a new object
+      // reference even when nothing actually changed server-side.
+      if (JSON.stringify(serverState) === JSON.stringify(stateRef.current)) return
+      justAdoptedRef.current = true
+      setState(serverState)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [stateQuery.isFetched, stateQuery.dataUpdatedAt])
 
   // Push local changes to the server-backed store, debounced. Skipped until
   // the initial hydration above has resolved so we don't clobber server data
-  // with a stale localStorage snapshot.
+  // with a stale localStorage snapshot, and skipped when the change was just
+  // adopted from the server (nothing new to push back).
   useEffect(() => {
     if (!hydratedRef.current) return
+    if (justAdoptedRef.current) {
+      justAdoptedRef.current = false
+      return
+    }
     if (pushTimerRef.current) clearTimeout(pushTimerRef.current)
     pushTimerRef.current = setTimeout(() => {
-      fetch('/api/state', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(state),
-      }).catch(() => {})
+      pushMutation.mutate(state)
     }, SERVER_SYNC_DEBOUNCE_MS)
     return () => {
       if (pushTimerRef.current) clearTimeout(pushTimerRef.current)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state])
-
-  // Poll for out-of-band changes (e.g. from an MCP tool call in another
-  // process) while the tab is visible. Last-write-wins, not a merge — and
-  // never accepts an empty server response, so a transient/fresh server
-  // store can't wipe local data out from under an open tab.
-  useEffect(() => {
-    const poll = () => {
-      if (document.visibilityState === 'hidden') return
-      fetch('/api/state')
-        .then(res => (res.ok ? res.json() : null))
-        .then((serverState: AppState | null) => {
-          if (serverState && hasProjects(serverState)) setState(serverState)
-        })
-        .catch(() => {})
-    }
-    const interval = setInterval(poll, SERVER_POLL_INTERVAL_MS)
-    return () => clearInterval(interval)
-  }, [setState])
 
   const createProject = useCallback((name: string, type?: string) => {
     const id = crypto.randomUUID()
@@ -179,6 +214,7 @@ export function useProject() {
         userProfile: data.userProfile && typeof data.userProfile === 'object' ? data.userProfile : { name: '', bannerColor: '#64B5F6' },
         nodeCounter: typeof data.nodeCounter === 'number' ? data.nodeCounter : 0,
         tcCounter: data.tcCounter && typeof data.tcCounter === 'object' ? data.tcCounter : {},
+        githubRepo: data.githubRepo && typeof data.githubRepo === 'object' ? data.githubRepo : undefined,
       }
 
       setState(prev => ({

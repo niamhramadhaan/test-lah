@@ -8,14 +8,14 @@ export async function POST(req: NextRequest) {
   try {
     const {
       title, prompt, apiKey, provider, model, language, baseURL, images,
-      projectName, projectType, projectNotes, nodeNotes,
+      projectName, projectType, projectNotes, nodeNotes, githubIssuesContext,
     } = await req.json()
 
     if (!title && !prompt && (!images || images.length === 0)) {
       return NextResponse.json({ error: 'Title, prompt, or image required' }, { status: 400 })
     }
 
-    const context = { title, prompt, projectName, projectType, projectNotes, nodeNotes }
+    const context = { title, prompt, projectName, projectType, projectNotes, nodeNotes, githubIssuesContext }
 
     if (provider === 'claude-code') {
       const testCases = await generateTestCasesViaClaudeCode({ ...context, language })

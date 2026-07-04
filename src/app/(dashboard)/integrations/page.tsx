@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import { GridPattern } from '@/components/ui/grid-pattern'
 import { useLLMConfig, type LLMProvider } from '@/hooks/useLLMConfig'
+import { useTestLLMConnection, useEncryptSecret } from '@/hooks/useLLM'
 import { PROVIDER_LIST, type ProviderDef } from '@/lib/llm/providers'
+import { GitHubAccordion } from '@/components/integrations/GitHubAccordion'
 
 export default function IntegrationsPage() {
   const { activeProviderId, setActiveProvider } = useLLMConfig()
@@ -41,6 +43,11 @@ export default function IntegrationsPage() {
             />
           ))}
         </div>
+
+        <h3 className="text-xs font-medium uppercase tracking-wider mb-3 mt-8" style={{ color: 'var(--text-tertiary)' }}>Source Control</h3>
+        <div className="space-y-3">
+          <GitHubAccordion />
+        </div>
       </div>
     </div>
   )
@@ -58,28 +65,15 @@ function ProviderAccordion({ def, expanded, onToggle, isActive, onSetActive }: {
 function LocalCliAccordion({ def, expanded, onToggle, isActive, onSetActive }: { def: ProviderDef; expanded: boolean; onToggle: () => void; isActive: boolean; onSetActive: () => void }) {
   const { config, updateProvider } = useLLMConfig()
   const provider = config.providers[def.id]
-  const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<{ ok: boolean; error?: string } | null>(null)
+  const testMutation = useTestLLMConnection()
+  const testing = testMutation.isPending
+  const testResult = testMutation.data ?? null
   const accentColor = def.color || '#6B7280'
 
   if (!provider) return null
 
-  const handleTest = async () => {
-    setTesting(true)
-    setTestResult(null)
-    try {
-      const res = await fetch('/api/llm/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: def.id }),
-      })
-      const data = await res.json()
-      setTestResult(data)
-    } catch {
-      setTestResult({ ok: false, error: 'Network error' })
-    } finally {
-      setTesting(false)
-    }
+  const handleTest = () => {
+    testMutation.mutate({ provider: def.id })
   }
 
   const handleConnect = () => {
@@ -221,10 +215,12 @@ function ApiKeyAccordion({ def, expanded, onToggle, isActive, onSetActive }: { d
   const [editingKey, setEditingKey] = useState(false)
   const [keyValue, setKeyValue] = useState(provider?.apiKey || '')
   const [baseURLValue, setBaseURLValue] = useState(provider?.baseURL || def.baseURL || '')
-  const [testing, setTesting] = useState(false)
+  const testMutation = useTestLLMConnection()
+  const encryptMutation = useEncryptSecret()
+  const testing = testMutation.isPending
   // For custom provider, use the current model value for testing
   const testModel = provider?.defaultModel || def.defaultModel
-  const [testResult, setTestResult] = useState<{ ok: boolean; error?: string } | null>(null)
+  const testResult = testMutation.data ?? null
   const [testedKey, setTestedKey] = useState<string | null>(null)
 
   useEffect(() => {
@@ -237,45 +233,27 @@ function ApiKeyAccordion({ def, expanded, onToggle, isActive, onSetActive }: { d
   // Auto-migrate: encrypt plaintext keys on first load
   useEffect(() => {
     if (provider?.connected && provider.apiKey && !provider.apiKey.startsWith('enc:')) {
-      fetch('/api/llm/encrypt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value: provider.apiKey }),
-      })
-        .then(r => r.json())
-        .then(data => {
+      encryptMutation.mutate(provider.apiKey, {
+        onSuccess: data => {
           if (data.encrypted) {
             updateProvider(def.id, { apiKey: data.encrypted })
           }
-        })
-        .catch(() => {}) // silent fail — old key still works
+        },
+      })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTest = async () => {
     const key = keyValue.trim()
     if (!key) return
 
-    setTesting(true)
-    setTestResult(null)
     setTestedKey(null)
 
-    try {
-      const res = await fetch('/api/llm/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: def.id, apiKey: key, baseURL: baseURLValue.trim() || undefined, model: testModel }),
-      })
-      const data = await res.json()
-      setTestResult(data)
+    const data = await testMutation.mutateAsync({ provider: def.id, apiKey: key, baseURL: baseURLValue.trim() || undefined, model: testModel })
 
-      if (data.ok) {
-        setTestedKey(key)
-      }
-    } catch {
-      setTestResult({ ok: false, error: 'Network error' })
-    } finally {
-      setTesting(false)
+    if (data.ok) {
+      setTestedKey(key)
     }
   }
 
@@ -291,18 +269,9 @@ function ApiKeyAccordion({ def, expanded, onToggle, isActive, onSetActive }: { d
 
     // Encrypt the key before storing
     let encryptedKey = key
-    try {
-      const res = await fetch('/api/llm/encrypt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value: key }),
-      })
-      const data = await res.json()
-      if (data.encrypted) {
-        encryptedKey = data.encrypted
-      }
-    } catch {
-      // If encryption fails, store plaintext (server decrypt handles both)
+    const encryptData = await encryptMutation.mutateAsync(key)
+    if (encryptData.encrypted) {
+      encryptedKey = encryptData.encrypted
     }
 
     updateProvider(def.id, {
@@ -314,7 +283,7 @@ function ApiKeyAccordion({ def, expanded, onToggle, isActive, onSetActive }: { d
       secondaryModel: provider?.secondaryModel || '',
     })
     setEditingKey(false)
-    setTestResult(null)
+    testMutation.reset()
     setTestedKey(null)
   }
 
@@ -329,7 +298,7 @@ function ApiKeyAccordion({ def, expanded, onToggle, isActive, onSetActive }: { d
     setKeyValue('')
     setBaseURLValue(def.baseURL || '')
     setEditingKey(false)
-    setTestResult(null)
+    testMutation.reset()
   }
 
   const handleModelChange = (field: 'defaultModel' | 'secondaryModel', value: string) => {
@@ -423,7 +392,7 @@ function ApiKeyAccordion({ def, expanded, onToggle, isActive, onSetActive }: { d
                   <input
                     type="text"
                     value={baseURLValue}
-                    onChange={e => { setBaseURLValue(e.target.value); setTestedKey(null); setTestResult(null) }}
+                    onChange={e => { setBaseURLValue(e.target.value); setTestedKey(null); testMutation.reset() }}
                     placeholder="https://api.example.com/v1"
                     className="w-full px-3 py-2 text-sm rounded-lg outline-none border transition-colors focus:border-[var(--accent)]"
                     style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
@@ -435,7 +404,7 @@ function ApiKeyAccordion({ def, expanded, onToggle, isActive, onSetActive }: { d
                 <input
                   type="password"
                   value={keyValue}
-                  onChange={e => { setKeyValue(e.target.value); setTestedKey(null); setTestResult(null) }}
+                  onChange={e => { setKeyValue(e.target.value); setTestedKey(null); testMutation.reset() }}
                   placeholder={def.keyPlaceholder}
                   className="flex-1 px-3 py-2 text-sm rounded-lg outline-none border transition-colors focus:border-[var(--accent)]"
                   style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
@@ -466,7 +435,7 @@ function ApiKeyAccordion({ def, expanded, onToggle, isActive, onSetActive }: { d
                 </button>
                 {editingKey && (
                   <button
-                    onClick={() => { setEditingKey(false); setKeyValue(provider.apiKey); setBaseURLValue(provider.baseURL || def.baseURL || ''); setTestedKey(null); setTestResult(null) }}
+                    onClick={() => { setEditingKey(false); setKeyValue(provider.apiKey); setBaseURLValue(provider.baseURL || def.baseURL || ''); setTestedKey(null); testMutation.reset() }}
                     className="px-3 py-2 text-xs font-medium rounded-lg border transition-colors hover:bg-[var(--bg-secondary)]"
                     style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
                   >

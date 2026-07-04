@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { TestCase, Status, E2ERunConfig, E2ERun, E2ETestResult as E2ETestResultType } from '@/types'
 import { useDashboard } from '@/context/DashboardContext'
 
@@ -40,7 +41,18 @@ export function E2ETestRunner({
   // UI state
   const [activeTab, setActiveTab] = useState<TabId>('runner')
   const [isRunning, setIsRunning] = useState(false)
-  const [isGenerating, setIsGenerating] = useState(false)
+  const generateScriptsMutation = useMutation({
+    mutationFn: async (input: { testCases: TestCase[]; baseUrl: string; llmConfig: ReturnType<typeof getLLMConfig> }) => {
+      const response = await fetch('/api/e2e', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...input, generateOnly: true }),
+      })
+      if (!response.ok) throw new Error('Failed to generate scripts')
+      return response.json()
+    },
+  })
+  const isGenerating = generateScriptsMutation.isPending
   const [results, setResults] = useState<E2ETestResultType[]>([])
   const [currentTest, setCurrentTest] = useState<{ index: number; title: string } | null>(null)
   const [logs, setLogs] = useState<LogEntry[]>([])
@@ -181,24 +193,13 @@ export function E2ETestRunner({
       addLog('error', 'Please configure LLM in Integrations page first')
       return
     }
-    setIsGenerating(true)
     addLog('info', 'Generating test scripts...')
     try {
-      const response = await fetch('/api/e2e', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          testCases: testCases.filter(tc => selectedTests.has(tc.id)),
-          baseUrl,
-          llmConfig,
-          generateOnly: true,
-        }),
+      const data = await generateScriptsMutation.mutateAsync({
+        testCases: testCases.filter(tc => selectedTests.has(tc.id)),
+        baseUrl,
+        llmConfig,
       })
-      if (!response.ok) {
-        addLog('error', 'Failed to generate scripts')
-        return
-      }
-      const data = await response.json()
       setGeneratedScripts(prev => ({ ...prev, ...data.scripts }))
       for (const [tcId, script] of Object.entries(data.scripts)) {
         const tc = testCases.find(t => t.id === tcId)
@@ -208,9 +209,8 @@ export function E2ETestRunner({
       setActiveTab('scripts')
     } catch (error) {
       addLog('error', `Error: ${error instanceof Error ? error.message : String(error)}`)
-    } finally {
-      setIsGenerating(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testCases, selectedTests, baseUrl, getLLMConfig, addLog, e2e])
 
   const runTests = useCallback(async () => {

@@ -192,6 +192,7 @@ function buildServer(): McpServer {
         let projectType: string | undefined
         let projectNotes: string | undefined
         let nodeNotes: string | undefined
+        let githubIssuesContext: string | undefined
 
         if (projectId) {
           const project = requireProject(projectId)
@@ -199,14 +200,20 @@ function buildServer(): McpServer {
           projectType = project.type
           projectNotes = project.notes
           if (nodeId) {
-            nodeNotes = project.flows.find(n => n.id === nodeId)?.notes
+            const node = project.flows.find(n => n.id === nodeId)
+            nodeNotes = node?.notes
+            if (node?.linkedIssues && node.linkedIssues.length > 0) {
+              githubIssuesContext = node.linkedIssues
+                .map(issue => `#${issue.number} [${issue.state}] ${issue.title}${issue.body ? `\n${issue.body}` : ''}`)
+                .join('\n\n')
+            }
           }
         }
 
         const def = getProviderDef(provider)
         const generated = await generateTestCases(
           { def, apiKey, model: model || '', baseURL },
-          { title, prompt: prompt ?? '', language: language ?? 'en', projectName, projectType, projectNotes, nodeNotes },
+          { title, prompt: prompt ?? '', language: language ?? 'en', projectName, projectType, projectNotes, nodeNotes, githubIssuesContext },
         )
 
         if (projectId && nodeId) {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { FlowNode, Project } from '@/types'
 import { generateTestCases, GeneratedTestCase } from '@/lib/llm'
 import { useLLMConfig } from '@/hooks/useLLMConfig'
@@ -40,9 +41,11 @@ export function GenerateTestModal({ open, onClose, node, project, onGenerate }: 
   const [prompt, setPrompt] = useState('')
   const [language, setLanguage] = useState<'en' | 'id'>('en')
   const [langOpen, setLangOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const generateMutation = useMutation({ mutationFn: generateTestCases })
+  const loading = generateMutation.isPending
   const [error, setError] = useState<string | null>(null)
   const [images, setImages] = useState<string[]>([])
+  const [selectedIssueNumbers, setSelectedIssueNumbers] = useState<Set<number>>(new Set())
 
   const [catUrl, setCatUrl] = useState('')
   const [catFact, setCatFact] = useState(CAT_FACTS[0])
@@ -77,15 +80,17 @@ export function GenerateTestModal({ open, onClose, node, project, onGenerate }: 
       setTitle(node.label)
       setPrompt('')
       setError(null)
-      setLoading(false)
+      generateMutation.reset()
       setImages([])
       setExtractedFrames([])
       setSelectedFrameIndices(new Set())
       setShowFrameSelector(false)
       setCatUrl('')
       setCatIndex(0)
+      setSelectedIssueNumbers(new Set((node.linkedIssues ?? []).map(i => i.number)))
     }
-  }, [open, node.label])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, node.label, node.linkedIssues])
 
   useEffect(() => {
     if (!loading) return
@@ -311,11 +316,15 @@ export function GenerateTestModal({ open, onClose, node, project, onGenerate }: 
       return
     }
 
-    setLoading(true)
     setError(null)
 
+    const includedIssues = (node.linkedIssues ?? []).filter(issue => selectedIssueNumbers.has(issue.number))
+    const githubIssuesContext = includedIssues.length > 0
+      ? includedIssues.map(issue => `#${issue.number} [${issue.state}] ${issue.title}${issue.body ? `\n${issue.body}` : ''}`).join('\n\n')
+      : undefined
+
     try {
-      const cases = await generateTestCases({
+      const cases = await generateMutation.mutateAsync({
         title,
         prompt,
         apiKey: activeProvider!.apiKey,
@@ -328,13 +337,12 @@ export function GenerateTestModal({ open, onClose, node, project, onGenerate }: 
         projectType: project?.type,
         projectNotes: project?.notes,
         nodeNotes: node.notes,
+        githubIssuesContext,
       })
       onGenerate(cases)
       onClose()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Generation failed')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -423,6 +431,34 @@ export function GenerateTestModal({ open, onClose, node, project, onGenerate }: 
                 ))}
               </div>
             </div>
+
+            {/* Linked GitHub issues as context */}
+            {node.linkedIssues && node.linkedIssues.length > 0 && (
+              <div>
+                <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  Include linked issues as context
+                </label>
+                <div className="space-y-1">
+                  {node.linkedIssues.map(issue => (
+                    <label key={issue.number} className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIssueNumbers.has(issue.number)}
+                        onChange={() => setSelectedIssueNumbers(prev => {
+                          const next = new Set(prev)
+                          if (next.has(issue.number)) next.delete(issue.number)
+                          else next.add(issue.number)
+                          return next
+                        })}
+                        className="cursor-pointer accent-[var(--accent)]"
+                        style={{ width: 14, height: 14 }}
+                      />
+                      <span className="truncate">#{issue.number} {issue.title}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Image & Video attachments */}
             <div>

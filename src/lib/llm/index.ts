@@ -154,6 +154,7 @@ export interface FeatureContext {
   projectType?: string
   projectNotes?: string
   nodeNotes?: string
+  githubIssuesContext?: string
 }
 
 /**
@@ -172,6 +173,9 @@ export function buildFeatureContext(ctx: FeatureContext): string {
   parts.push(`Feature: ${ctx.title}`)
   if (ctx.nodeNotes?.trim()) {
     parts.push(`Node Notes:\n${ctx.nodeNotes.trim()}`)
+  }
+  if (ctx.githubIssuesContext?.trim()) {
+    parts.push(`Linked GitHub Issue(s):\n${ctx.githubIssuesContext.trim()}`)
   }
   parts.push(`Description / DoD / Acceptance Criteria:\n${ctx.prompt || '(no additional description provided)'}`)
   return parts.join('\n\n')
