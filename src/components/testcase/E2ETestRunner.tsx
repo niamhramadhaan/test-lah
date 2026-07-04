@@ -4,11 +4,18 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { TestCase, Status, E2ERunConfig, E2ERun, E2ETestResult as E2ETestResultType } from '@/types'
 import { useDashboard } from '@/context/DashboardContext'
+import { getProviderDef } from '@/lib/llm/providers'
 
 interface E2ETestRunnerProps {
   testCases: TestCase[]
   projectId: string
+  nodeId: string
+  onUpdateTestCase: (nodeId: string, tcId: string, patch: Partial<TestCase>) => void
   onClose: () => void
+}
+
+function mapE2EStatusToStatus(status: 'pass' | 'fail' | 'skip' | 'error'): Status {
+  return status === 'error' ? 'fail' : status
 }
 
 interface LogEntry {
@@ -25,12 +32,14 @@ interface ScreenshotEntry {
 
 type TabId = 'runner' | 'scripts' | 'history'
 
-export function E2ETestRunner({ 
-  testCases, 
-  projectId, 
-  onClose 
+export function E2ETestRunner({
+  testCases,
+  projectId,
+  nodeId,
+  onUpdateTestCase,
+  onClose
 }: E2ETestRunnerProps) {
-  const { e2e, testCases: tcHook } = useDashboard()
+  const { e2e } = useDashboard()
   
   // Config state
   const [baseUrl, setBaseUrl] = useState(e2e.config.baseUrl)
@@ -178,7 +187,9 @@ export function E2ETestRunner({
     const activeProvider = fullConfig.activeProvider
     if (!activeProvider || !fullConfig.providers?.[activeProvider]) return null
     const providerConfig = fullConfig.providers[activeProvider]
-    if (!providerConfig.apiKey || !providerConfig.connected) return null
+    if (!providerConfig.connected) return null
+    const isLocalCli = getProviderDef(activeProvider).type === 'local-cli'
+    if (!isLocalCli && !providerConfig.apiKey) return null
     return {
       provider: activeProvider,
       model: providerConfig.defaultModel,
@@ -296,6 +307,7 @@ export function E2ETestRunner({
                       setGeneratedScripts(prev => ({ ...prev, [data.testCaseId]: data.script }))
                       e2e.saveScript(data.testCaseId, data.result?.testCaseTitle || '', '', data.script)
                     }
+                    onUpdateTestCase(nodeId, data.testCaseId, { status: mapE2EStatusToStatus(data.status) })
                     allResults.push(data.result)
                     setResults([...allResults])
                     break
@@ -331,7 +343,7 @@ export function E2ETestRunner({
     setIsRunning(false)
     setCurrentTest(null)
     abortControllerRef.current = null
-  }, [testCases, selectedTests, baseUrl, browser, headless, timeout, addLog, getLLMConfig, projectId, e2e, healingReport])
+  }, [testCases, selectedTests, baseUrl, browser, headless, timeout, addLog, getLLMConfig, projectId, e2e, healingReport, nodeId, onUpdateTestCase])
 
   const stopTests = useCallback(() => {
     if (abortControllerRef.current) {

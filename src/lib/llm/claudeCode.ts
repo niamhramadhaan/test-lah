@@ -52,7 +52,7 @@ export async function testClaudeCodeConnection(): Promise<{ ok: boolean; error?:
   }
 }
 
-function runClaudeCli(prompt: string): Promise<string> {
+export function runClaudeCli(prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
     // --allowedTools '' denies all tool use so this stays a plain text
     // completion (no file/bash access) rather than an agentic session.

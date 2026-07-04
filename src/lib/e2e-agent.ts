@@ -20,6 +20,10 @@ export interface StepResult {
   status: 'pass' | 'fail' | 'skip'
   error?: string
   screenshot?: string
+  // True when this step only passed after some recovery mechanism
+  // (overlay dismissal, AI healing) rather than resolving cleanly on the
+  // first attempt — surfaced so a green run doesn't silently hide it.
+  healed?: boolean
 }
 
 export interface E2ERunConfig {
@@ -156,11 +160,16 @@ export async function executeTestCase(
     const browserEngine = browsers[browserType] || chromium
     
     // For Edge, use channel
-    const launchOptions: any = { headless: runConfig.headless ?? true }
+    // Strip LD_PRELOAD: editor tooling (e.g. VS Code's Console Ninja) can
+    // inject a Node-only native hook into this process's env, which crashes
+    // the non-Node chrome-headless-shell child with an "undefined symbol"
+    // error at launch if inherited.
+    const { LD_PRELOAD: _ldPreload, ...browserEnv } = process.env
+    const launchOptions: any = { headless: runConfig.headless ?? true, env: browserEnv }
     if (runConfig.browser === 'edge') {
       launchOptions.channel = 'msedge'
     }
-    
+
     const browser = await browserEngine.launch(launchOptions)
     const context = await browser.newContext()
     const page = await context.newPage()

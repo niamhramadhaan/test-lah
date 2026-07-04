@@ -761,6 +761,8 @@ export function TestCasePanel({
         <E2ETestRunner
           testCases={testCases}
           projectId={projectId}
+          nodeId={selectedNode.id}
+          onUpdateTestCase={onUpdateTestCase}
           onClose={() => setE2eRunnerOpen(false)}
         />
       )}
