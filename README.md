@@ -147,7 +147,7 @@ Click the export button. Download as **Markdown** for the wiki or **JSON** for t
 
 Next.js 14 · TypeScript · Tailwind CSS · Motion · Lottie · Playwright · `@google/generative-ai` · `openai` · `@ai-sdk/groq` · OpenRouter · AES-256-GCM encryption · `@modelcontextprotocol/sdk`
 
-Project/test-case data is kept in browser localStorage and mirrored to a local JSON file (`.ayu-data/state.json`) so the MCP server below can read and write it too. No external database.
+Project/test-case data is kept in browser localStorage and mirrored to a local JSON file (`~/.test-lah/state.json` by default, override with `AYU_DATA_DIR`) so the MCP server below can read and write it too. No external database.
 
 ## MCP Server (Claude Code integration)
 

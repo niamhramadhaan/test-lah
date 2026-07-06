@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { readState, writeState } from '@/lib/store/fileStore'
 import type { AppState } from '@/types'
 
+// Without this, Next.js treats a parameterless GET as static and executes it
+// once at `next build` time to cache the response — which reads whatever
+// local .ayu-data/state.json exists on the machine running the build and,
+// under `output: 'standalone'`, gets file-traced straight into the build
+// artifact. This route must never run at build time.
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   return NextResponse.json(readState())
 }
