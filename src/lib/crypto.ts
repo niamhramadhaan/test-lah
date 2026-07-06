@@ -6,17 +6,49 @@
  */
 
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'crypto'
+import fs from 'fs'
+import path from 'path'
+import { getDataDir } from '@/lib/dataDir'
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 12
 const AUTH_TAG_LENGTH = 16
+const KEY_FILE = path.join(getDataDir(), 'encryption.key')
+
+let cachedKeySource: string | null = null
+
+// Resolves the raw key material for encryption: an explicit ENCRYPTION_KEY
+// env var always wins (for deployments with ephemeral/serverless filesystems
+// that need a stable, externally-managed secret). Otherwise, a random key is
+// generated once and persisted next to the local state file
+// (.ayu-data/encryption.key) so a zero-config `npx test-lah` run still
+// encrypts data at rest with no setup, and the same key survives restarts so
+// previously-encrypted values stay decryptable.
+function getKeySource(): string {
+  if (process.env.ENCRYPTION_KEY) return process.env.ENCRYPTION_KEY
+  if (cachedKeySource) return cachedKeySource
+
+  try {
+    if (fs.existsSync(KEY_FILE)) {
+      cachedKeySource = fs.readFileSync(KEY_FILE, 'utf-8').trim()
+      return cachedKeySource
+    }
+    fs.mkdirSync(path.dirname(KEY_FILE), { recursive: true })
+    const generated = randomBytes(32).toString('hex')
+    const tmpFile = `${KEY_FILE}.${process.pid}.tmp`
+    fs.writeFileSync(tmpFile, generated, { mode: 0o600 })
+    fs.renameSync(tmpFile, KEY_FILE)
+    cachedKeySource = generated
+    return generated
+  } catch (err) {
+    throw new Error(
+      `ENCRYPTION_KEY is not set, and a local key could not be generated at ${KEY_FILE}: ${err instanceof Error ? err.message : String(err)}. Set ENCRYPTION_KEY explicitly (required on read-only/ephemeral filesystems, e.g. most serverless hosts).`
+    )
+  }
+}
 
 function getEncryptionKey(): Buffer {
-  const raw = process.env.ENCRYPTION_KEY
-  if (!raw) {
-    throw new Error('ENCRYPTION_KEY environment variable is not set')
-  }
-  return createHash('sha256').update(raw).digest()
+  return createHash('sha256').update(getKeySource()).digest()
 }
 
 /**

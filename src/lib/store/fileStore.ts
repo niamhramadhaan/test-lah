@@ -2,8 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import { randomUUID } from 'crypto'
 import { AppState, Project, DEFAULT_COLUMNS } from '@/types'
+import { getDataDir } from '@/lib/dataDir'
 
-const DATA_DIR = process.env.AYU_DATA_DIR ?? path.join(process.cwd(), '.ayu-data')
+const DATA_DIR = getDataDir()
 const STATE_FILE = path.join(DATA_DIR, 'state.json')
 
 const INITIAL_STATE: AppState = {
